@@ -9,10 +9,10 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.components.KaScopeContext
 import org.jetbrains.kotlin.analysis.api.components.KaScopeKind
+import org.jetbrains.kotlin.analysis.api.fir.references.KDocReferenceResolver.canBeReferencedAsExtensionOn
+import org.jetbrains.kotlin.analysis.api.fir.references.KDocReferenceResolver.getTypeQualifiedExtensions
 import org.jetbrains.kotlin.analysis.api.scopes.KaScope
 import org.jetbrains.kotlin.analysis.api.symbols.*
-import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.markers.KaDeclarationContainerSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
@@ -174,14 +174,38 @@ internal object KDocReferenceResolver {
         return emptyList()
     }
 
-    private fun KaSession.getSymbolsFromScopes(fqName: FqName, contextElement: KtElement): Collection<KaSymbol> {
-        getSymbolsFromParentMemberScopes(fqName, contextElement).ifNotEmpty { return this }
+    private fun KaSession.getSymbolsFromScopes(
+        fqName: FqName,
+        contextElement: KtElement,
+        earlyBreakFilter: (KaSymbol) -> Boolean = { true }
+    ): Collection<KaSymbol> {
+        getSymbolsFromParentMemberScopes(fqName, contextElement).filter(earlyBreakFilter).ifNotEmpty { return this }
         val importScopeContext = contextElement.containingKtFile.importingScopeContext
-        getSymbolsFromImportingScope(importScopeContext, fqName, KaScopeKind.ExplicitSimpleImportingScope::class).ifNotEmpty { return this }
-        getSymbolsFromPackageScope(fqName, contextElement).ifNotEmpty { return this }
-        getSymbolsFromImportingScope(importScopeContext, fqName, KaScopeKind.DefaultSimpleImportingScope::class).ifNotEmpty { return this }
-        getSymbolsFromImportingScope(importScopeContext, fqName, KaScopeKind.ExplicitStarImportingScope::class).ifNotEmpty { return this }
-        getSymbolsFromImportingScope(importScopeContext, fqName, KaScopeKind.DefaultStarImportingScope::class).ifNotEmpty { return this }
+        getSymbolsFromImportingScope(
+            importScopeContext,
+            fqName,
+            KaScopeKind.ExplicitSimpleImportingScope::class
+        ).filter(earlyBreakFilter).ifNotEmpty { return this }
+
+        getSymbolsFromPackageScope(fqName, contextElement).filter(earlyBreakFilter).ifNotEmpty { return this }
+        getSymbolsFromImportingScope(
+            importScopeContext,
+            fqName,
+            KaScopeKind.DefaultSimpleImportingScope::class
+        ).filter(earlyBreakFilter).ifNotEmpty { return this }
+
+        getSymbolsFromImportingScope(
+            importScopeContext,
+            fqName,
+            KaScopeKind.ExplicitStarImportingScope::class
+        ).filter(earlyBreakFilter).ifNotEmpty { return this }
+
+        getSymbolsFromImportingScope(
+            importScopeContext,
+            fqName,
+            KaScopeKind.DefaultStarImportingScope::class
+        ).filter(earlyBreakFilter).ifNotEmpty { return this }
+
         return emptyList()
     }
 
@@ -310,33 +334,44 @@ internal object KDocReferenceResolver {
         val receiverTypeName = fqName.parent()
         if (receiverTypeName.isRoot) return emptyList()
 
-        val possibleExtensions = getExtensionCallableSymbolsByShortName(extensionName, contextElement)
-        if (possibleExtensions.isEmpty()) return emptyList()
-
         val possibleReceivers = getReceiverTypeCandidates(receiverTypeName, contextElement)
+        if (possibleReceivers.isEmpty()) return emptyList()
 
-        return possibleReceivers.flatMap { receiverClassSymbol ->
-            val receiverType = buildClassType(receiverClassSymbol)
-            val applicableExtensions = possibleExtensions.filter { canBeReferencedAsExtensionOn(it, receiverType) }
+        val gatheredSymbols = mutableListOf<ResolveResult>()
 
-            applicableExtensions.map { it.toResolveResult(receiverClassReference = receiverClassSymbol) }
+        getExtensionCallableSymbolsByShortName(extensionName, contextElement) { symbol ->
+            (symbol as? KaCallableSymbol) ?: return@getExtensionCallableSymbolsByShortName false
+
+            val applicableReceivers =
+                possibleReceivers.filter {
+                    val receiverClassType = buildClassType(it)
+                    canBeReferencedAsExtensionOn(symbol, receiverClassType)
+                }
+
+            gatheredSymbols.addAll(applicableReceivers.map { receiver -> symbol.toResolveResult(receiverClassReference = receiver) })
+            applicableReceivers.isNotEmpty()
         }
+
+        return gatheredSymbols
     }
 
-    private fun KaSession.getExtensionCallableSymbolsByShortName(name: Name, contextElement: KtElement): List<KaCallableSymbol> {
-        return getSymbolsFromScopes(FqName.topLevel(name), contextElement)
+    private fun KaSession.getExtensionCallableSymbolsByShortName(
+        name: Name, contextElement: KtElement, earlyBreakFilter: (KaSymbol) -> Boolean = { true }
+    ): List<KaCallableSymbol> {
+        return getSymbolsFromScopes(FqName.topLevel(name), contextElement, earlyBreakFilter)
             .filterIsInstance<KaCallableSymbol>()
             .filter { it.isExtension }
     }
 
-    private fun KaSession.getReceiverTypeCandidates(receiverTypeName: FqName, contextElement: KtElement): List<KaClassLikeSymbol> {
-        val possibleReceivers =
-            getSymbolsFromScopes(receiverTypeName, contextElement).ifEmpty { null }
-                ?: getNonImportedSymbolsByFullyQualifiedName(receiverTypeName).ifEmpty { null }
-                ?: emptyList()
+    private fun KaSession.getReceiverTypeCandidates(
+        receiverTypeName: FqName,
+        contextElement: KtElement,
+        earlyBreakFilter: (KaSymbol) -> Boolean = { true }
+    ): Collection<KaClassLikeSymbol> =
+        getSymbolsFromScopes(receiverTypeName, contextElement, earlyBreakFilter).ifEmpty {
+            getNonImportedSymbolsByFullyQualifiedName(receiverTypeName)
+        }.filterIsInstance<KaClassLikeSymbol>()
 
-        return possibleReceivers.filterIsInstance<KaClassLikeSymbol>()
-    }
 
     /**
      * Returns true if we consider that [this] extension function prefixed with [actualReceiverType] in
@@ -345,7 +380,7 @@ internal object KDocReferenceResolver {
      * This is **not** an actual type check, it is just an opinionated approximation.
      * The main guideline was K1 KDoc resolve.
      *
-     * This check might change in the future, as Dokka team advances with KDoc rules.
+     * This check might change in the future, as the Dokka team advances with KDoc rules.
      */
     private fun KaSession.canBeReferencedAsExtensionOn(symbol: KaCallableSymbol, actualReceiverType: KaType): Boolean {
         val extensionReceiverType = symbol.receiverParameter?.returnType ?: return false
@@ -433,6 +468,7 @@ internal object KDocReferenceResolver {
             }
         }
     }
+
 
     private fun generateNameInterpretations(fqName: FqName): Sequence<FqNameInterpretation> = sequence {
         val parts = fqName.pathSegments()
