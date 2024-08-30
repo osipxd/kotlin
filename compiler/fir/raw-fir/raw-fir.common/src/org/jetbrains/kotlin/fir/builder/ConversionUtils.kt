@@ -285,11 +285,15 @@ fun generateAccessExpression(
         }
     }
 
-fun generateResolvedAccessExpression(source: KtSourceElement?, variable: FirVariable): FirQualifiedAccessExpression =
+fun generateResolvedAccessExpression(
+    propertyAccessSource: KtSourceElement?,
+    variable: FirVariable,
+    calleeReferenceSource: KtSourceElement? = propertyAccessSource,
+): FirQualifiedAccessExpression =
     buildPropertyAccessExpression {
-        this.source = source
+        this.source = propertyAccessSource
         calleeReference = buildResolvedNamedReference {
-            this.source = source
+            this.source = calleeReferenceSource
             name = variable.name
             resolvedSymbol = variable.symbol
         }
