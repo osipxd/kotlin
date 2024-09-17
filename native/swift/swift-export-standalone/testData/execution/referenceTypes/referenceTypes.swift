@@ -386,7 +386,7 @@ class ReferenceTypesTests : TestProvider {
             TestCase(name: "openClassesAdhereToLSP", method: withAutorelease(openClassesAdhereToLSP)),
             TestCase(name: "companionObject", method: withAutorelease(companionObject)),
             TestCase(name: "overridesShouldWork", method: withAutorelease(overridesShouldWork)),
-            TestCase(name: "overridesShouldWork", method: withAutorelease(overridesShouldWorkAcrossModules)),
+            TestCase(name: "overridesShouldWorkAcrossModules", method: withAutorelease(overridesShouldWorkAcrossModules)),
         ]
     }
 }
