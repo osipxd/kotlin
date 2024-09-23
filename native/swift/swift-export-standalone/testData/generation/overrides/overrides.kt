@@ -3,7 +3,7 @@
 // EXPORT_TO_SWIFT
 // FILE: inheritance.kt
 
-open class Parent() {
+open class Parent(val value: String) {
     open fun nonoverride(): Int = 42
 
     open fun primitiveTypeFunc(arg: Int): Int = arg
@@ -26,7 +26,7 @@ open class Parent() {
     open fun overrideChainFunc() = Unit
 }
 
-open class Child : Parent() {
+open class Child(value: Int) : Parent("$value") {
     override fun nonoverride(): Nothing = TODO("This is not an override in swift")
 
     override fun primitiveTypeFunc(arg: Int): Int = 43
@@ -47,7 +47,7 @@ open class Child : Parent() {
     open override fun overrideChainFunc() = Unit
 }
 
-class GrandChild : Child() {
+class GrandChild(value: Int) : Child(value) {
     override fun hopFunc() {}
     final override fun finalOverrideHopFunc() {}
     final override fun overrideChainFunc() = Unit
@@ -57,7 +57,7 @@ class GrandChild : Child() {
 // EXPORT_TO_SWIFT
 // FILE: overrides_across_modules.kt
 
-open class Cousin : Parent() {
+open class Cousin(value: String) : Parent(value) {
     override fun primitiveTypeFunc(arg: Int): Int = 10
     override val primitiveTypeVar: Int get() = 20
     final override fun finalOverrideFunc() {}

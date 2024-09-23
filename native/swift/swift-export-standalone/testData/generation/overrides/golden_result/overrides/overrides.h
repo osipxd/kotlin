@@ -71,15 +71,17 @@ NSNumber * Parent_subtypeOptionalPrimitiveFunc(uintptr_t self);
 
 NSNumber * Parent_subtypeOptionalPrimitiveVar_get(uintptr_t self);
 
+NSString * Parent_value_get(uintptr_t self);
+
 uintptr_t __root___Child_init_allocate();
 
-void __root___Child_init_initialize__TypesOfArguments__Swift_UInt__(uintptr_t __kt);
+void __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(uintptr_t __kt, int32_t value);
 
 uintptr_t __root___GrandChild_init_allocate();
 
-void __root___GrandChild_init_initialize__TypesOfArguments__Swift_UInt__(uintptr_t __kt);
+void __root___GrandChild_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(uintptr_t __kt, int32_t value);
 
 uintptr_t __root___Parent_init_allocate();
 
-void __root___Parent_init_initialize__TypesOfArguments__Swift_UInt__(uintptr_t __kt);
+void __root___Parent_init_initialize__TypesOfArguments__Swift_UInt_Swift_String__(uintptr_t __kt, NSString * value);
 

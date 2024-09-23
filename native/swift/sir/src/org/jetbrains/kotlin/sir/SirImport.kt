@@ -23,6 +23,6 @@ class SirImport(
     }
 
     enum class Mode {
-        Exported, ImplementationOnly,
+        ImplementationOnly, Exported
     }
 }

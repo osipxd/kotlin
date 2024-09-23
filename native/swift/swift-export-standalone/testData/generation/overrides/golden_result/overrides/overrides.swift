@@ -32,15 +32,17 @@ open class Child : overrides.Parent {
             return Child_subtypeOptionalPrimitiveVar_get(self.__externalRCRef())
         }
     }
-    public override init() {
-        let __kt = __root___Child_init_allocate()
-        super.init(__externalRCRef: __kt)
-        __root___Child_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
-    }
     public override init(
         __externalRCRef: Swift.UInt
     ) {
         super.init(__externalRCRef: __externalRCRef)
+    }
+    public init(
+        value: Swift.Int32
+    ) {
+        let __kt = __root___Child_init_allocate()
+        super.init(__externalRCRef: __kt)
+        __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(__kt, value)
     }
     public final override func finalOverrideFunc() -> Swift.Void {
         return Child_finalOverrideFunc(self.__externalRCRef())
@@ -79,15 +81,17 @@ open class Child : overrides.Parent {
     }
 }
 public final class GrandChild : overrides.Child {
-    public override init() {
-        let __kt = __root___GrandChild_init_allocate()
-        super.init(__externalRCRef: __kt)
-        __root___GrandChild_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
-    }
     public override init(
         __externalRCRef: Swift.UInt
     ) {
         super.init(__externalRCRef: __externalRCRef)
+    }
+    public override init(
+        value: Swift.Int32
+    ) {
+        let __kt = __root___GrandChild_init_allocate()
+        super.init(__externalRCRef: __kt)
+        __root___GrandChild_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(__kt, value)
     }
     public override func finalOverrideHopFunc() -> Swift.Void {
         return GrandChild_finalOverrideHopFunc(self.__externalRCRef())
@@ -130,15 +134,22 @@ open class Parent : KotlinRuntime.KotlinBase {
             return Parent_subtypeOptionalPrimitiveVar_get(self.__externalRCRef())?.int32Value
         }
     }
-    public override init() {
-        let __kt = __root___Parent_init_allocate()
-        super.init(__externalRCRef: __kt)
-        __root___Parent_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
+    public final var value: Swift.String {
+        get {
+            return Parent_value_get(self.__externalRCRef())
+        }
     }
     public override init(
         __externalRCRef: Swift.UInt
     ) {
         super.init(__externalRCRef: __externalRCRef)
+    }
+    public init(
+        value: Swift.String
+    ) {
+        let __kt = __root___Parent_init_allocate()
+        super.init(__externalRCRef: __kt)
+        __root___Parent_init_initialize__TypesOfArguments__Swift_UInt_Swift_String__(__kt, value)
     }
     open func finalOverrideFunc() -> Swift.Void {
         return Parent_finalOverrideFunc(self.__externalRCRef())
