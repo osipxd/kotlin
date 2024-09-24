@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
  * [org.jetbrains.kotlin.backend.konan.objcexport.ObjCExportTranslatorKt.makeMethodsOrderStable]
  */
 @OptIn(KaExperimentalApi::class)
-fun KaSession.getStringSignature(symbol: KaFunctionSymbol): String {
+internal fun KaSession.getStringSignature(symbol: KaFunctionSymbol): String {
     return buildString {
         append(symbol.name)
 

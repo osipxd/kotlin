@@ -1,6 +1,7 @@
 package org.jetbrains.kotlin.objcexport.mangling
 
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.analysis.api.KaNonPublicApi
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.objcexport.ObjCExportContext
@@ -45,7 +46,8 @@ private fun ObjCExportContext.canBeInheritedBySameClass(
 
     if (isFirstTopLevel || isSecondTopLevel) {
         val bothAccessors = isFirstPropertyAccessor && isSecondPropertyAccessor
-        return isFirstTopLevel && isSecondTopLevel && bothAccessors && first.sourcePsi<PsiElement>()?.containingFile == second.sourcePsi<PsiElement>()?.containingFile
+        val sameFile = with(analysisSession) { fromTheSameFile(first, second) }
+        return isFirstTopLevel && isSecondTopLevel && bothAccessors && sameFile
     }
 
     val firstClass = analysisSession.getClassIfCategory(first) ?: with(analysisSession) { first.containingDeclaration as KaClassSymbol }
@@ -60,6 +62,15 @@ private fun ObjCExportContext.canBeInheritedBySameClass(
     }
 
     return analysisSession.canHaveCommonSubtype(firstClass, secondClass, ignoreInterfaceMethodCollisions)
+}
+
+@OptIn(KaNonPublicApi::class)
+private fun KaSession.fromTheSameFile(first: KaCallableSymbol, second: KaCallableSymbol): Boolean {
+    return if (first.origin == KaSymbolOrigin.SOURCE && second.origin == KaSymbolOrigin.SOURCE)
+        first.containingFile == second.containingFile
+    else if (first.origin == KaSymbolOrigin.LIBRARY && second.origin == KaSymbolOrigin.LIBRARY)
+        first.klibSourceFileName == second.klibSourceFileName && first.callableId?.packageName == second.callableId?.packageName
+    else false
 }
 
 private fun KaSession.canHaveCommonSubtype(
