@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.backend.konan.objcexport.ObjCIdType
 import org.jetbrains.kotlin.backend.konan.objcexport.ObjCMethod
 import org.jetbrains.kotlin.backend.konan.objcexport.ObjCProtocolType
 import org.jetbrains.kotlin.objcexport.*
+import org.jetbrains.kotlin.objcexport.mangling.KtObjCExportMangling
 import org.jetbrains.kotlin.objcexport.testUtils.*
 import org.jetbrains.kotlin.psi.KtFile
 import org.junit.jupiter.api.Test
@@ -232,6 +233,7 @@ class TypeParametersTranslationTests(
                         moduleClassifier = KtObjCExportModuleClassifier.default,
                         cache = hashMapOf(),
                         overrides = hashMapOf(),
+                        manglers = KtObjCExportMangling()
                     )
                 )
             ) {

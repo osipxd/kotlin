@@ -6,6 +6,9 @@
 package org.jetbrains.kotlin.backend.konan.objcexport
 
 import org.jetbrains.kotlin.backend.konan.InternalKotlinNativeApi
+import org.jetbrains.kotlin.backend.konan.objcexport.mangling.mangledAttributes
+import org.jetbrains.kotlin.backend.konan.objcexport.mangling.mangledName
+import org.jetbrains.kotlin.backend.konan.objcexport.mangling.mangledSelectors
 
 object StubRenderer {
     fun render(stub: ObjCExportStub): List<String> = render(stub, false)
@@ -135,19 +138,19 @@ object StubRenderer {
         }
 
         fun appendParameters() {
+            val selectors = method.mangledSelectors()
             assert(
-                method.selectors.size == method.parameters.size ||
-                    method.selectors.size == 1 && method.parameters.size == 0
+                selectors.size == method.parameters.size || selectors.size == 1 && method.parameters.size == 0
             )
 
-            if (method.selectors.size == 1 && method.parameters.size == 0) {
-                append(method.selectors[0])
+            if (selectors.size == 1 && method.parameters.size == 0) {
+                append(selectors[0])
             } else {
-                for (i in 0 until method.selectors.size) {
+                for (i in 0 until selectors.size) {
                     if (i > 0) append(' ')
 
                     val parameter = method.parameters[i]
-                    val selector = method.selectors[i]
+                    val selector = selectors[i]
                     append(selector)
                     append("(")
                     append(parameter.type.render())
@@ -158,7 +161,7 @@ object StubRenderer {
         }
 
         fun appendAttributes() {
-            appendPostfixDeclarationAttributes(method.attributes)
+            appendPostfixDeclarationAttributes(method.mangledAttributes())
         }
 
         appendStaticness()
@@ -205,7 +208,7 @@ object StubRenderer {
         }
 
         append("@interface ")
-        append(name)
+        append(mangledName())
         appendGenerics()
         appendCategoryName()
         appendSuperClass()
@@ -245,3 +248,4 @@ fun formatGenerics(buffer: Appendable, generics: List<Any>) {
         generics.joinTo(buffer, separator = ", ", prefix = "<", postfix = ">")
     }
 }
+

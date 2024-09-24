@@ -10,9 +10,12 @@ import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.backend.konan.objcexport.*
+import org.jetbrains.kotlin.backend.konan.objcexport.mangling.ObjCClassNameMangler
+import org.jetbrains.kotlin.backend.konan.objcexport.mangling.objCMangler
 import org.jetbrains.kotlin.objcexport.analysisApiUtils.isCompanion
 import org.jetbrains.kotlin.objcexport.analysisApiUtils.isThrowable
 import org.jetbrains.kotlin.objcexport.analysisApiUtils.isVisibleInObjC
+import org.jetbrains.kotlin.objcexport.extras.objCExportStubExtras
 
 
 fun ObjCExportContext.translateToObjCClass(symbol: KaClassSymbol): ObjCClass? = withClassifierContext(symbol) {
@@ -26,6 +29,7 @@ fun ObjCExportContext.translateToObjCClass(symbol: KaClassSymbol): ObjCClass? = 
     }
     if (!analysisSession.isVisibleInObjC(symbol)) return@withClassifierContext null
 
+    val exportContext = this
     val enumKind = symbol.classKind == KaClassKind.ENUM_CLASS
     val final = symbol.modality == KaSymbolModality.FINAL
 
@@ -79,7 +83,15 @@ fun ObjCExportContext.translateToObjCClass(symbol: KaClassSymbol): ObjCClass? = 
         categoryName = categoryName,
         generics = generics,
         superClass = superClass.superClassName.objCName,
-        superClassGenerics = superClass.superClassGenerics
+        superClassGenerics = superClass.superClassGenerics,
+        extras = objCExportStubExtras {
+            objCMangler = object : ObjCClassNameMangler {
+                override val mangleName: () -> String
+                    get() = {
+                        exportSession.manglers.classNameMangler.mangle(name.objCName, symbol, exportContext)
+                    }
+            }
+        }
     )
 }
 

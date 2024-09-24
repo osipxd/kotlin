@@ -549,12 +549,14 @@ class ObjCExportHeaderGeneratorTest(private val generator: HeaderGenerator) {
         doTest(headersTestDataDir.resolve("nullableFunctionalTypeArgumentsAndReturnTypesTranslated"))
     }
 
-    /**
-     * Mangling itself work as expected, but test fails due to invalid methods order which requires implementation of KT-66066
-     */
     @Test
     fun `test - methods mangling`() {
         doTest(headersTestDataDir.resolve("methodsMangling"))
+    }
+
+    @Test
+    fun `test - methods mangling with the same parameter names`() {
+        doTest(headersTestDataDir.resolve("methodsManglingWithTheSameParameterNames"))
     }
 
     private fun doTest(root: File, configuration: Configuration = Configuration()) {

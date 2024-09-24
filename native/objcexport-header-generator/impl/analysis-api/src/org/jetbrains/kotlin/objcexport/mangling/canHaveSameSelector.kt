@@ -1,6 +1,5 @@
 package org.jetbrains.kotlin.objcexport.mangling
 
-import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.analysis.api.KaNonPublicApi
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.*
@@ -19,6 +18,7 @@ internal fun ObjCExportContext.canHaveSameSelector(
 ): Boolean {
     if (!canBeInheritedBySameClass(first, second, ignoreInterfaceMethodCollisions)) return true
     if (first.name != second.name) return false
+    if (first.callableId != second.callableId) return true
 
     if (first is KaPropertySetterSymbol && second is KaPropertySetterSymbol) {
         // Methods should merge in any common subclass as it can't have two properties with same name.

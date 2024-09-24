@@ -9,14 +9,18 @@ import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.analysis.api.symbols.markers.KaNamedSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.backend.konan.objcexport.MethodBridgeValueParameter
+import org.jetbrains.kotlin.objcexport.mangling.KtObjCExportMangling
+import org.jetbrains.kotlin.objcexport.mangling.ObjCMethodManglerImpl
+import org.jetbrains.kotlin.objcexport.mangling.ObjClassNameManglerImpl
+import org.jetbrains.kotlin.objcexport.mangling.SwiftAttributeManglerImpl
 import org.jetbrains.kotlin.utils.getOrPutNullable
 
 
 sealed interface KtObjCExportSession {
     val configuration: KtObjCExportConfiguration
-
     val useSiteExportSession: KtObjCExportSession
         get() = this
+    val manglers: KtObjCExportMangling
 }
 
 /**
@@ -68,6 +72,7 @@ inline fun <T> withKtObjCExportSession(
         moduleClassifier = moduleClassifier,
         cache = hashMapOf(),
         overrides = hashMapOf(),
+        manglers = KtObjCExportMangling()
     ).block()
 }
 
@@ -78,6 +83,7 @@ internal data class KtObjCExportSessionImpl(
     override val moduleClassifier: KtObjCExportModuleClassifier,
     override val cache: MutableMap<Any, Any?>,
     override val overrides: Map<KaSymbol, KtObjCExportSymbolOverride>,
+    override val manglers: KtObjCExportMangling,
 ) : KtObjCExportSessionPrivate
 
 
