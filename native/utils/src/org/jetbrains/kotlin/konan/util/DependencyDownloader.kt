@@ -183,7 +183,7 @@ class DependencyDownloader(
             }
             attempt++
             waitTime += attemptIntervalMs
-            println("Cannot download a dependency: $e\n" +
+            println("Cannot download a dependency $source: $e\n" +
                     "Waiting ${waitTime.toDouble() / 1000} sec and trying again (attempt: $attempt/$maxAttempts).")
             // TODO: Wait better
             Thread.sleep(waitTime)
