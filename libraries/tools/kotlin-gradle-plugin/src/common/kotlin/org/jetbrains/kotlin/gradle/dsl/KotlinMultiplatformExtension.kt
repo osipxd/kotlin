@@ -35,7 +35,6 @@ abstract class KotlinMultiplatformExtension
     KotlinTargetContainerWithPresetFunctions,
     KotlinTargetContainerWithJsPresetFunctions,
     KotlinTargetContainerWithWasmPresetFunctions,
-    KotlinTargetContainerWithNativeShortcuts,
     KotlinHierarchyDsl,
     HasConfigurableKotlinCompilerOptions<KotlinCommonCompilerOptions>,
     KotlinMultiplatformSourceSetConventions by KotlinMultiplatformSourceSetConventionsImpl {

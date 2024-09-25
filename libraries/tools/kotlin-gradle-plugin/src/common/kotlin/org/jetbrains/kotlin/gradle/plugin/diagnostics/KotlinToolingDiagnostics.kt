@@ -10,7 +10,6 @@ import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.PRESETS_DEPRECATION_MESSAGE_SUFFIX
 import org.jetbrains.kotlin.gradle.dsl.KotlinSourceSetConvention.isAccessedByKotlinSourceSetConventionAt
-import org.jetbrains.kotlin.gradle.dsl.NativeTargetShortcutTrace
 import org.jetbrains.kotlin.gradle.internal.KOTLIN_BUILD_TOOLS_API_IMPL
 import org.jetbrains.kotlin.gradle.internal.KOTLIN_MODULE_GROUP
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
@@ -996,20 +995,6 @@ object KotlinToolingDiagnostics {
             Then, run "./gradlew --stop" to stop the Gradle daemon
             For more information, see documentation: https://kotl.in/iq4uke
             """.trimIndent()
-        )
-    }
-
-    object UnsupportedTargetShortcutError : ToolingDiagnosticFactory(ERROR) {
-        operator fun invoke(shortcutName: String, explicitTargets: String, trace: Throwable) = build(
-            """
-            The $shortcutName target shortcut is deprecated and no longer supported.
-            Please explicitly declare your targets using:
-            
-            """.trimIndent() + explicitTargets + """
-                
-            For a complete list of supported targets, refer to the documentation: https://kotl.in/6ixl2f
-            """.trimIndent(),
-            throwable = trace
         )
     }
 
