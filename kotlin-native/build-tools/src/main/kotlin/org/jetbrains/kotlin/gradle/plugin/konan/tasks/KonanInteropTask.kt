@@ -104,12 +104,22 @@ open class KonanInteropTask @Inject constructor(
     @get:PathSensitive(PathSensitivity.RELATIVE)
     val defFile: RegularFileProperty = objectFactory.fileProperty()
 
-    @get:Internal("Depends only upon the compiler classpath, because compiles into klib only;" + "even though stdlib klib is required for building, the result will not depend on it")
+    @get:Internal("Depends upon the compiler classpath, native libraries (for StubGenerator) and konan.properties (compilation flags + dependencies)")
     val compilerDistribution: NativeDistributionProperty = objectFactory.nativeDistributionProperty()
 
     @get:Classpath
     @Suppress("unused")
     protected val compilerClasspath = compilerDistribution.map { it.compilerClasspath }
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.NONE)
+    @Suppress("unused")
+    protected val indexerLibs = compilerDistribution.map { it.nativeLibs } // Only really needs to depend on stuff used by the StubGenerator
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    @Suppress("unused")
+    protected val konanProperties = compilerDistribution.map { it.konanProperties }
 
     @get:ServiceReference
     protected val isolatedClassLoadersService = project.gradle.sharedServices.registerIsolatedClassLoadersServiceIfAbsent()
