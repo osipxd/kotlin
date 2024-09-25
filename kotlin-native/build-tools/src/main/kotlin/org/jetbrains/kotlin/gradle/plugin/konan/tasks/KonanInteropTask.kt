@@ -14,7 +14,6 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.*
 import org.gradle.process.ExecOperations
@@ -24,7 +23,6 @@ import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.PlatformInfo
 import org.jetbrains.kotlin.gradle.plugin.konan.*
 import org.jetbrains.kotlin.konan.target.AbstractToolConfig
-import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.nativeDistribution.NativeDistributionProperty
 import org.jetbrains.kotlin.nativeDistribution.nativeDistributionProperty
 import javax.inject.Inject
@@ -83,39 +81,40 @@ private abstract class KonanInteropOutOfProcessAction @Inject constructor(
 /**
  * A task executing cinterop tool with the given args and compiling the stubs produced by this tool.
  */
-abstract class KonanInteropTask @Inject constructor(
+@CacheableTask
+open class KonanInteropTask @Inject constructor(
         objectFactory: ObjectFactory,
         private val workerExecutor: WorkerExecutor,
         private val layout: ProjectLayout,
-): DefaultTask() {
+) : DefaultTask() {
     @get:Input
-    abstract val konanTarget: Property<KonanTarget>
+    val target: Property<String> = objectFactory.property(String::class.java)
 
     @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
+    val outputDirectory: DirectoryProperty = objectFactory.directoryProperty()
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val klibFiles: ConfigurableFileCollection
+    val klibFiles: ConfigurableFileCollection = objectFactory.fileCollection()
 
     @get:Input
-    abstract val extraOpts: ListProperty<String>
+    val extraOpts: ListProperty<String> = objectFactory.listProperty(String::class.java)
 
     @get:InputFile
-    abstract val defFile: RegularFileProperty
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    val defFile: RegularFileProperty = objectFactory.fileProperty()
 
-    @get:Input
-    abstract val compilerOpts: ListProperty<String>
-
-    @get:Internal
+    @get:Internal("Depends only upon the compiler classpath, because compiles into klib only;" + "even though stdlib klib is required for building, the result will not depend on it")
     val compilerDistribution: NativeDistributionProperty = objectFactory.nativeDistributionProperty()
 
-    @get:Input
-    val compilerDistributionPath: Provider<String> = compilerDistribution.map { it.root.asFile.absolutePath }
+    @get:Classpath
+    @Suppress("unused")
+    protected val compilerClasspath = compilerDistribution.map { it.compilerClasspath }
 
     @get:ServiceReference
     protected val isolatedClassLoadersService = project.gradle.sharedServices.registerIsolatedClassLoadersServiceIfAbsent()
 
+    // This does not affect the result, only the way the result is built.
     private val allowRunningCInteropInProcess = project.kotlinBuildProperties.getBoolean("kotlin.native.allowRunningCinteropInProcess")
 
     @TaskAction
@@ -127,14 +126,9 @@ abstract class KonanInteropTask @Inject constructor(
             add("-o")
             add(outputDirectory.asFile.get().canonicalPath)
             add("-target")
-            add(konanTarget.get().visibleName)
+            add(target.get())
             add("-def")
             add(defFile.asFile.get().canonicalPath)
-
-            compilerOpts.get().forEach {
-                add("-compiler-option")
-                add(it)
-            }
 
             klibFiles.forEach {
                 add("-library")
@@ -152,7 +146,7 @@ abstract class KonanInteropTask @Inject constructor(
             workQueue.submit(KonanInteropInProcessAction::class.java) {
                 this.isolatedClassLoadersService.set(this@KonanInteropTask.isolatedClassLoadersService)
                 this.compilerDistribution.set(this@KonanInteropTask.compilerDistribution)
-                this.target.set(konanTarget.map { it.visibleName })
+                this.target.set(this@KonanInteropTask.target)
                 this.args.addAll(args)
             }
         } else {
