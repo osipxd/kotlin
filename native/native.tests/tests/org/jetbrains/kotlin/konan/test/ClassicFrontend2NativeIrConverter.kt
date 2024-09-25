@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.backend.common.linkage.issues.checkNoUnboundSymbols
 import org.jetbrains.kotlin.backend.common.serialization.DescriptorByIdSignatureFinderImpl
 import org.jetbrains.kotlin.backend.konan.serialization.KonanManglerDesc
 import org.jetbrains.kotlin.backend.konan.serialization.KonanManglerIr
-import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.languageVersionSettings
 import org.jetbrains.kotlin.config.messageCollector
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporterFactory
@@ -22,6 +21,7 @@ import org.jetbrains.kotlin.ir.linkage.partial.partialLinkageConfig
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.konan.test.blackbox.support.CastCompatibleKotlinNativeClassLoader
+import org.jetbrains.kotlin.library.KotlinLibrary
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi2ir.Psi2IrConfiguration
@@ -130,6 +130,10 @@ class ClassicFrontend2NativeIrConverter(
             diagnosticReporter = configuration.messageCollector
         )
 
+        // TODO: Implement it later if it is really necessary. Right now (2024-09-25), there are no tests which could produce
+        //  Kotlin/Native KLIBs with the classic frontend compiler. And it's not clear if such tests would be ever added.
+        val usedLibrariesForManifest = emptyList<KotlinLibrary>()
+
         @OptIn(ObsoleteDescriptorBasedAPI::class)
         return IrBackendInput.NativeBackendInput(
             moduleFragment,
@@ -137,7 +141,8 @@ class ClassicFrontend2NativeIrConverter(
             diagnosticReporter = DiagnosticReporterFactory.createReporter(configuration.messageCollector),
             descriptorMangler = (pluginContext.symbolTable as SymbolTable).signaturer!!.mangler,
             irMangler = KonanManglerIr,
-            metadataSerializer = null
+            metadataSerializer = null,
+            usedLibrariesForManifest = usedLibrariesForManifest,
         )
     }
 
