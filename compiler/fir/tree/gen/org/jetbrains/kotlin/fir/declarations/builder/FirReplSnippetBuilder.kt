@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.fir.builder.toMutableOrEmpty
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.impl.FirReplSnippetImpl
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
-import org.jetbrains.kotlin.fir.expressions.FirStatement
+import org.jetbrains.kotlin.fir.expressions.FirBlock
 import org.jetbrains.kotlin.fir.symbols.impl.FirReplSnippetSymbol
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.name.Name
@@ -35,8 +35,8 @@ class FirReplSnippetBuilder : FirAnnotationContainerBuilder {
     lateinit var name: Name
     lateinit var symbol: FirReplSnippetSymbol
     val receivers: MutableList<FirScriptReceiverParameter> = mutableListOf()
-    val statements: MutableList<FirStatement> = mutableListOf()
-    lateinit var runReturnTypeRef: FirTypeRef
+    lateinit var body: FirBlock
+    lateinit var resultTypeRef: FirTypeRef
 
     override fun build(): FirReplSnippet {
         return FirReplSnippetImpl(
@@ -49,8 +49,8 @@ class FirReplSnippetBuilder : FirAnnotationContainerBuilder {
             name,
             symbol,
             receivers.toMutableOrEmpty(),
-            statements,
-            runReturnTypeRef,
+            body,
+            resultTypeRef,
         )
     }
 

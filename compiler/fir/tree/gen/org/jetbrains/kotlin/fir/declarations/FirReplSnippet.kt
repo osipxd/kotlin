@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirModuleData
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
-import org.jetbrains.kotlin.fir.expressions.FirStatement
+import org.jetbrains.kotlin.fir.expressions.FirBlock
 import org.jetbrains.kotlin.fir.references.FirControlFlowGraphReference
 import org.jetbrains.kotlin.fir.symbols.impl.FirReplSnippetSymbol
 import org.jetbrains.kotlin.fir.types.FirTypeRef
@@ -33,8 +33,8 @@ abstract class FirReplSnippet : FirDeclaration(), FirControlFlowGraphOwner {
     abstract val name: Name
     abstract override val symbol: FirReplSnippetSymbol
     abstract val receivers: List<FirScriptReceiverParameter>
-    abstract val statements: List<FirStatement>
-    abstract val runReturnTypeRef: FirTypeRef
+    abstract val body: FirBlock
+    abstract val resultTypeRef: FirTypeRef
 
     override fun <R, D> accept(visitor: FirVisitor<R, D>, data: D): R =
         visitor.visitReplSnippet(this, data)
@@ -47,13 +47,15 @@ abstract class FirReplSnippet : FirDeclaration(), FirControlFlowGraphOwner {
 
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: FirControlFlowGraphReference?)
 
-    abstract fun replaceRunReturnTypeRef(newRunReturnTypeRef: FirTypeRef)
+    abstract fun replaceBody(newBody: FirBlock)
+
+    abstract fun replaceResultTypeRef(newResultTypeRef: FirTypeRef)
 
     abstract override fun <D> transformAnnotations(transformer: FirTransformer<D>, data: D): FirReplSnippet
 
     abstract fun <D> transformReceivers(transformer: FirTransformer<D>, data: D): FirReplSnippet
 
-    abstract fun <D> transformStatements(transformer: FirTransformer<D>, data: D): FirReplSnippet
+    abstract fun <D> transformBody(transformer: FirTransformer<D>, data: D): FirReplSnippet
 
-    abstract fun <D> transformRunReturnTypeRef(transformer: FirTransformer<D>, data: D): FirReplSnippet
+    abstract fun <D> transformResultTypeRef(transformer: FirTransformer<D>, data: D): FirReplSnippet
 }

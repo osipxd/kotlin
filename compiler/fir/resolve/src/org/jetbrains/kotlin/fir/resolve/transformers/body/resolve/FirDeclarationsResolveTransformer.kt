@@ -787,18 +787,18 @@ open class FirDeclarationsResolveTransformer(
     }
 
     override fun transformReplSnippet(replSnippet: FirReplSnippet, data: ResolutionMode): FirReplSnippet =
-        withReplSnippet(replSnippet) {
-            if (transformer.buildCfgForScripts) {
-                replSnippet.transformStatements(this, data)
-                val returnType = replSnippet.statements.lastOrNull()?.let {
+        if (transformer.buildCfgForScripts) {
+            withReplSnippet(replSnippet) {
+                replSnippet.transformBody (this, data)
+                val returnType = replSnippet.body.statements.lastOrNull()?.let {
                     (it as? FirExpression)?.resolvedType
                 } ?: StandardClassIds.Unit.constructClassLikeType()
-                replSnippet.replaceRunReturnTypeRef(
+                replSnippet.replaceResultTypeRef(
                     returnType.toFirResolvedTypeRef(replSnippet.source?.fakeElement(KtFakeSourceElementKind.ImplicitFunctionReturnType))
                 )
+                replSnippet
             }
-            replSnippet
-        }
+        } else replSnippet
 
     override fun transformCodeFragment(codeFragment: FirCodeFragment, data: ResolutionMode): FirCodeFragment {
         dataFlowAnalyzer.enterCodeFragment(codeFragment)

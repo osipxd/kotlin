@@ -767,8 +767,8 @@ object FirTree : AbstractFirTreeBuilder() {
         +declaredSymbol(replSnippetSymbolType)
 
         +listField("receivers", scriptReceiverParameter, useMutableOrEmpty = true, withTransform = true)
-        +listField(statement, withTransform = true)
-        +field("runReturnTypeRef", typeRef, withReplace = true, withTransform = true)
+        +field("body", block, nullable = false, withTransform = true, withReplace = true)
+        +field("resultTypeRef", typeRef, withReplace = true, withTransform = true)
     }
 
     val packageDirective: Element by element(Other) {
