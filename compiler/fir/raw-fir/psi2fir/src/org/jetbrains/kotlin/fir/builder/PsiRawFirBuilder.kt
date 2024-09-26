@@ -2202,13 +2202,14 @@ open class PsiRawFirBuilder(
             context: Context<T>,
         ): FirProperty {
             val propertyName = nameAsSafeName
-            val propertySymbol = if (isLocal) {
+            val isLocalProperty = context.inLocalContext || this.isLocal
+            val propertySymbol = if (isLocalProperty) {
                 FirPropertySymbol(propertyName)
             } else {
                 FirPropertySymbol(callableIdForName(propertyName))
             }
 
-            withContainerSymbol(propertySymbol, isLocal) {
+            withContainerSymbol(propertySymbol, isLocalProperty) {
                 val propertyType = typeReference.toFirOrImplicitType()
                 val isVar = isVar
                 val propertyInitializer = toInitializerExpression()
@@ -2230,7 +2231,7 @@ open class PsiRawFirBuilder(
                     for (annotationEntry in annotationEntries) {
                         propertyAnnotations += annotationEntry.convert<FirAnnotationCall>()
                     }
-                    if (this@toFirProperty.isLocal) {
+                    if (isLocalProperty) {
                         isLocal = true
                         symbol = propertySymbol
 
@@ -2342,13 +2343,13 @@ open class PsiRawFirBuilder(
                         }
                     }
                     annotations += when {
-                        isLocal -> propertyAnnotations
+                        isLocalProperty -> propertyAnnotations
                         else -> propertyAnnotations.filterStandalonePropertyRelevantAnnotations(isVar)
                     }
 
                     contextReceivers.addAll(convertContextReceivers(this@toFirProperty.contextReceivers))
                 }.also {
-                    if (!isLocal) {
+                    if (!isLocalProperty) {
                         fillDanglingConstraintsTo(it)
                     }
                 }
