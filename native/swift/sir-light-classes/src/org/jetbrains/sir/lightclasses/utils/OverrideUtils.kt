@@ -6,7 +6,6 @@
 package org.jetbrains.sir.lightclasses.utils;
 
 import org.jetbrains.kotlin.sir.*
-import kotlin.time.Duration
 
 internal inline val <reified T : SirClassMemberDeclaration> T.overridableCandidates: List<T>
     get() =
@@ -19,10 +18,10 @@ internal inline val <reified T : SirClassMemberDeclaration> T.overridableCandida
 
 private val SirClass.superClassDeclaration: SirClass? get() = (superClass as? SirNominalType)?.typeDeclaration as? SirClass
 
-internal fun SirType.isSuitableForCovariantOverrideOf(other: SirType): Boolean = when (this) {
-    is SirOptionalType -> (other as? SirOptionalType)?.let { wrappedType.isSuitableForCovariantOverrideOf(it.wrappedType) } ?: false
+internal fun SirType.isSubtypeOf(other: SirType): Boolean = when (this) {
+    is SirOptionalType -> (other as? SirOptionalType)?.let { wrappedType.isSubtypeOf(it.wrappedType) } ?: false
     is SirNominalType -> when (other) {
-        is SirOptionalType -> this.isSuitableForCovariantOverrideOf(other.wrappedType)
+        is SirOptionalType -> this.isSubtypeOf(other.wrappedType)
         is SirNominalType -> this.typeDeclaration.isSubclassOf(other.typeDeclaration)
         else -> false
     }
@@ -31,13 +30,15 @@ internal fun SirType.isSuitableForCovariantOverrideOf(other: SirType): Boolean =
 
 private fun SirDeclaration.isSubclassOf(other: SirDeclaration): Boolean = this == other || this is SirClass && (superClass as? SirNominalType)?.typeDeclaration?.isSubclassOf(other) ?: false
 
-public fun SirInit.computeIsOverride(): Boolean = (this.parent as? SirClass)?.superClassDeclaration?.let { cls ->
+internal fun SirInit.computeIsOverride(): Boolean = (this.parent as? SirClass)?.superClassDeclaration?.let { cls ->
     cls.overrideableInitializers.any { this.isViableOverrideFor(it) }
 } ?: false
 
-private fun SirInit.isViableOverrideFor(other: SirInit): Boolean =
-    this.parameters == other.parameters && (!this.isFailable || this.isFailable && other.isFailable)
+internal fun List<SirParameter>.isSuitableForOverrideOf(other: List<SirParameter>): Boolean =
+    this.size == other.size && this.zip(other).all { it.second.type.isSubtypeOf(it.first.type) }
 
+private fun SirInit.isViableOverrideFor(other: SirInit): Boolean =
+    this.parameters.isSuitableForOverrideOf(other.parameters) && (!this.isFailable || this.isFailable && other.isFailable)
 
 private val SirClass.overrideableInitializers: List<SirInit>
     // By swift rules:

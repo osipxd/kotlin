@@ -1,6 +1,8 @@
 #include <Foundation/Foundation.h>
 #include <stdint.h>
 
+void Child_actuallyOverride__TypesOfArguments__Swift_Int32_overrides_Parent_overrides_Parent__(uintptr_t self, int32_t nullable, uintptr_t poly, uintptr_t nullablePoly);
+
 void Child_finalOverrideFunc(uintptr_t self);
 
 uintptr_t Child_nonoverride(uintptr_t self) __attribute((noreturn));
@@ -36,6 +38,8 @@ void GrandChild_finalOverrideHopFunc(uintptr_t self);
 void GrandChild_hopFunc(uintptr_t self);
 
 void GrandChild_overrideChainFunc(uintptr_t self);
+
+void Parent_actuallyOverride__TypesOfArguments__Swift_Int32_opt__overrides_Child_overrides_Child_opt___(uintptr_t self, NSNumber * nullable, uintptr_t poly, uintptr_t nullablePoly);
 
 void Parent_finalOverrideFunc(uintptr_t self);
 
@@ -76,6 +80,10 @@ NSString * Parent_value_get(uintptr_t self);
 uintptr_t __root___Child_init_allocate();
 
 void __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(uintptr_t __kt, int32_t value);
+
+void __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32_overrides_Parent_overrides_Parent__(uintptr_t __kt, int32_t nullable, uintptr_t poly, uintptr_t nullablePoly);
+
+void __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_String__(uintptr_t __kt, NSString * value);
 
 uintptr_t __root___GrandChild_init_allocate();
 

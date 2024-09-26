@@ -44,6 +44,29 @@ open class Child : overrides.Parent {
         super.init(__externalRCRef: __kt)
         __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(__kt, value)
     }
+    public override init(
+        value: Swift.String
+    ) {
+        let __kt = __root___Child_init_allocate()
+        super.init(__externalRCRef: __kt)
+        __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_String__(__kt, value)
+    }
+    public init(
+        nullable: Swift.Int32,
+        poly: overrides.Parent,
+        nullablePoly: overrides.Parent
+    ) {
+        let __kt = __root___Child_init_allocate()
+        super.init(__externalRCRef: __kt)
+        __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32_overrides_Parent_overrides_Parent__(__kt, nullable, poly.__externalRCRef(), nullablePoly.__externalRCRef())
+    }
+    open func actuallyOverride(
+        nullable: Swift.Int32,
+        poly: overrides.Parent,
+        nullablePoly: overrides.Parent
+    ) -> Swift.Void {
+        return Child_actuallyOverride__TypesOfArguments__Swift_Int32_overrides_Parent_overrides_Parent__(self.__externalRCRef(), nullable, poly.__externalRCRef(), nullablePoly.__externalRCRef())
+    }
     public final override func finalOverrideFunc() -> Swift.Void {
         return Child_finalOverrideFunc(self.__externalRCRef())
     }
@@ -150,6 +173,13 @@ open class Parent : KotlinRuntime.KotlinBase {
         let __kt = __root___Parent_init_allocate()
         super.init(__externalRCRef: __kt)
         __root___Parent_init_initialize__TypesOfArguments__Swift_UInt_Swift_String__(__kt, value)
+    }
+    open func actuallyOverride(
+        nullable: Swift.Int32?,
+        poly: overrides.Child,
+        nullablePoly: overrides.Child?
+    ) -> Swift.Void {
+        return Parent_actuallyOverride__TypesOfArguments__Swift_Int32_opt__overrides_Child_overrides_Child_opt___(self.__externalRCRef(), nullable.flatMap { it in NSNumber(value: it) }, poly.__externalRCRef(), nullablePoly?.__externalRCRef() ?? 0)
     }
     open func finalOverrideFunc() -> Swift.Void {
         return Parent_finalOverrideFunc(self.__externalRCRef())

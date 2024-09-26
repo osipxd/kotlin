@@ -5,6 +5,15 @@
 import kotlin.native.internal.ExportedBridge
 import kotlinx.cinterop.*
 
+@ExportedBridge("Child_actuallyOverride__TypesOfArguments__Swift_Int32_overrides_Parent_overrides_Parent__")
+public fun Child_actuallyOverride__TypesOfArguments__Swift_Int32_overrides_Parent_overrides_Parent__(self: kotlin.native.internal.NativePtr, nullable: Int, poly: kotlin.native.internal.NativePtr, nullablePoly: kotlin.native.internal.NativePtr): Unit {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as Child
+    val __nullable = nullable
+    val __poly = kotlin.native.internal.ref.dereferenceExternalRCRef(poly) as Parent
+    val __nullablePoly = kotlin.native.internal.ref.dereferenceExternalRCRef(nullablePoly) as Parent
+    __self.actuallyOverride(__nullable, __poly, __nullablePoly)
+}
+
 @ExportedBridge("Child_finalOverrideFunc")
 public fun Child_finalOverrideFunc(self: kotlin.native.internal.NativePtr): Unit {
     val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as Child
@@ -128,6 +137,15 @@ public fun GrandChild_hopFunc(self: kotlin.native.internal.NativePtr): Unit {
 public fun GrandChild_overrideChainFunc(self: kotlin.native.internal.NativePtr): Unit {
     val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as GrandChild
     __self.overrideChainFunc()
+}
+
+@ExportedBridge("Parent_actuallyOverride__TypesOfArguments__Swift_Int32_opt__overrides_Child_overrides_Child_opt___")
+public fun Parent_actuallyOverride__TypesOfArguments__Swift_Int32_opt__overrides_Child_overrides_Child_opt___(self: kotlin.native.internal.NativePtr, nullable: kotlin.native.internal.NativePtr, poly: kotlin.native.internal.NativePtr, nullablePoly: kotlin.native.internal.NativePtr): Unit {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as Parent
+    val __nullable = if (nullable == kotlin.native.internal.NativePtr.NULL) null else interpretObjCPointer<Int>(nullable)
+    val __poly = kotlin.native.internal.ref.dereferenceExternalRCRef(poly) as Child
+    val __nullablePoly = if (nullablePoly == kotlin.native.internal.NativePtr.NULL) null else kotlin.native.internal.ref.dereferenceExternalRCRef(nullablePoly) as Child
+    __self.actuallyOverride(__nullable, __poly, __nullablePoly)
 }
 
 @ExportedBridge("Parent_finalOverrideFunc")
@@ -266,6 +284,22 @@ public fun __root___Child_init_allocate(): kotlin.native.internal.NativePtr {
 public fun __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(__kt: kotlin.native.internal.NativePtr, value: Int): Unit {
     val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
     val __value = value
+    kotlin.native.internal.initInstance(____kt, Child(__value))
+}
+
+@ExportedBridge("__root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32_overrides_Parent_overrides_Parent__")
+public fun __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32_overrides_Parent_overrides_Parent__(__kt: kotlin.native.internal.NativePtr, nullable: Int, poly: kotlin.native.internal.NativePtr, nullablePoly: kotlin.native.internal.NativePtr): Unit {
+    val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
+    val __nullable = nullable
+    val __poly = kotlin.native.internal.ref.dereferenceExternalRCRef(poly) as Parent
+    val __nullablePoly = kotlin.native.internal.ref.dereferenceExternalRCRef(nullablePoly) as Parent
+    kotlin.native.internal.initInstance(____kt, Child(__nullable, __poly, __nullablePoly))
+}
+
+@ExportedBridge("__root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_String__")
+public fun __root___Child_init_initialize__TypesOfArguments__Swift_UInt_Swift_String__(__kt: kotlin.native.internal.NativePtr, value: kotlin.native.internal.NativePtr): Unit {
+    val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
+    val __value = interpretObjCPointer<String>(value)
     kotlin.native.internal.initInstance(____kt, Child(__value))
 }
 

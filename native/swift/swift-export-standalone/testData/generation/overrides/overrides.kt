@@ -4,6 +4,8 @@
 // FILE: inheritance.kt
 
 open class Parent(val value: String) {
+    open fun actuallyOverride(nullable: Int?, poly: Child, nullablePoly: Child?) = Unit
+
     open fun nonoverride(): Int = 42
 
     open fun primitiveTypeFunc(arg: Int): Int = arg
@@ -27,6 +29,12 @@ open class Parent(val value: String) {
 }
 
 open class Child(value: Int) : Parent("$value") {
+    constructor(nullable: Int, poly: Parent, nullablePoly: Parent): this(42)
+    constructor(value: String): this(43)
+
+    open fun actuallyOverride(nullable: Int, poly: Parent, nullablePoly: Parent): Unit =
+        TODO("This is actually an override in swift")
+
     override fun nonoverride(): Nothing = TODO("This is not an override in swift")
 
     override fun primitiveTypeFunc(arg: Int): Int = 43
