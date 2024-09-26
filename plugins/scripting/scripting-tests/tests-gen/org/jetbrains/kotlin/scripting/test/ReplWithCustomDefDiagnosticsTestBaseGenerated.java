@@ -24,6 +24,12 @@ public class ReplWithCustomDefDiagnosticsTestBaseGenerated extends AbstractReplW
   }
 
   @Test
+  @TestMetadata("simple_many.repl.kts")
+  public void testSimple_many_repl() {
+    runTest("plugins/scripting/scripting-tests/testData/diagnostics/repl/simple_many.repl.kts");
+  }
+
+  @Test
   @TestMetadata("simple.repl.kts")
   public void testSimple_repl() {
     runTest("plugins/scripting/scripting-tests/testData/diagnostics/repl/simple.repl.kts");
