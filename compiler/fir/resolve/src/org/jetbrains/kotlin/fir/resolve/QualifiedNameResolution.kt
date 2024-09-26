@@ -124,7 +124,7 @@ fun FirResolvedQualifier.continueQualifier(
         qualifiedAccess.source,
         explicitReceiver = null,
         nestedClassSymbol,
-        extraNotFatalDiagnostics = this@continueQualifier.nonFatalDiagnostics,
+        extraNotFatalDiagnostics = nonFatalDiagnosticsFromExpression,
         session
     )
 
@@ -133,9 +133,10 @@ fun FirResolvedQualifier.continueQualifier(
         packageFqName = this@continueQualifier.packageFqName,
         relativeClassFqName = this@continueQualifier.relativeClassFqName?.child(name),
         symbol = nestedClassSymbol,
-        nonFatalDiagnostics = nonFatalDiagnostics + nonFatalDiagnosticsFromExpression.orEmpty(),
+        nonFatalDiagnostics = nonFatalDiagnostics,
         extraTypeArguments = this@continueQualifier.typeArguments,
-        candidate = candidate
+        candidate = candidate,
+        explicitParent = this,
     )
 }
 
@@ -211,6 +212,7 @@ private fun BodyResolveComponents.buildResolvedQualifierResult(
     nonFatalDiagnostics: List<ConeDiagnostic>? = null,
     extraTypeArguments: List<FirTypeProjection>? = null,
     candidate: FirTypeCandidateCollector.TypeCandidate? = null,
+    explicitParent: FirResolvedQualifier? = null,
 ): QualifierResolutionResult {
     return QualifierResolutionResult(
         buildResolvedQualifierForClass(
@@ -221,7 +223,8 @@ private fun BodyResolveComponents.buildResolvedQualifierResult(
             typeArgumentsForQualifier = qualifiedAccess.typeArguments.applyIf(!extraTypeArguments.isNullOrEmpty()) { plus(extraTypeArguments.orEmpty()) },
             diagnostic = candidate?.diagnostic,
             nonFatalDiagnostics = nonFatalDiagnostics.orEmpty(),
-            annotations = qualifiedAccess.annotations
+            annotations = qualifiedAccess.annotations,
+            explicitParent = explicitParent,
         ),
         candidate?.applicability ?: CandidateApplicability.RESOLVED,
     )
