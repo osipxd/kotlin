@@ -299,9 +299,7 @@ class CacheBuilder(
             if (ok && libraryCache.exists) {
                 cacheRootDirectories[library] = libraryCache.absolutePath
             } else {
-                configuration.report(CompilerMessageSeverity.WARNING,
-                        "Failed to wait for cache to be built\n" +
-                                "Falling back to not use cache for ${library.libraryName}")
+                error("Failed to wait for cache to be built for ${library.libraryName}")
             }
             return false
         }
@@ -321,12 +319,24 @@ class CacheBuilder(
             spawnLibraryCacheBuild(library, dependencies, dependencyCaches, libraryCacheDirectory, makePerFileCache, filesToCache)
             cacheRootDirectories[library] = libraryCache.absolutePath
         } catch (t: Throwable) {
-            configuration.report(CompilerMessageSeverity.LOGGING, "${t.message}\n${t.stackTraceToString()}")
-            configuration.report(CompilerMessageSeverity.WARNING,
-                    "Failed to build cache: ${t.message}\n${t.stackTraceToString()}\n" +
-                            "Falling back to not use cache for ${library.libraryName}")
+            try {
+                libraryCache.deleteRecursively()
+            } catch (_: Throwable) {
+                // Nothing to do.
+            }
+            @Suppress("IncorrectFormatting") val extraUserInfo =
+                    """
+                        Failed to build cache for ${library.libraryName}.
+                        As a workaround, please try to disable ${
+                            if (makePerFileCache)
+                                "incremental compilation (kotlin.incremental.native=false)"
+                            else
+                                "compiler caches (kotlin.native.cacheKind=none)"
+                        }
 
-            libraryCache.deleteRecursively()
+                        Also, consider filing an issue with full Gradle log here: https://kotl.in/issue
+                        """.trimIndent()
+            konanConfig.configuration.reportCompilationError("$extraUserInfo\n\n${t.message}\n\n${t.stackTraceToString()}")
         }
     }
 
