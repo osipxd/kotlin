@@ -12,17 +12,30 @@ import com.intellij.psi.*
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.TokenSet
 import org.jetbrains.kotlin.KtNodeTypes
+import org.jetbrains.kotlin.descriptors.SourceElement
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.lexer.KotlinLexer
 import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.lexer.KtTokens.MODALITY_MODIFIERS
+import org.jetbrains.kotlin.load.kotlin.KotlinJvmBinaryClass
+import org.jetbrains.kotlin.load.kotlin.header.KotlinClassHeader
+import org.jetbrains.kotlin.load.kotlin.header.ReadKotlinClassHeaderAnnotationVisitor
+import org.jetbrains.kotlin.metadata.jvm.JvmProtoBuf
+import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmFlags
+import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmMetadataVersion
+import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.stubs.KotlinClassOrObjectStub
 import org.jetbrains.kotlin.types.expressions.OperatorConventions
+import org.jetbrains.org.objectweb.asm.AnnotationVisitor
+import org.jetbrains.org.objectweb.asm.ClassReader
+import org.jetbrains.org.objectweb.asm.ClassVisitor
+import org.jetbrains.org.objectweb.asm.Opcodes
 import java.util.*
 
 // NOTE: in this file we collect only Kotlin-specific methods working with PSI and not modifying it
@@ -661,6 +674,107 @@ fun KtNamedDeclaration.safeFqNameForLazyResolve(): FqName? {
     //NOTE: should only create special names for package level declarations, so we can safely rely on real fq name for parent
     val parentFqName = KtNamedDeclarationUtil.getParentFqName(this)
     return parentFqName?.child(safeNameForLazyResolve())
+}
+
+/**
+ * Prepares [KotlinClassHeader] by reading metadata from [ByteArray] of the given [KtClass] and
+ * returns whether its header indicates that it was compiled with `-Xjvm-default=..` or not.
+ */
+fun KtClass.isNewPlaceForBodyGeneration(): Boolean {
+    val file = containingFile.virtualFile ?: return false
+    val header = createClassHeader(file.contentsToByteArray()) ?: return false
+    val data = header.data ?: return false
+    val strings = header.strings ?: return false
+    val proto = JvmProtoBufUtil.readClassDataFrom(data, strings).second
+    return JvmFlags.IS_COMPILED_IN_JVM_DEFAULT_MODE.get(
+        proto.getExtension(JvmProtoBuf.jvmClassFlags)
+    )
+}
+
+/**
+ * Converts the given [desc] to [ClassId]. For example, `kotlin/Metadata` into [ClassId] with `kotlin` package and `Metadata` class.
+ *
+ * Note: This function simply finds the last '/' from [desc] and the substring before the last '/' as its package and the
+ *  substring after '/' as its class name. There is no guarantee that this is correct. We have to update this function when
+ *  we find exceptional cases.
+ */
+private fun resolveClassIdFromDesc(desc: String): ClassId {
+    assert(desc.startsWith("L") && desc.endsWith(";")) { "Not a JVM descriptor: $desc" }
+    val name = desc.substring(1, desc.length - 1)
+    val indexOfClassName = name.lastIndexOf('/') + 1
+    return ClassId(FqName(name.substring(0, indexOfClassName - 1)), FqName(name.substring(indexOfClassName)), false)
+}
+
+/**
+ * Returns [AnnotationVisitor] that recursively visits annotations and runs visit functions of [classHeaderVisitor]
+ * for the annotations. As a result of the recursive visit and running functions of [classHeaderVisitor],
+ * [classHeaderVisitor] can collect metadata from the class file.
+ */
+private fun createAnnotationVisitor(classHeaderVisitor: KotlinJvmBinaryClass.AnnotationArgumentVisitor): AnnotationVisitor =
+    object : AnnotationVisitor(Opcodes.API_VERSION) {
+        override fun visit(name: String?, value: Any?) {
+            val identifier = name?.let { Name.identifier(it) }
+            classHeaderVisitor.visit(identifier, value)
+        }
+
+        override fun visitArray(name: String?): AnnotationVisitor? {
+            val identifier = name?.let { Name.identifier(it) }
+            val annotationArrayVisitor = classHeaderVisitor.visitArray(identifier) ?: return null
+            return object : AnnotationVisitor(Opcodes.API_VERSION) {
+                override fun visit(name: String?, value: Any) {
+                    annotationArrayVisitor.visit(value)
+                }
+
+                override fun visitEnum(name: String?, desc: String, value: String) {
+                    annotationArrayVisitor.visitEnum(resolveClassIdFromDesc(desc), Name.identifier(value))
+                }
+
+                override fun visitAnnotation(name: String?, desc: String): AnnotationVisitor? {
+                    val argumentVisitor = annotationArrayVisitor.visitAnnotation(resolveClassIdFromDesc(desc)) ?: return null
+                    return createAnnotationVisitor(argumentVisitor)
+                }
+
+                override fun visitEnd() {
+                    annotationArrayVisitor.visitEnd()
+                }
+            }
+        }
+
+        override fun visitAnnotation(name: String?, desc: String): AnnotationVisitor? {
+            val argumentVisitor =
+                classHeaderVisitor.visitAnnotation(name?.let { Name.identifier(it) }, resolveClassIdFromDesc(desc)) ?: return null
+            return createAnnotationVisitor(argumentVisitor)
+        }
+
+        override fun visitEnum(name: String?, desc: String, value: String) {
+            classHeaderVisitor.visitEnum(name?.let { Name.identifier(it) }, resolveClassIdFromDesc(desc), Name.identifier(value))
+        }
+
+        override fun visitEnd() {
+            classHeaderVisitor.visitEnd()
+        }
+    }
+
+/**
+ * Creates [KotlinClassHeader] by extracting metadata from [classByteArray].
+ */
+private fun createClassHeader(classByteArray: ByteArray): KotlinClassHeader? {
+    val readHeaderVisitor = ReadKotlinClassHeaderAnnotationVisitor()
+    ClassReader(classByteArray).accept(
+        object : ClassVisitor(Opcodes.API_VERSION) {
+            override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor? {
+                if (descriptor == null) return null
+                val classHeaderVisitor =
+                    readHeaderVisitor.visitAnnotation(resolveClassIdFromDesc(descriptor), SourceElement.NO_SOURCE) ?: return null
+                return createAnnotationVisitor(classHeaderVisitor)
+            }
+
+            override fun visitEnd() {
+                readHeaderVisitor.visitEnd()
+            }
+        }, ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES
+    )
+    return readHeaderVisitor.createHeader(JvmMetadataVersion.INSTANCE)
 }
 
 fun isTopLevelInFileOrScript(element: PsiElement): Boolean {

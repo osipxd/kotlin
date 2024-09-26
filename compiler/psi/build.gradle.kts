@@ -11,12 +11,14 @@ val jflexPath by configurations.creating
 
 dependencies {
     api(project(":core:compiler.common"))
+    api(project(":core:descriptors.jvm"))
     api(project(":compiler:util"))
     api(project(":compiler:frontend.common"))
     api(project(":kotlin-script-runtime"))
 
     compileOnly(intellijCore())
     compileOnly(libs.guava)
+    compileOnly(libs.intellij.asm)
     compileOnly(commonDependency("org.jetbrains.intellij.deps.fastutil:intellij-deps-fastutil"))
 
     jflexPath(commonDependency("org.jetbrains.intellij.deps.jflex", "jflex"))

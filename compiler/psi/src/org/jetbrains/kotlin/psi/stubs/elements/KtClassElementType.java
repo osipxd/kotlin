@@ -26,6 +26,8 @@ import org.jetbrains.kotlin.psi.stubs.impl.Utils;
 import java.io.IOException;
 import java.util.List;
 
+import static org.jetbrains.kotlin.psi.psiUtil.KtPsiUtilKt.isNewPlaceForBodyGeneration;
+
 public class KtClassElementType extends KtStubElementType<KotlinClassStub, KtClass> {
     public KtClassElementType(@NotNull @NonNls String debugName) {
         super(debugName, KtClass.class, KotlinClassStub.class);
@@ -55,7 +57,7 @@ public class KtClassElementType extends KtStubElementType<KotlinClassStub, KtCla
                 StringRef.fromString(fqName != null ? fqName.asString() : null), classId,
                 StringRef.fromString(psi.getName()),
                 Utils.INSTANCE.wrapStrings(superNames),
-                psi.isInterface(), isEnumEntry, false, psi.isLocal(), psi.isTopLevel()
+                psi.isInterface(), isEnumEntry, isNewPlaceForBodyGeneration(psi), psi.isLocal(), psi.isTopLevel()
         );
     }
 
