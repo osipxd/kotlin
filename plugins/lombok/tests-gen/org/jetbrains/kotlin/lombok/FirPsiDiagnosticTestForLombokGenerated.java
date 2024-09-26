@@ -25,9 +25,27 @@ public class FirPsiDiagnosticTestForLombokGenerated extends AbstractFirPsiDiagno
   }
 
   @Test
-  @TestMetadata("builderConfig.kt")
-  public void testBuilderConfig() {
-    runTest("plugins/lombok/testData/diagnostics/builderConfig.kt");
+  @TestMetadata("superBuilderAnnotationArguments.kt")
+  public void testSuperBuilderAnnotationArguments() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderAnnotationArguments.kt");
+  }
+
+  @Test
+  @TestMetadata("superBuilderComplexHierarchy.kt")
+  public void testSuperBuilderComplexHierarchy() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderComplexHierarchy.kt");
+  }
+
+  @Test
+  @TestMetadata("superBuilderConfig.kt")
+  public void testSuperBuilderConfig() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderConfig.kt");
+  }
+
+  @Test
+  @TestMetadata("superBuilderSingular.kt")
+  public void testSuperBuilderSingular() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderSingular.kt");
   }
 
   @Nested
