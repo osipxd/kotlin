@@ -5,10 +5,10 @@
 
 package org.jetbrains.kotlin.backend.common.extensions
 
-import org.jetbrains.kotlin.ir.declarations.IrConstructor
-import org.jetbrains.kotlin.ir.declarations.IrDeclaration
-import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+import org.jetbrains.kotlin.metadata.ProtoBuf
+import org.jetbrains.kotlin.protobuf.GeneratedMessageLite
 
 abstract class IrGeneratedDeclarationsRegistrar {
     abstract fun addMetadataVisibleAnnotationsToElement(declaration: IrDeclaration, annotations: List<IrConstructorCall>)
@@ -22,4 +22,48 @@ abstract class IrGeneratedDeclarationsRegistrar {
 
     // TODO: KT-63881
     // abstract fun registerPropertyAsMetadataVisible(irProperty: IrProperty)
+
+    abstract fun <T : Any> addCustomMetadataExtension(
+        irClass: IrClass,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Class, T>,
+        value: T
+    )
+
+    abstract fun <T : Any> addCustomMetadataExtension(
+        irClass: IrConstructor,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Constructor, T>,
+        value: T
+    )
+
+    abstract fun <T : Any> addCustomMetadataExtension(
+        irClass: IrSimpleFunction,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Function, T>,
+        value: T
+    )
+
+    abstract fun <T : Any> addCustomMetadataExtension(
+        irClass: IrProperty,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Property, T>,
+        value: T
+    )
+
+    abstract fun <T : Any> getCustomMetadataExtension(
+        irClass: IrClass,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Class, T>,
+    ): T?
+
+    abstract fun <T : Any> getCustomMetadataExtension(
+        irConstructor: IrConstructor,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Constructor, T>,
+    ): T?
+
+    abstract fun <T : Any> getCustomMetadataExtension(
+        irFunction: IrSimpleFunction,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Function, T>,
+    ): T?
+
+    abstract fun <T : Any> getCustomMetadataExtension(
+        irProperty: IrProperty,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Property, T>,
+    ): T?
 }

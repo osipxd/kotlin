@@ -16,19 +16,19 @@ import org.jetbrains.kotlin.descriptors.TypeAliasDescriptor
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
-import org.jetbrains.kotlin.ir.declarations.IrConstructor
-import org.jetbrains.kotlin.ir.declarations.IrDeclaration
-import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.linkage.IrDeserializer
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.util.IdSignature
 import org.jetbrains.kotlin.ir.util.ReferenceSymbolTable
 import org.jetbrains.kotlin.ir.util.TypeTranslator
+import org.jetbrains.kotlin.metadata.ProtoBuf
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.platform.TargetPlatform
+import org.jetbrains.kotlin.protobuf.GeneratedMessageLite
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
 
@@ -194,5 +194,56 @@ open class IrPluginContextImpl constructor(
 
         override fun registerConstructorAsMetadataVisible(irConstructor: IrConstructor) {}
 
+        override fun <T : Any> addCustomMetadataExtension(
+            irClass: IrClass,
+            extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Class, T>,
+            value: T,
+        ) {}
+
+        override fun <T : Any> addCustomMetadataExtension(
+            irClass: IrConstructor,
+            extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Constructor, T>,
+            value: T,
+        ) {}
+
+        override fun <T : Any> addCustomMetadataExtension(
+            irClass: IrSimpleFunction,
+            extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Function, T>,
+            value: T,
+        ) {}
+
+        override fun <T : Any> addCustomMetadataExtension(
+            irClass: IrProperty,
+            extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Property, T>,
+            value: T,
+        ) {}
+
+        override fun <T : Any> getCustomMetadataExtension(
+            irClass: IrClass,
+            extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Class, T>,
+        ): T? {
+            return null
+        }
+
+        override fun <T : Any> getCustomMetadataExtension(
+            irConstructor: IrConstructor,
+            extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Constructor, T>,
+        ): T? {
+            return null
+        }
+
+        override fun <T : Any> getCustomMetadataExtension(
+            irFunction: IrSimpleFunction,
+            extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Function, T>,
+        ): T? {
+            return null
+        }
+
+        override fun <T : Any> getCustomMetadataExtension(
+            irProperty: IrProperty,
+            extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Property, T>,
+        ): T? {
+            return null
+        }
     }
 }

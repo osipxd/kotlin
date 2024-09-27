@@ -44,6 +44,7 @@ import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.scopes.*
 import org.jetbrains.kotlin.fir.scopes.impl.FirScriptDeclarationsScope
 import org.jetbrains.kotlin.fir.scopes.impl.nestedClassifierScope
+import org.jetbrains.kotlin.fir.serialization.FirAdditionalMetadataProvider.MetadataExtensionDescription
 import org.jetbrains.kotlin.fir.serialization.constant.hasConstantValue
 import org.jetbrains.kotlin.fir.serialization.constant.toConstantValue
 import org.jetbrains.kotlin.fir.symbols.impl.*
@@ -340,7 +341,7 @@ class FirElementSerializer private constructor(
                 plugin.registerProtoExtensions(klass.symbol, stringTable, protoRegistrar)
             }
         }
-
+        builder.setPluginExtensions(klass, FirAdditionalMetadataProvider::findMetadataExtensionsFor)
         return builder
     }
 
@@ -609,6 +610,7 @@ class FirElementSerializer private constructor(
         }
 
         extension.serializeProperty(property, builder, versionRequirementTable, local)
+        builder.setPluginExtensions(property, FirAdditionalMetadataProvider::findMetadataExtensionsFor)
 
         return builder
     }
@@ -706,6 +708,8 @@ class FirElementSerializer private constructor(
                 builder.addVersionRequirement(writeVersionRequirement(LanguageFeature.DefinitelyNonNullableTypes))
             }
         }
+
+        builder.setPluginExtensions(function, FirAdditionalMetadataProvider::findMetadataExtensionsFor)
 
         return builder
     }
@@ -810,7 +814,7 @@ class FirElementSerializer private constructor(
         }
 
         extension.serializeConstructor(constructor, builder, local)
-
+        builder.setPluginExtensions(constructor, FirAdditionalMetadataProvider::findMetadataExtensionsFor)
         return builder
     }
 
@@ -1436,6 +1440,21 @@ class FirElementSerializer private constructor(
                 }
             }
             return versionRequirementTable[requirement]
+        }
+    }
+
+    @Suppress("IncorrectFormatting")
+    private fun <
+        M : GeneratedMessageLite.ExtendableMessage<M>,
+        B : GeneratedMessageLite.ExtendableBuilder<M, B>,
+        F : FirDeclaration
+    > B.setPluginExtensions(
+        declaration: F,
+        findMetadataExtensionsFor: FirAdditionalMetadataProvider.(F) -> List<MetadataExtensionDescription<M, *>>
+    ) {
+        for ((extension, value) in extension.additionalMetadataProvider?.findMetadataExtensionsFor(declaration).orEmpty()) {
+            @Suppress("UNCHECKED_CAST")
+            this.setExtension(extension as GeneratedMessageLite.GeneratedExtension<M, Any>, value)
         }
     }
 }

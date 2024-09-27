@@ -16,18 +16,22 @@ import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.*
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.utils.classId
+import org.jetbrains.kotlin.fir.declarations.utils.unknownMetadataFields
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.expressions.builder.buildAnnotation
 import org.jetbrains.kotlin.fir.expressions.builder.buildAnnotationArgumentMapping
-import org.jetbrains.kotlin.fir.expressions.builder.buildLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildExpressionStub
+import org.jetbrains.kotlin.fir.expressions.builder.buildLiteralExpression
+import org.jetbrains.kotlin.fir.lazy.Fir2IrLazyClass
+import org.jetbrains.kotlin.fir.lazy.Fir2IrLazyProperty
+import org.jetbrains.kotlin.fir.lazy.Fir2IrLazySimpleFunction
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.providers.getContainingFile
-import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.resolve.toRegularClassSymbol
+import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.serialization.FirAdditionalMetadataProvider
+import org.jetbrains.kotlin.fir.serialization.FirAdditionalMetadataProvider.MetadataExtensionDescription
 import org.jetbrains.kotlin.fir.serialization.providedDeclarationsForMetadataService
-import org.jetbrains.kotlin.fir.types.ConeClassifierLookupTag
 import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirTypeParameterSymbol
@@ -43,8 +47,11 @@ import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.metadata.ProtoBuf
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.protobuf.ExtensionRegistryLite
+import org.jetbrains.kotlin.protobuf.GeneratedMessageLite
 import org.jetbrains.kotlin.types.ConstantValueKind
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
 import org.jetbrains.kotlin.utils.addToStdlib.shouldNotBeCalled
@@ -420,6 +427,142 @@ class Fir2IrIrGeneratedDeclarationsRegistrar(private val components: Fir2IrCompo
 
     private object GeneratedForMetadata : GeneratedDeclarationKey()
 
+    // ---------------------------------------------------- custom metatada ----------------------------------------------------
+
+    private val metadataExtensionsForClasses: MutableMap<FirClass, MutableList<MetadataExtensionDescription<ProtoBuf.Class, *>>> = mutableMapOf()
+    private val metadataExtensionsForConstructors: MutableMap<FirConstructor, MutableList<MetadataExtensionDescription<ProtoBuf.Constructor, *>>> = mutableMapOf()
+    private val metadataExtensionsForFunctions: MutableMap<FirSimpleFunction, MutableList<MetadataExtensionDescription<ProtoBuf.Function, *>>> = mutableMapOf()
+    private val metadataExtensionsForProperties: MutableMap<FirProperty, MutableList<MetadataExtensionDescription<ProtoBuf.Property, *>>> = mutableMapOf()
+
+    // ---------------------------------------------------- add custom metadata ----------------------------------------------------
+
+    override fun <T : Any> addCustomMetadataExtension(
+        irClass: IrClass,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Class, T>,
+        value: T,
+    ) {
+        addCustomMetadataExtension(metadataExtensionsForClasses, irClass, extension, value)
+    }
+
+    override fun <T : Any> addCustomMetadataExtension(
+        irClass: IrConstructor,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Constructor, T>,
+        value: T,
+    ) {
+        addCustomMetadataExtension(metadataExtensionsForConstructors, irClass, extension, value)
+    }
+
+    override fun <T : Any> addCustomMetadataExtension(
+        irClass: IrSimpleFunction,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Function, T>,
+        value: T,
+    ) {
+        addCustomMetadataExtension(metadataExtensionsForFunctions, irClass, extension, value)
+    }
+
+    override fun <T : Any> addCustomMetadataExtension(
+        irClass: IrProperty,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Property, T>,
+        value: T,
+    ) {
+        addCustomMetadataExtension(metadataExtensionsForProperties, irClass, extension, value)
+    }
+
+    private inline fun <reified F : FirDeclaration, T : Any, M : GeneratedMessageLite.ExtendableMessage<M>> addCustomMetadataExtension(
+        map: MutableMap<F, MutableList<MetadataExtensionDescription<M, *>>>,
+        irDeclaration: IrMetadataSourceOwner,
+        extension: GeneratedMessageLite.GeneratedExtension<M, T>,
+        value: T,
+    ) {
+        val firDeclaration = (irDeclaration.metadata as? FirMetadataSource)?.fir as? F
+            ?: error("No FIR declaration found for ${irDeclaration.render()}")
+        map.getOrPut(firDeclaration) { mutableListOf() }
+            .add(MetadataExtensionDescription(extension, value))
+
+    }
+
+    // ---------------------------------------------------- get custom metadata ----------------------------------------------------
+
+    override fun <T : Any> getCustomMetadataExtension(
+        irClass: IrClass,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Class, T>,
+    ): T? {
+        return getCustomMetadataExtension(
+            irClass,
+            extension,
+            ProtoBuf.Class::newBuilder,
+            ProtoBuf.Class::parseFrom
+        ) {
+            fqName = 0
+        }
+    }
+
+    override fun <T : Any> getCustomMetadataExtension(
+        irConstructor: IrConstructor,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Constructor, T>,
+    ): T? {
+        return getCustomMetadataExtension(
+            irConstructor,
+            extension,
+            ProtoBuf.Constructor::newBuilder,
+            ProtoBuf.Constructor::parseFrom
+        ) {}
+    }
+
+    override fun <T : Any> getCustomMetadataExtension(
+        irFunction: IrSimpleFunction,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Function, T>,
+    ): T? {
+        return getCustomMetadataExtension(
+            irFunction,
+            extension,
+            ProtoBuf.Function::newBuilder,
+            ProtoBuf.Function::parseFrom
+        ) {
+            name = 0
+        }
+    }
+
+    override fun <T : Any> getCustomMetadataExtension(
+        irProperty: IrProperty,
+        extension: GeneratedMessageLite.GeneratedExtension<ProtoBuf.Property, T>,
+    ): T? {
+        return getCustomMetadataExtension(
+            irProperty,
+            extension,
+            ProtoBuf.Property::newBuilder,
+            ProtoBuf.Property::parseFrom
+        ) {
+            name = 0
+        }
+    }
+
+    private inline fun <T : Any, M : GeneratedMessageLite.ExtendableMessage<M>, B : GeneratedMessageLite.ExtendableBuilder<M, B>> getCustomMetadataExtension(
+        irDeclaration: IrDeclaration,
+        extension: GeneratedMessageLite.GeneratedExtension<M, T>,
+        newBuilder: () -> B,
+        parseFrom: (ByteArray, ExtensionRegistryLite) -> M,
+        initRequiredFields: B.() -> Unit
+    ): T? {
+        val firDeclaration = when (irDeclaration) {
+            is Fir2IrLazyClass -> irDeclaration.fir
+            is Fir2IrLazySimpleFunction -> irDeclaration.fir
+            is Fir2IrLazyProperty -> irDeclaration.fir
+            else -> return null
+        }
+        val unknownFields = firDeclaration.unknownMetadataFields ?: return null
+        val classProto = newBuilder().apply {
+            initRequiredFields()
+            mergeFrom(unknownFields)
+        }.build()
+        val bytes = classProto.toByteArray()
+        val registry = ExtensionRegistryLite.newInstance().apply {
+            add(extension)
+        }
+        val parsedProto = parseFrom(bytes, registry)
+        return parsedProto.getExtension(extension)
+    }
+
     private inner class Provider : FirAdditionalMetadataProvider() {
         override fun findGeneratedAnnotationsFor(declaration: FirDeclaration): List<FirAnnotation> {
             val irAnnotations = extractGeneratedIrDeclarations(declaration).takeUnless { it.isEmpty() } ?: return emptyList()
@@ -468,5 +611,21 @@ class Fir2IrIrGeneratedDeclarationsRegistrar(private val components: Fir2IrCompo
         @Suppress("RecursivePropertyAccessor")
         private val ClassId.topmostParentClassId: ClassId
             get() = parentClassId?.topmostParentClassId ?: this
+
+        override fun findMetadataExtensionsFor(klass: FirClass): List<MetadataExtensionDescription<ProtoBuf.Class, *>> {
+            return metadataExtensionsForClasses[klass].orEmpty()
+        }
+
+        override fun findMetadataExtensionsFor(constructor: FirConstructor): List<MetadataExtensionDescription<ProtoBuf.Constructor, *>> {
+            return metadataExtensionsForConstructors[constructor].orEmpty()
+        }
+
+        override fun findMetadataExtensionsFor(function: FirFunction): List<MetadataExtensionDescription<ProtoBuf.Function, *>> {
+            return metadataExtensionsForFunctions[function].orEmpty()
+        }
+
+        override fun findMetadataExtensionsFor(property: FirProperty): List<MetadataExtensionDescription<ProtoBuf.Property, *>> {
+            return metadataExtensionsForProperties[property].orEmpty()
+        }
     }
 }

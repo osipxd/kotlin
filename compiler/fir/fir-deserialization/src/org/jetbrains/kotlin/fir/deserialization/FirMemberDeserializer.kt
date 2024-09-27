@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyGetter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertySetter
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.utils.sourceElement
+import org.jetbrains.kotlin.fir.declarations.utils.unknownMetadataFields
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildExpressionStub
@@ -493,6 +494,9 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
             this.versionRequirements = versionRequirements
             replaceDeprecationsProvider(getDeprecationsProvider(c.session))
             setLazyPublishedVisibility(c.session)
+            proto.unknownFields?.takeUnless { it.isEmpty }?.let {
+                unknownMetadataFields = it
+            }
             getter?.setLazyPublishedVisibility(annotations, this, c.session)
             setter?.setLazyPublishedVisibility(annotations, this, c.session)
         }
@@ -582,6 +586,9 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
         }.apply {
             this.versionRequirements = versionRequirements
             setLazyPublishedVisibility(c.session)
+            proto.unknownFields?.takeUnless { it.isEmpty }?.let {
+                unknownMetadataFields = it
+            }
         }
         if (proto.hasContract()) {
             val contractDeserializer = if (proto.typeParameterList.isEmpty()) this.contractDeserializer else FirContractDeserializer(local)
@@ -666,6 +673,9 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
             containingClassForStaticMemberAttr = c.dispatchReceiver!!.lookupTag
             this.versionRequirements = VersionRequirement.create(proto, c)
             setLazyPublishedVisibility(c.session)
+            proto.unknownFields?.takeUnless { it.isEmpty }?.let {
+                unknownMetadataFields = it
+            }
         }
     }
 
