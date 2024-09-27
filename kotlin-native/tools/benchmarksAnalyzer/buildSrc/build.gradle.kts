@@ -61,22 +61,24 @@ tasks.withType<KotlinJvmCompile>().configureEach {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-build-gradle-plugin:${kotlinBuildProperties.buildGradlePluginVersion}")
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${project.bootstrapKotlinVersion}")
-    api("org.jetbrains.kotlin:kotlin-native-utils:${project.bootstrapKotlinVersion}")
-    api("org.jetbrains.kotlin:kotlin-util-klib:${project.bootstrapKotlinVersion}")
+
     compileOnly(gradleApi())
     val kotlinVersion = project.bootstrapKotlinVersion
-    val ktorVersion = "1.2.1"
+    val ktorVersion = "2.3.12"
     val slackApiVersion = "1.2.0"
     val shadowVersion = "8.3.0"
-    val metadataVersion = "0.0.1-dev-10"
+    val metadataVersion = "0.0.6"
+
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+    api("org.jetbrains.kotlin:kotlin-native-utils:${kotlinVersion}")
+    api("org.jetbrains.kotlin:kotlin-util-klib:${kotlinVersion}")
 
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     implementation("com.ullink.slack:simpleslackapi:$slackApiVersion")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
     implementation("io.ktor:ktor-client-auth:$ktorVersion")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
