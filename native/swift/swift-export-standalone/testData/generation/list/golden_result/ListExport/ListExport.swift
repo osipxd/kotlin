@@ -2,62 +2,62 @@ import KotlinRuntime
 @_implementationOnly import KotlinBridges_ListExport
 
 public func testListAny(
-    l: Swift.Array<KotlinRuntime.KotlinBase>
-) -> Swift.Array<KotlinRuntime.KotlinBase> {
+    l: [KotlinRuntime.KotlinBase]
+) -> [KotlinRuntime.KotlinBase] {
     return __root___testListAny__TypesOfArguments__Swift_Array_KotlinRuntime_KotlinBase___(l as [Any]) as! Swift.Array<KotlinRuntime.KotlinBase>
 }
 public func testListInt(
-    l: Swift.Array<Swift.Int32>
-) -> Swift.Array<Swift.Int32> {
+    l: [Swift.Int32]
+) -> [Swift.Int32] {
     return __root___testListInt__TypesOfArguments__Swift_Array_Swift_Int32___(l as [Any]) as! Swift.Array<Swift.Int32>
 }
 public func testListListInt(
-    l: Swift.Array<Swift.Array<Swift.Int32>>
-) -> Swift.Array<Swift.Array<Swift.Int32>> {
+    l: [[Swift.Int32]]
+) -> [[Swift.Int32]] {
     return __root___testListListInt__TypesOfArguments__Swift_Array_Swift_Array_Swift_Int32____(l as [Any]) as! Swift.Array<Swift.Array<Swift.Int32>>
 }
 public func testListNothing(
-    l: Swift.Array<Swift.Never>
-) -> Swift.Array<Swift.Never> {
+    l: [Swift.Never]
+) -> [Swift.Never] {
     return __root___testListNothing__TypesOfArguments__Swift_Array_Swift_Never___(l as [Any]) as! Swift.Array<Swift.Never>
 }
 public func testListOptAny(
-    l: Swift.Array<Swift.Optional<KotlinRuntime.KotlinBase>>
-) -> Swift.Array<Swift.Optional<KotlinRuntime.KotlinBase>> {
+    l: [KotlinRuntime.KotlinBase?]
+) -> [KotlinRuntime.KotlinBase?] {
     return __root___testListOptAny__TypesOfArguments__Swift_Array_Swift_Optional_KotlinRuntime_KotlinBase____(l as [Any]) as! Swift.Array<Swift.Optional<KotlinRuntime.KotlinBase>>
 }
 public func testListOptInt(
-    l: Swift.Array<Swift.Optional<Swift.Int32>>
-) -> Swift.Array<Swift.Optional<Swift.Int32>> {
+    l: [Swift.Int32?]
+) -> [Swift.Int32?] {
     return __root___testListOptInt__TypesOfArguments__Swift_Array_Swift_Optional_Swift_Int32____(l as [Any]) as! Swift.Array<Swift.Optional<Swift.Int32>>
 }
 public func testListOptListInt(
-    l: Swift.Array<Swift.Optional<Swift.Array<Swift.Int32>>>
-) -> Swift.Array<Swift.Optional<Swift.Array<Swift.Int32>>> {
+    l: [[Swift.Int32]?]
+) -> [[Swift.Int32]?] {
     return __root___testListOptListInt__TypesOfArguments__Swift_Array_Swift_Optional_Swift_Array_Swift_Int32_____(l as [Any]) as! Swift.Array<Swift.Optional<Swift.Array<Swift.Int32>>>
 }
 public func testListOptNothing(
-    l: Swift.Array<Swift.Optional<Swift.Never>>
-) -> Swift.Array<Swift.Optional<Swift.Never>> {
+    l: [Swift.Never?]
+) -> [Swift.Never?] {
     return __root___testListOptNothing__TypesOfArguments__Swift_Array_Swift_Optional_Swift_Never____(l as [Any]) as! Swift.Array<Swift.Optional<Swift.Never>>
 }
 public func testListOptString(
-    l: Swift.Array<Swift.Optional<Swift.String>>
-) -> Swift.Array<Swift.Optional<Swift.String>> {
+    l: [Swift.String?]
+) -> [Swift.String?] {
     return __root___testListOptString__TypesOfArguments__Swift_Array_Swift_Optional_Swift_String____(l as [Any]) as! Swift.Array<Swift.Optional<Swift.String>>
 }
 public func testListShort(
-    l: Swift.Array<Swift.Int16>
-) -> Swift.Array<Swift.Int16> {
+    l: [Swift.Int16]
+) -> [Swift.Int16] {
     return __root___testListShort__TypesOfArguments__Swift_Array_Swift_Int16___(l as [Any]) as! Swift.Array<Swift.Int16>
 }
 public func testListString(
-    l: Swift.Array<Swift.String>
-) -> Swift.Array<Swift.String> {
+    l: [Swift.String]
+) -> [Swift.String] {
     return __root___testListString__TypesOfArguments__Swift_Array_Swift_String___(l as [Any]) as! Swift.Array<Swift.String>
 }
 public func testOptListInt(
-    l: Swift.Array<Swift.Int32>?
-) -> Swift.Array<Swift.Int32>? {
+    l: [Swift.Int32]?
+) -> [Swift.Int32]? {
     return __root___testOptListInt__TypesOfArguments__Swift_Array_Swift_Int32__opt___(l.flatMap { it in it as [Any] } ?? .none).flatMap { it in it as! Swift.Array<Swift.Int32> }
 }
