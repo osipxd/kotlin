@@ -1,0 +1,11 @@
+package org.jetbrains.kotlin.plugin.sandbox;
+
+import "core/metadata/src/metadata.proto";
+import "core/metadata/src/ext_options.proto";
+
+option java_outer_classname = "SandboxPluginMetadataExtensions";
+option optimize_for = LITE_RUNTIME;
+
+extend org.jetbrains.kotlin.metadata.Class {
+  optional int32 sandbox_index = 17100;
+}

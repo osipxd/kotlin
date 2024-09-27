@@ -55,6 +55,7 @@ val PROTO_PATHS: List<ProtoPath> = listOf(
     ProtoPath("compiler/util-klib/src/KlibMetadataProtoBuf.proto"),
     ProtoPath("compiler/ir/serialization.common/src/KotlinIr.proto", false),
     ProtoPath("compiler/ir/serialization.jvm/src/JvmIr.proto", false),
+    ProtoPath("plugins/plugin-sandbox/src/extraMetadata.proto", generateDebug = false),
 )
 
 private val EXT_OPTIONS_PROTO_PATH = ProtoPath("core/metadata/src/ext_options.proto")
