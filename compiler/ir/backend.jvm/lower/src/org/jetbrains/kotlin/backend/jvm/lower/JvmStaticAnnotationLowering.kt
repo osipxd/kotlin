@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.backend.jvm.lower
 
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
+import org.jetbrains.kotlin.backend.common.ModuleLoweringPass
 import org.jetbrains.kotlin.backend.common.phaser.PhaseDescription
 import org.jetbrains.kotlin.backend.jvm.CachedFieldsForObjectInstances
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
@@ -31,11 +32,15 @@ import org.jetbrains.kotlin.resolve.annotations.JVM_STATIC_ANNOTATION_FQ_NAME
     name = "JvmStaticInObject",
     description = "Make JvmStatic functions in non-companion objects static and replace all call sites in the module"
 )
-internal class JvmStaticInObjectLowering(val context: JvmBackendContext) : FileLoweringPass {
-    override fun lower(irFile: IrFile) =
-        irFile.transformChildrenVoid(
-            SingletonObjectJvmStaticTransformer(context.irBuiltIns, context.cachedDeclarations.fieldsForObjectInstances)
+internal class JvmStaticInObjectLowering(val context: JvmBackendContext) : ModuleLoweringPass {
+    override fun lower(module: IrModuleFragment) {
+        module.transformChildrenVoid(
+            SingletonObjectJvmStaticUsageTransformer(context.irBuiltIns)
         )
+        module.transformChildrenVoid(
+            SingletonObjectJvmStaticDeclarationTransformer(context.cachedDeclarations.fieldsForObjectInstances)
+        )
+    }
 }
 
 @PhaseDescription(
@@ -78,26 +83,26 @@ private fun IrMemberAccessExpression<*>.makeStatic(irBuiltIns: IrBuiltIns, repla
     }
 }
 
-class SingletonObjectJvmStaticTransformer(
-    private val irBuiltIns: IrBuiltIns,
+class SingletonObjectJvmStaticUsageTransformer(
+    private val irBuiltIns: IrBuiltIns
+) : IrElementTransformerVoid() {
+    override fun visitMemberAccess(expression: IrMemberAccessExpression<*>): IrExpression {
+        expression.transformChildrenVoid(this)
+
+        val callee = expression.symbol.owner
+        if (callee is IrDeclaration && callee.isJvmStaticInObject()) {
+            return expression.makeStatic(irBuiltIns, replaceCallee = null)
+        }
+        return expression
+    }
+}
+
+class SingletonObjectJvmStaticDeclarationTransformer(
     private val cachedFields: CachedFieldsForObjectInstances
 ) : IrElementTransformerVoid() {
     override fun visitSimpleFunction(declaration: IrSimpleFunction): IrStatement {
         transformFunction(declaration)
         return super.visitSimpleFunction(declaration)
-    }
-
-    private fun transformFunction(function: IrFunction) {
-        if (function.isJvmStaticInObject()) {
-            // dispatch receiver parameter is already null for synthetic property annotation methods
-            function.dispatchReceiverParameter?.let { oldDispatchReceiverParameter ->
-                function.dispatchReceiverParameter = null
-
-                if (function !is IrLazyFunctionBase) {
-                    function.replaceThisByStaticReference(cachedFields, function.parentAsClass, oldDispatchReceiverParameter)
-                }
-            }
-        }
     }
 
     // This lowering runs before functions references are handled, and should transform them too.
@@ -117,10 +122,20 @@ class SingletonObjectJvmStaticTransformer(
             }
         }
 
-        if (callee is IrDeclaration && callee.isJvmStaticInObject()) {
-            return expression.makeStatic(irBuiltIns, replaceCallee = null)
-        }
         return expression
+    }
+
+    private fun transformFunction(function: IrFunction) {
+        if (function.isJvmStaticInObject()) {
+            // dispatch receiver parameter is already null for synthetic property annotation methods
+            function.dispatchReceiverParameter?.let { oldDispatchReceiverParameter ->
+                function.dispatchReceiverParameter = null
+
+                if (function !is IrLazyFunctionBase) {
+                    function.replaceThisByStaticReference(cachedFields, function.parentAsClass, oldDispatchReceiverParameter)
+                }
+            }
+        }
     }
 }
 

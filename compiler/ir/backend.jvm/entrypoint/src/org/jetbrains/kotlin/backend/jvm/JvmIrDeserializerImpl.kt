@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.backend.jvm
 
-import org.jetbrains.kotlin.backend.jvm.lower.SingletonObjectJvmStaticTransformer
 import org.jetbrains.kotlin.backend.jvm.serialization.deserializeFromByteArray
 import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -30,8 +29,6 @@ class JvmIrDeserializerImpl : JvmIrDeserializer {
         deserializeFromByteArray(
             serializedIr, irBuiltIns, symbolTable, irProviders, irClass, JvmIrTypeSystemContext(irBuiltIns)
         )
-
-        irClass.transform(SingletonObjectJvmStaticTransformer(irBuiltIns, extensions.cachedFields), null)
 
         return true
     }
