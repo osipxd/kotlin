@@ -28,6 +28,6 @@ fun test(){
 }
 
 fun box(): String {
-    //test()
+    test()
     return "OK"
 }
