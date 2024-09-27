@@ -231,7 +231,7 @@ private fun bridgeType(type: SirType): Bridge {
         SirSwiftModule.uint -> Bridge.AsOpaqueObject(type, KotlinType.KotlinObject, CType.Object)
         SirSwiftModule.never -> Bridge.AsOpaqueObject(type, KotlinType.KotlinObject, CType.Object)
 
-        SirSwiftModule.string -> Bridge.AsObjCBridged(type, KotlinType.String, CType.NSString)
+        SirSwiftModule.string -> Bridge.AsObjCBridged(type, CType.NSString)
 
         SirSwiftModule.utf16CodeUnit -> Bridge.AsIs(type, KotlinType.Char, CType.UInt16)
 
@@ -248,12 +248,12 @@ private fun bridgeType(type: SirType): Bridge {
             }
             is Bridge.AsIs
                 -> Bridge.AsOptionalWrapper(
-                Bridge.AsObjCBridged(bridge.swiftType, bridge.kotlinType, CType.NSNumber)
+                Bridge.AsObjCBridged(bridge.swiftType, CType.NSNumber)
             )
             else -> error("Found Optional wrapping for $bridge. That is currently unsupported. See KT-66875")
         }
 
-        SirSwiftModule.array -> Bridge.AsObjCBridged(type, KotlinType.ObjCObjectUnretained, CType.NSArray)
+        SirSwiftModule.array -> Bridge.AsObjCBridged(type, CType.NSArray)
 
         is SirTypealias -> bridgeType(subtype.type)
 
@@ -408,17 +408,11 @@ private sealed class Bridge(
 
     class AsObjCBridged(
         swiftType: SirType,
-        localKotlinType: KotlinType,
         cType: CType
     ) : Bridge(swiftType, KotlinType.ObjCObjectUnretained, cType) {
         override val inKotlinSources = object : ValueConversion {
-            override fun swiftToKotlin(typeNamer: SirTypeNamer, valueExpression: String): String {
-                val kotlinType = when (cType) {
-                    CType.NSArray -> typeNamer.kotlinFqName(swiftType)
-                    else -> localKotlinType.repr
-                }
-                return "interpretObjCPointer<${kotlinType}>($valueExpression)"
-            }
+            override fun swiftToKotlin(typeNamer: SirTypeNamer, valueExpression: String): String =
+                "interpretObjCPointer<${typeNamer.kotlinFqName(swiftType)}>($valueExpression)"
 
             override fun kotlinToSwift(typeNamer: SirTypeNamer, valueExpression: String) =
                 "$valueExpression.objcPtr()"
@@ -430,7 +424,6 @@ private sealed class Bridge(
             override fun swiftToKotlin(typeNamer: SirTypeNamer, valueExpression: String): String {
                 return when (cType) {
                     CType.NSNumber -> "NSNumber(value: $valueExpression)"
-                    CType.NSArray -> "$valueExpression as [Any]"
                     else -> valueExpression
                 }
             }
@@ -480,34 +473,34 @@ private sealed class Bridge(
                         wrappedObject.inKotlinSources.kotlinToSwift(typeNamer, valueExpression)
                     }"
                 }
-
             }
+
         override val inSwiftSources: InSwiftSourcesConversion = object : InSwiftSourcesConversion {
             override fun swiftToKotlin(typeNamer: SirTypeNamer, valueExpression: String): String {
                 require(wrappedObject is AsObjCBridged || wrappedObject is AsObject)
                 val adapter = wrappedObject.inSwiftSources.swiftToKotlin(typeNamer, "it").takeIf { it != "it" }
-                val flatMap = adapter?.let { ".flatMap { it in $it }" } ?: ""
-                return "$valueExpression$flatMap ?? ${wrappedObject.inSwiftSources.renderNil()}"
+                return "$valueExpression${adapter?.let { ".map { it in $it }" } ?: ""} ?? ${wrappedObject.inSwiftSources.renderNil()}"
             }
 
             override fun kotlinToSwift(typeNamer: SirTypeNamer, valueExpression: String): String {
                 return when (wrappedObject) {
                     is AsObjCBridged -> {
                         val adapter = wrappedObject.inSwiftSources.kotlinToSwift(typeNamer, "it").takeIf { it != "it" }
-                        valueExpression + (adapter?.let { ".flatMap { it in $it }" } ?: "")
+                        valueExpression + (adapter?.let { ".map { it in $it }" } ?: "")
                     }
                     is AsObject -> "switch $valueExpression { case ${wrappedObject.inSwiftSources.renderNil()}: .none; case let res: ${
                         wrappedObject.inSwiftSources.kotlinToSwift(typeNamer, "res")
                     }; }"
+
                     is AsIs,
-                    is AsOpaqueObject
-                        -> TODO("yet unsupported")
+                    is AsOpaqueObject,
+                    -> TODO("yet unsupported")
+
                     is AsOptionalWrapper, AsOptionalNothing -> error("there is not optional wrappers for optional")
                 }
             }
 
             override fun renderNil(): String = error("we do not support wrapping optionals into optionals, as it is impossible in kotlin")
-
         }
     }
 

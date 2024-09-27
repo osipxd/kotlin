@@ -315,7 +315,7 @@ private object StandaloneSirTypeNamer : SirTypeNamer {
             KotlinRuntimeModule.kotlinBase -> "kotlin.Any"
             SirSwiftModule.string -> "kotlin.String"
 
-            SirSwiftModule.bool -> "Bool"
+            SirSwiftModule.bool -> "Boolean"
 
             SirSwiftModule.int8 -> "Byte"
             SirSwiftModule.int16 -> "Short"
@@ -329,6 +329,8 @@ private object StandaloneSirTypeNamer : SirTypeNamer {
 
             SirSwiftModule.double -> "Double"
             SirSwiftModule.float -> "Float"
+
+            SirSwiftModule.utf16CodeUnit -> "Char"
 
             SirSwiftModule.uint -> "UInt"
 
