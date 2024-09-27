@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.lombok.k2.generators
 
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
-import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.checkers.toRegularClassSymbol
@@ -20,7 +19,6 @@ import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.declarations.utils.effectiveVisibility
 import org.jetbrains.kotlin.fir.java.JavaScopeProvider
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaClass
-import org.jetbrains.kotlin.fir.java.declarations.FirJavaField
 import org.jetbrains.kotlin.fir.java.declarations.buildJavaClass
 import org.jetbrains.kotlin.fir.moduleData
 import org.jetbrains.kotlin.fir.resolve.defaultType
@@ -33,6 +31,7 @@ import org.jetbrains.kotlin.fir.toFirResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.ConeStarProjection
+import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.constructClassLikeType
 import org.jetbrains.kotlin.fir.types.constructType
@@ -55,54 +54,32 @@ class SuperBuilderGenerator(session: FirSession) : BuilderGeneratorBase<SuperBui
 
     override fun FirRegularClassSymbol.getBuilderType(): ConeKotlinType = typeParameterSymbols[1].defaultType
 
-    @OptIn(SymbolInternals::class)
-    override fun createBuilderClass(classSymbol: FirClassSymbol<*>): FirJavaClass? {
-        val javaClass = classSymbol.fir as? FirJavaClass ?: return null
-        val superBuilder = javaClass.superTypeRefs.mapNotNull { superTypeRef ->
+    override fun FirJavaClass.getSuperType(): FirTypeRef {
+        val superClass = superTypeRefs.mapNotNull { superTypeRef ->
             val superTypeSymbol = superTypeRef.toRegularClassSymbol(session) ?: return@mapNotNull null
             builderClassCache.getValue(superTypeSymbol)
         }.singleOrNull()
-        val builder = lombokService.getSuperBuilder(classSymbol) ?: return null
-        val builderNameString = builder.builderClassName.replace("*", classSymbol.name.asString())
-        val visibility = Visibilities.DEFAULT_VISIBILITY
-        val builderClass = classSymbol.createBuilder(
-            session,
-            Name.identifier(builderNameString),
-            visibility,
-            Modality.FINAL,
-            superBuilder = superBuilder,
-        )?.apply {
-            declarations += symbol.createDefaultJavaConstructor(visibility)
-            declarations += symbol.createJavaMethod(
-                Name.identifier("self"),
-                valueParameters = emptyList(),
-                returnTypeRef = symbol.typeParameterSymbols[1].defaultType.toFirResolvedTypeRef(),
-                visibility = visibility,
-                modality = Modality.FINAL
-            )
-            declarations += symbol.createJavaMethod(
-                Name.identifier(builder.buildMethodName),
-                valueParameters = emptyList(),
-                returnTypeRef = symbol.typeParameterSymbols[0].defaultType.toFirResolvedTypeRef(),
-                visibility = visibility,
-                modality = Modality.FINAL
-            )
-            createMethodsForFields(javaClass, builder)
-
-        } ?: return null
-
-        // There is also build impl class, but it's private, and it's used only for internal purposes. Not relevant for API.
-
-        return builderClass
+        return superClass?.symbol?.let {
+            it.constructType(
+                typeArguments = arrayOf(
+                    it.typeParameterSymbols[0].defaultType.toFirResolvedTypeRef().coneType,
+                    it.typeParameterSymbols[1].defaultType.toFirResolvedTypeRef().coneType,
+                ),
+                isNullable = false
+            ).toFirResolvedTypeRef()
+        } ?: session.builtinTypes.anyType
     }
 
+    // There is also build impl class, but it's private, and it's used only for internal purposes. Not relevant for API.
+
     @OptIn(SymbolInternals::class)
-    private fun FirClassSymbol<*>.createBuilder(
+    override fun FirClassSymbol<*>.createBuilder(
         session: FirSession,
         name: Name,
         visibility: Visibility,
         modality: Modality,
-        superBuilder: FirJavaClass?,
+        isStatic: Boolean,
+        superTypeRef: FirTypeRef?,
     ): FirJavaClass? {
         val containingClass = this.fir as? FirJavaClass ?: return null
         val classId = containingClass.classId.createNestedClassId(name)
@@ -152,18 +129,7 @@ class SuperBuilderGenerator(session: FirSession) : BuilderGeneratorBase<SuperBui
                     )
                 }
             }
-            val superTypeRef = if (superBuilder != null) {
-                superBuilder.symbol.constructType(
-                    typeArguments = arrayOf(
-                        typeParameters[0].symbol.defaultType.toFirResolvedTypeRef().coneType,
-                        typeParameters[1].symbol.defaultType.toFirResolvedTypeRef().coneType,
-                    ),
-                    isNullable = false
-                ).toFirResolvedTypeRef()
-            } else {
-                session.builtinTypes.anyType
-            }
-            this.superTypeRefs += listOf(superTypeRef)
+            this.superTypeRefs += listOf(superTypeRef ?: session.builtinTypes.anyType)
             val effectiveVisibility = containingClass.effectiveVisibility.lowerBound(
                 visibility.toEffectiveVisibility(this@createBuilder, forClass = true),
                 session.typeContext
@@ -181,5 +147,23 @@ class SuperBuilderGenerator(session: FirSession) : BuilderGeneratorBase<SuperBui
                 isFun = classKind == ClassKind.INTERFACE
             }
         }
+    }
+
+    override fun FirJavaClass.createBuilderMethods(builder: SuperBuilder) {
+        val visibility = builder.visibility.toVisibility()
+        declarations += symbol.createJavaMethod(
+            Name.identifier("self"),
+            valueParameters = emptyList(),
+            returnTypeRef = symbol.typeParameterSymbols[1].defaultType.toFirResolvedTypeRef(),
+            visibility = visibility,
+            modality = Modality.FINAL
+        )
+        declarations += symbol.createJavaMethod(
+            Name.identifier(builder.buildMethodName),
+            valueParameters = emptyList(),
+            returnTypeRef = symbol.typeParameterSymbols[0].defaultType.toFirResolvedTypeRef(),
+            visibility = visibility,
+            modality = Modality.FINAL
+        )
     }
 }

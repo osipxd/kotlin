@@ -9,22 +9,15 @@ import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.fir.FirSession
-import org.jetbrains.kotlin.fir.caches.FirCache
-import org.jetbrains.kotlin.fir.caches.createCache
-import org.jetbrains.kotlin.fir.caches.firCachesFactory
-import org.jetbrains.kotlin.fir.caches.getValue
 import org.jetbrains.kotlin.fir.declarations.builder.buildOuterClassTypeParameterRef
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.declarations.utils.effectiveVisibility
-import org.jetbrains.kotlin.fir.extensions.NestedClassGenerationContext
 import org.jetbrains.kotlin.fir.java.JavaScopeProvider
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaClass
-import org.jetbrains.kotlin.fir.java.declarations.FirJavaField
 import org.jetbrains.kotlin.fir.java.declarations.buildJavaClass
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
-import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.toEffectiveVisibility
@@ -47,42 +40,16 @@ class BuilderGenerator(session: FirSession) : BuilderGeneratorBase<Builder>(sess
 
     override fun FirRegularClassSymbol.getBuilderType(): ConeKotlinType = defaultType()
 
-    @OptIn(SymbolInternals::class)
-    override fun createBuilderClass(classSymbol: FirClassSymbol<*>): FirJavaClass? {
-        val javaClass = classSymbol.fir as? FirJavaClass ?: return null
-        val builder = getBuilder(classSymbol) ?: return null
-        val builderName = Name.identifier(builder.builderClassName.replace("*", classSymbol.name.asString()))
-        val visibility = builder.visibility.toVisibility()
-        val builderClass = classSymbol.createJavaClass(
-            session,
-            builderName,
-            visibility,
-            Modality.FINAL,
-            isStatic = true,
-            superTypeRefs = listOf(session.builtinTypes.anyType)
-        )?.apply {
-            declarations += symbol.createDefaultJavaConstructor(visibility)
-            declarations += symbol.createJavaMethod(
-                Name.identifier(builder.buildMethodName),
-                valueParameters = emptyList(),
-                returnTypeRef = classSymbol.defaultType().toFirResolvedTypeRef(),
-                visibility = visibility,
-                modality = Modality.FINAL
-            )
-            createMethodsForFields(javaClass, builder)
-        } ?: return null
-
-        return builderClass
-    }
+    override fun FirJavaClass.getSuperType(): FirTypeRef = session.builtinTypes.anyType
 
     @OptIn(SymbolInternals::class)
-    fun FirClassSymbol<*>.createJavaClass(
+    override fun FirClassSymbol<*>.createBuilder(
         session: FirSession,
         name: Name,
         visibility: Visibility,
         modality: Modality,
         isStatic: Boolean,
-        superTypeRefs: List<FirTypeRef>,
+        superTypeRef: FirTypeRef?,
     ): FirJavaClass? {
         val containingClass = this.fir as? FirJavaClass ?: return null
         val classId = containingClass.classId.createNestedClassId(name)
@@ -102,9 +69,9 @@ class BuilderGenerator(session: FirSession) : BuilderGeneratorBase<Builder>(sess
                     buildOuterClassTypeParameterRef { symbol = it.symbol }
                 }
             }
-            this.superTypeRefs += superTypeRefs
+            this.superTypeRefs += listOf(superTypeRef ?: session.builtinTypes.anyType)
             val effectiveVisibility = containingClass.effectiveVisibility.lowerBound(
-                visibility.toEffectiveVisibility(this@createJavaClass, forClass = true),
+                visibility.toEffectiveVisibility(this@createBuilder, forClass = true),
                 session.typeContext
             )
             isTopLevel = false
@@ -120,5 +87,15 @@ class BuilderGenerator(session: FirSession) : BuilderGeneratorBase<Builder>(sess
                 isFun = classKind == ClassKind.INTERFACE
             }
         }
+    }
+
+    override fun FirJavaClass.createBuilderMethods(builder: Builder) {
+        declarations += symbol.createJavaMethod(
+            Name.identifier(builder.buildMethodName),
+            valueParameters = emptyList(),
+            returnTypeRef = symbol.defaultType().toFirResolvedTypeRef(),
+            visibility = builder.visibility.toVisibility(),
+            modality = Modality.FINAL
+        )
     }
 }

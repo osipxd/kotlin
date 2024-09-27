@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.lombok.k2.generators
 import com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlin.KtFakeSourceElementKind
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.fakeElement
 import org.jetbrains.kotlin.fir.FirSession
@@ -24,6 +25,7 @@ import org.jetbrains.kotlin.fir.extensions.MemberGenerationContext
 import org.jetbrains.kotlin.fir.extensions.NestedClassGenerationContext
 import org.jetbrains.kotlin.fir.java.declarations.*
 import org.jetbrains.kotlin.fir.resolve.defaultType
+import org.jetbrains.kotlin.fir.symbols.SymbolInternals
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.toEffectiveVisibility
 import org.jetbrains.kotlin.fir.toFirResolvedTypeRef
@@ -49,11 +51,30 @@ abstract class BuilderGeneratorBase<T : BuilderBase>(session: FirSession) : FirD
         private const val TO_BUILDER = "toBuilder"
     }
 
+    protected abstract fun getBuilder(classSymbol: FirClassSymbol<*>): T?
+
+    protected abstract fun ClassId.constructBuilderType(): ConeClassLikeType
+
+    protected abstract fun FirRegularClassSymbol.getBuilderType(): ConeKotlinType
+
+    protected abstract fun FirClassSymbol<*>.createBuilder(
+        session: FirSession,
+        name: Name,
+        visibility: Visibility,
+        modality: Modality,
+        isStatic: Boolean,
+        superBuilderRef: FirTypeRef?,
+    ): FirJavaClass?
+
+    protected abstract fun FirJavaClass.createBuilderMethods(builder: T)
+
+    protected abstract fun FirJavaClass.getSuperType(): FirTypeRef
+
     protected val lombokService: LombokService
         get() = session.lombokService
 
     protected val builderClassCache: FirCache<FirClassSymbol<*>, FirJavaClass?, Nothing?> =
-        session.firCachesFactory.createCache(::createBuilderClass)
+        session.firCachesFactory.createCache(::initializeBuilder)
 
     private val functionsCache: FirCache<FirClassSymbol<*>, Map<Name, List<FirJavaMethod>>?, Nothing?> =
         session.firCachesFactory.createCache(::createFunctions)
@@ -69,30 +90,6 @@ abstract class BuilderGeneratorBase<T : BuilderBase>(session: FirSession) : FirD
         return builderClassCache.getValue(owner)?.symbol
     }
 
-    protected abstract fun getBuilder(classSymbol: FirClassSymbol<*>): T?
-
-    protected abstract fun createBuilderClass(classSymbol: FirClassSymbol<*>): FirJavaClass?
-
-    protected abstract fun ClassId.constructBuilderType(): ConeClassLikeType
-
-    protected abstract fun FirRegularClassSymbol.getBuilderType(): ConeKotlinType
-
-    protected fun FirJavaClass.createMethodsForFields(javaClass: FirJavaClass, builder: T) {
-        val fields = javaClass.declarations.filterIsInstance<FirJavaField>()
-        for (field in fields) {
-            when (val singular = lombokService.getSingular(field.symbol)) {
-                null -> createSetterMethod(builder, field, symbol, declarations)
-                else -> createMethodsForSingularFields(
-                    builder,
-                    singular,
-                    field,
-                    symbol,
-                    declarations,
-                )
-            }
-        }
-    }
-
     override fun getCallableNamesForClass(classSymbol: FirClassSymbol<*>, context: MemberGenerationContext): Set<Name> {
         if (!classSymbol.isSuitableJavaClass()) return emptySet()
         return functionsCache.getValue(classSymbol)?.keys.orEmpty()
@@ -101,6 +98,42 @@ abstract class BuilderGeneratorBase<T : BuilderBase>(session: FirSession) : FirD
     override fun generateFunctions(callableId: CallableId, context: MemberGenerationContext?): List<FirNamedFunctionSymbol> {
         val classSymbol = context?.owner ?: return emptyList()
         return functionsCache.getValue(classSymbol)?.get(callableId.callableName).orEmpty().map { it.symbol }
+    }
+
+    @OptIn(SymbolInternals::class)
+    fun initializeBuilder(classSymbol: FirClassSymbol<*>): FirJavaClass? {
+        val javaClass = classSymbol.fir as? FirJavaClass ?: return null
+        val builder = getBuilder(classSymbol) ?: return null
+        val builderNameString = builder.builderClassName.replace("*", classSymbol.name.asString())
+        val visibility = Visibilities.DEFAULT_VISIBILITY
+        val builderClass = classSymbol.createBuilder(
+            session,
+            Name.identifier(builderNameString),
+            visibility,
+            Modality.FINAL,
+            isStatic = false,
+            superBuilderRef = javaClass.getSuperType(),
+        )?.apply {
+            declarations += symbol.createDefaultJavaConstructor(visibility)
+
+            createBuilderMethods(builder)
+
+            val fields = javaClass.declarations.filterIsInstance<FirJavaField>()
+            for (field in fields) {
+                when (val singular = lombokService.getSingular(field.symbol)) {
+                    null -> createSetterMethod(builder, field, symbol, declarations)
+                    else -> createMethodsForSingularFields(
+                        builder,
+                        singular,
+                        field,
+                        symbol,
+                        declarations,
+                    )
+                }
+            }
+        } ?: return null
+
+        return builderClass
     }
 
     private fun createFunctions(classSymbol: FirClassSymbol<*>): Map<Name, List<FirJavaMethod>>? {
@@ -222,12 +255,12 @@ abstract class BuilderGeneratorBase<T : BuilderBase>(session: FirSession) : FirD
         }
 
         val visibility = builder.visibility.toVisibility()
-        val buildTypeRef = builderClassSymbol.getBuilderType().toFirResolvedTypeRef()
+        val builderTypeRef = builderClassSymbol.getBuilderType().toFirResolvedTypeRef()
 
         destination += builderClassSymbol.createJavaMethod(
             name = nameInSingularForm.toMethodName(builder),
             valueParameters,
-            returnTypeRef = buildTypeRef,
+            returnTypeRef = builderTypeRef,
             modality = Modality.FINAL,
             visibility = visibility
         )
@@ -235,7 +268,7 @@ abstract class BuilderGeneratorBase<T : BuilderBase>(session: FirSession) : FirD
         destination += builderClassSymbol.createJavaMethod(
             name = field.name.toMethodName(builder),
             valueParameters = listOf(ConeLombokValueParameter(field.name, addMultipleParameterType)),
-            returnTypeRef = buildTypeRef,
+            returnTypeRef = builderTypeRef,
             modality = Modality.FINAL,
             visibility = visibility
         )
@@ -243,7 +276,7 @@ abstract class BuilderGeneratorBase<T : BuilderBase>(session: FirSession) : FirD
         destination += builderClassSymbol.createJavaMethod(
             name = Name.identifier("clear${field.name.identifier.capitalize()}"),
             valueParameters = listOf(),
-            returnTypeRef = buildTypeRef,
+            returnTypeRef = builderTypeRef,
             modality = Modality.FINAL,
             visibility = visibility
         )
