@@ -3840,6 +3840,16 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/inlineVarargInts.kt");
       }
 
+      @TestMetadata("innerConstructorToExtensionFun.kt")
+      public void testInnerConstructorToExtensionFun() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorToExtensionFun.kt");
+      }
+
+      @TestMetadata("innerConstructorToExtensionWithTypeParam.kt")
+      public void testInnerConstructorToExtensionWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorToExtensionWithTypeParam.kt");
+      }
+
       @TestMetadata("innerConstructorWithVararg.kt")
       public void testInnerConstructorWithVararg() {
         runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorWithVararg.kt");
@@ -4040,6 +4050,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         @TestMetadata("inlineSimple.kt")
         public void testInlineSimple() {
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineSimple.kt");
+        }
+
+        @TestMetadata("inlineWithExtensionAsASuperType.kt")
+        public void testInlineWithExtensionAsASuperType() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithExtensionAsASuperType.kt");
         }
 
         @TestMetadata("inlineWithExtensionFunction.kt")
@@ -4493,6 +4508,16 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/function/coercionToUnit.kt");
       }
 
+      @TestMetadata("constructorFromInnerClass.kt")
+      public void testConstructorFromInnerClass() {
+        runTest("compiler/testData/codegen/box/callableReference/function/constructorFromInnerClass.kt");
+      }
+
+      @TestMetadata("constructorFromInnerClassWithTypeParam.kt")
+      public void testConstructorFromInnerClassWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/constructorFromInnerClassWithTypeParam.kt");
+      }
+
       @TestMetadata("constructorFromTopLevelNoArgs.kt")
       public void testConstructorFromTopLevelNoArgs() {
         runTest("compiler/testData/codegen/box/callableReference/function/constructorFromTopLevelNoArgs.kt");
@@ -4551,6 +4576,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       @TestMetadata("extensionProperty.kt")
       public void testExtensionProperty() {
         runTest("compiler/testData/codegen/box/callableReference/function/extensionProperty.kt");
+      }
+
+      @TestMetadata("extensionWithTypeParam.kt")
+      public void testExtensionWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionWithTypeParam.kt");
       }
 
       @TestMetadata("genericCallableReferenceArguments.kt")
@@ -4892,6 +4922,21 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       @TestMetadata("enumNameOrdinal.kt")
       public void testEnumNameOrdinal() {
         runTest("compiler/testData/codegen/box/callableReference/property/enumNameOrdinal.kt");
+      }
+
+      @TestMetadata("extensionProperty.kt")
+      public void testExtensionProperty() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionProperty.kt");
+      }
+
+      @TestMetadata("extensionPropertyWithExtensionReceiver.kt")
+      public void testExtensionPropertyWithExtensionReceiver() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyWithExtensionReceiver.kt");
+      }
+
+      @TestMetadata("extensionPropertyWithExtensionType.kt")
+      public void testExtensionPropertyWithExtensionType() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyWithExtensionType.kt");
       }
 
       @TestMetadata("extensionToArray.kt")
@@ -16516,6 +16561,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("extensionFunctionAsType.kt")
     public void testExtensionFunctionAsType() {
       runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsType.kt");
+    }
+
+    @TestMetadata("extensionFunctionWithExtensionAsAReceiver.kt")
+    public void testExtensionFunctionWithExtensionAsAReceiver() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithExtensionAsAReceiver.kt");
     }
 
     @TestMetadata("kt1061.kt")

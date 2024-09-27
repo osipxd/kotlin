@@ -3087,6 +3087,18 @@ public class FirJsCodegenBoxTestGenerated extends AbstractFirJsCodegenBoxTest {
       }
 
       @Test
+      @TestMetadata("innerConstructorToExtensionFun.kt")
+      public void testInnerConstructorToExtensionFun() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorToExtensionFun.kt");
+      }
+
+      @Test
+      @TestMetadata("innerConstructorToExtensionWithTypeParam.kt")
+      public void testInnerConstructorToExtensionWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorToExtensionWithTypeParam.kt");
+      }
+
+      @Test
       @TestMetadata("innerConstructorWithVararg.kt")
       public void testInnerConstructorWithVararg() {
         runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorWithVararg.kt");
@@ -3285,6 +3297,12 @@ public class FirJsCodegenBoxTestGenerated extends AbstractFirJsCodegenBoxTest {
         @TestMetadata("inlineSimple.kt")
         public void testInlineSimple() {
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineSimple.kt");
+        }
+
+        @Test
+        @TestMetadata("inlineWithExtensionAsASuperType.kt")
+        public void testInlineWithExtensionAsASuperType() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithExtensionAsASuperType.kt");
         }
 
         @Test
@@ -3759,6 +3777,18 @@ public class FirJsCodegenBoxTestGenerated extends AbstractFirJsCodegenBoxTest {
       }
 
       @Test
+      @TestMetadata("constructorFromInnerClass.kt")
+      public void testConstructorFromInnerClass() {
+        runTest("compiler/testData/codegen/box/callableReference/function/constructorFromInnerClass.kt");
+      }
+
+      @Test
+      @TestMetadata("constructorFromInnerClassWithTypeParam.kt")
+      public void testConstructorFromInnerClassWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/constructorFromInnerClassWithTypeParam.kt");
+      }
+
+      @Test
       @TestMetadata("constructorFromTopLevelNoArgs.kt")
       public void testConstructorFromTopLevelNoArgs() {
         runTest("compiler/testData/codegen/box/callableReference/function/constructorFromTopLevelNoArgs.kt");
@@ -3816,6 +3846,12 @@ public class FirJsCodegenBoxTestGenerated extends AbstractFirJsCodegenBoxTest {
       @TestMetadata("extensionFromTopLevelUnitOneStringArg.kt")
       public void testExtensionFromTopLevelUnitOneStringArg() {
         runTest("compiler/testData/codegen/box/callableReference/function/extensionFromTopLevelUnitOneStringArg.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionWithTypeParam.kt")
+      public void testExtensionWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionWithTypeParam.kt");
       }
 
       @Test
@@ -4190,6 +4226,24 @@ public class FirJsCodegenBoxTestGenerated extends AbstractFirJsCodegenBoxTest {
       @TestMetadata("enumNameOrdinal.kt")
       public void testEnumNameOrdinal() {
         runTest("compiler/testData/codegen/box/callableReference/property/enumNameOrdinal.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionProperty.kt")
+      public void testExtensionProperty() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionProperty.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyWithExtensionReceiver.kt")
+      public void testExtensionPropertyWithExtensionReceiver() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyWithExtensionReceiver.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyWithExtensionType.kt")
+      public void testExtensionPropertyWithExtensionType() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyWithExtensionType.kt");
       }
 
       @Test
@@ -15243,6 +15297,12 @@ public class FirJsCodegenBoxTestGenerated extends AbstractFirJsCodegenBoxTest {
     @TestMetadata("extensionFunctionAsType.kt")
     public void testExtensionFunctionAsType() {
       runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsType.kt");
+    }
+
+    @Test
+    @TestMetadata("extensionFunctionWithExtensionAsAReceiver.kt")
+    public void testExtensionFunctionWithExtensionAsAReceiver() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithExtensionAsAReceiver.kt");
     }
 
     @Test
