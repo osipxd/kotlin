@@ -317,7 +317,7 @@ fun main(args: Array<String>) {
                 model("box")
             }
             testClass<AbstractDiagnosticTestForLombok> {
-                model("diagnostics", excludedPattern = excludedFirTestdataPattern)
+                model("diagnostics/common", excludedPattern = excludedFirTestdataPattern)
             }
             testClass<AbstractFirPsiDiagnosticTestForLombok> {
                 model("diagnostics", excludedPattern = excludedFirTestdataPattern)
