@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.analysis.low.level.api.fir.providers
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.analysis.low.level.api.fir.caches.NullableCaffeineCache
 import org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.LLFirSession
@@ -27,6 +28,7 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
+import java.time.Duration
 
 /**
  * [LLFirCombinedKotlinSymbolProvider] combines multiple [LLFirKotlinSymbolProvider]s with the following advantages:
@@ -40,11 +42,14 @@ import org.jetbrains.kotlin.psi.KtCallableDeclaration
  * - A small Caffeine cache can avoid most index accesses for classes, because many names are requested multiple times, with a minor memory
  *   footprint.
  *
+ * TODO (marco): Add documentation about callable caches.
+ *
  * [declarationProvider] must have a scope which combines the scopes of the individual [providers].
  *
  * [packageProviderForKotlinPackages] should be the package provider combined from all [providers] which allow `kotlin` packages (see
  * [LLFirProvider.SymbolProvider.allowKotlinPackage]). It may be `null` if no such provider exists. See [getPackage] for a use case.
  */
+@OptIn(FirSymbolProviderInternals::class)
 internal class LLFirCombinedKotlinSymbolProvider private constructor(
     session: FirSession,
     project: Project,
@@ -57,13 +62,26 @@ internal class LLFirCombinedKotlinSymbolProvider private constructor(
 
     private val classifierCache = NullableCaffeineCache<ClassId, FirClassLikeSymbol<*>> { it.maximumSize(500) }
 
+    // TODO (marco): Add scheduling? It's probably a bad idea to schedule thousands of jobs with the system scheduler, so maybe we should
+    //               rather schedule routine maintenance that iterates through all FIR sessions on a 5-10 second interval, in a different
+    //               thread?
+
+    private val functionCache =
+        Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofSeconds(5))
+            .build<CallableId, List<FirNamedFunctionSymbol>>()
+
+    private val propertyCache =
+        Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofSeconds(5))
+            .build<CallableId, List<FirPropertySymbol>>()
+
     override fun getClassLikeSymbolByClassId(classId: ClassId): FirClassLikeSymbol<*>? {
         if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
 
         return classifierCache.get(classId) { computeClassLikeSymbolByClassId(it) }
     }
 
-    @OptIn(FirSymbolProviderInternals::class)
     private fun computeClassLikeSymbolByClassId(classId: ClassId): FirClassLikeSymbol<*>? {
         val candidates = declarationProvider.getAllClassesByClassId(classId) + declarationProvider.getAllTypeAliasesByClassId(classId)
         val (ktClass, provider) = selectFirstElementInClasspathOrder(candidates) { it } ?: return null
@@ -72,42 +90,61 @@ internal class LLFirCombinedKotlinSymbolProvider private constructor(
 
     @FirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<FirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
-        forEachCallableProvider(
-            packageFqName,
-            name,
-            declarationProvider::getTopLevelCallables,
-        ) { callableId, callables ->
-            getTopLevelCallableSymbolsTo(destination, callableId, callables)
-        }
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+
+        val callableId = CallableId(packageFqName, name)
+
+        // Callables are provided very rarely (compared to functions/properties individually), so it's okay to hit caches and indices twice
+        // here.
+        destination.addAll(getTopLevelFunctionSymbolsFromCache(callableId))
+        destination.addAll(getTopLevelPropertySymbolsFromCache(callableId))
     }
 
     @FirSymbolProviderInternals
     override fun getTopLevelFunctionSymbolsTo(destination: MutableList<FirNamedFunctionSymbol>, packageFqName: FqName, name: Name) {
-        forEachCallableProvider(packageFqName, name, declarationProvider::getTopLevelFunctions) { callableId, functions ->
-            getTopLevelFunctionSymbolsTo(destination, callableId, functions)
-        }
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+
+        destination.addAll(getTopLevelFunctionSymbolsFromCache(CallableId(packageFqName, name)))
     }
+
+    // TODO (marco): Unify implementations of `getTopLevelFunctionSymbolsFromCache` and `getTopLevelPropertySymbolsFromCache`.
+
+    private fun getTopLevelFunctionSymbolsFromCache(callableId: CallableId): List<FirNamedFunctionSymbol> =
+        functionCache.get(callableId) { computeTopLevelFunctionSymbols(it) } ?: emptyList()
+
+    private fun computeTopLevelFunctionSymbols(callableId: CallableId): List<FirNamedFunctionSymbol> =
+        buildList {
+            forEachCallableProvider(callableId, declarationProvider::getTopLevelFunctions) { callableId, functions ->
+                getTopLevelFunctionSymbolsTo(this@buildList, callableId, functions)
+            }
+        }
 
     @FirSymbolProviderInternals
     override fun getTopLevelPropertySymbolsTo(destination: MutableList<FirPropertySymbol>, packageFqName: FqName, name: Name) {
-        forEachCallableProvider(packageFqName, name, declarationProvider::getTopLevelProperties) { callableId, properties ->
-            getTopLevelPropertySymbolsTo(destination, callableId, properties)
-        }
+        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
+
+        destination.addAll(getTopLevelPropertySymbolsFromCache(CallableId(packageFqName, name)))
     }
+
+    private fun getTopLevelPropertySymbolsFromCache(callableId: CallableId): List<FirPropertySymbol> {
+        return propertyCache.get(callableId) { computeTopLevelPropertySymbols(it) } ?: emptyList()
+    }
+
+    private fun computeTopLevelPropertySymbols(callableId: CallableId): List<FirPropertySymbol> =
+        buildList {
+            forEachCallableProvider(callableId, declarationProvider::getTopLevelProperties) { callableId, properties ->
+                getTopLevelPropertySymbolsTo(this@buildList, callableId, properties)
+            }
+        }
 
     /**
      * Calls [provide] on those providers which can contribute a callable of the given name.
      */
     private inline fun <A : KtCallableDeclaration> forEachCallableProvider(
-        packageFqName: FqName,
-        name: Name,
+        callableId: CallableId,
         getCallables: (CallableId) -> Collection<A>,
         provide: LLFirKotlinSymbolProvider.(CallableId, Collection<A>) -> Unit,
     ) {
-        if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
-
-        val callableId = CallableId(packageFqName, name)
-
         getCallables(callableId)
             .groupBy { getModule(it) }
             .forEach { (ktModule, callables) ->
@@ -160,9 +197,3 @@ internal class LLFirCombinedKotlinSymbolProvider private constructor(
             } else providers.singleOrNull()
     }
 }
-
-/**
- * Callables are provided very rarely (compared to functions/properties individually), so it's okay to hit indices twice here.
- */
-private fun KotlinDeclarationProvider.getTopLevelCallables(callableId: CallableId): List<KtCallableDeclaration> =
-    getTopLevelFunctions(callableId) + getTopLevelProperties(callableId)
