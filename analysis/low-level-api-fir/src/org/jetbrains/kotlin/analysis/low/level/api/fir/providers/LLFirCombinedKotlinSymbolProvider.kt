@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclaration
 import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProvider
 import org.jetbrains.kotlin.analysis.api.platform.declarations.mergeDeclarationProviders
 import org.jetbrains.kotlin.analysis.api.platform.packages.mergePackageProviders
+import org.jetbrains.kotlin.analysis.low.level.api.fir.util.LLFirKotlinSymbolNamesProvider
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.resolve.providers.FirCompositeCachedSymbolNamesProvider
@@ -53,7 +54,27 @@ internal class LLFirCombinedKotlinSymbolProvider private constructor(
     private val packageProvider: KotlinPackageProvider,
     private val packageProviderForKotlinPackages: KotlinPackageProvider?,
 ) : LLFirSelectingCombinedSymbolProvider<LLFirKotlinSymbolProvider>(session, project, providers) {
-    override val symbolNamesProvider: FirSymbolNamesProvider = FirCompositeCachedSymbolNamesProvider.fromSymbolProviders(session, providers)
+    // TODO (marco): Explain: We want to compute package sets from individual providers since for (1) libraries, we would need to hit the
+    //               package index for each root anyway, and for (2) modules, we'd need a virtual file enumeration for performance (most
+    //               likely), and combined scopes don't have virtual file enumerations.
+    //               But for "names in package" sets, we do not want to hit individual symbol providers: The index access is properly keyed
+    //               with the package name, and the combined scope is efficient. Instead, hitting individual symbol names providers means
+    //               that we access the index N times, even though in most cases the result will be empty. And if we don't have package
+    //               sets, the "names in package" sets will be cached in each individual symbol names provider, which increases memory
+    //               consumption by a lot.
+    override val symbolNamesProvider: FirSymbolNamesProvider =
+        object : FirCompositeCachedSymbolNamesProvider(session, providers.map { it.symbolNamesProvider }) {
+            private val combinedSymbolNamesProvider =
+                LLFirKotlinSymbolNamesProvider(declarationProvider, providers.any { it.allowKotlinPackage })
+
+            override fun computeTopLevelClassifierNames(packageFqName: FqName): Set<Name>? {
+                return combinedSymbolNamesProvider.getTopLevelClassifierNamesInPackage(packageFqName)
+            }
+
+            override fun computeTopLevelCallableNames(packageFqName: FqName): Set<Name>? {
+                return combinedSymbolNamesProvider.getTopLevelCallableNamesInPackage(packageFqName)
+            }
+        }
 
     private val classifierCache = NullableCaffeineCache<ClassId, FirClassLikeSymbol<*>> { it.maximumSize(500) }
 
