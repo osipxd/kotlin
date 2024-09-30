@@ -130,6 +130,9 @@ interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeF
         else -> error("Type should be rigid or flexible: $this")
     }
 
+    fun KotlinTypeMarker.typeDepthForApproximation(): Int =
+        typeDepth()
+
     fun findCommonIntegerLiteralTypesSuperType(explicitSupertypes: List<RigidTypeMarker>): RigidTypeMarker?
 
     /*
