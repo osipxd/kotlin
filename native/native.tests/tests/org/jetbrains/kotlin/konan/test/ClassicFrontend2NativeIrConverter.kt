@@ -130,8 +130,9 @@ class ClassicFrontend2NativeIrConverter(
             diagnosticReporter = configuration.messageCollector
         )
 
-        // TODO: Implement it later if it is really necessary. Right now (2024-09-25), there are no tests which could produce
-        //  Kotlin/Native KLIBs with the classic frontend compiler. And it's not clear if such tests would be ever added.
+        // N.B. The list of libraries to be written to manifest `depends=` property is not computed here.
+        // The reason for this is that there are no tests which could produce Kotlin/Native KLIBs with the classic frontend compiler.
+        // And there are no plans to add such tests in the future.
         val usedLibrariesForManifest = emptyList<KotlinLibrary>()
 
         @OptIn(ObsoleteDescriptorBasedAPI::class)
