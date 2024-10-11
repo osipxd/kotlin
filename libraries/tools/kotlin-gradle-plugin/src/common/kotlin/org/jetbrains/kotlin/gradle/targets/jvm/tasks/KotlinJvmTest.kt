@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.gradle.targets.jvm.tasks
 
 import org.gradle.api.internal.tasks.testing.*
+import org.gradle.api.internal.tasks.testing.detection.DefaultTestExecuter
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -17,12 +18,13 @@ abstract class KotlinJvmTest : Test() {
     @Optional
     var targetName: String? = null
 
-    override fun createTestExecuter(): TestExecuter<JvmTestExecutionSpec> =
-        if (targetName != null) Executor(
-            super.createTestExecuter(),
-            targetName!!,
-        )
-        else super.createTestExecuter()
+    override fun createTestExecuter(): TestExecuter<JvmTestExecutionSpec> {
+        val executor = super.createTestExecuter()
+
+        // If the executor is not instance of DefaultTestExecutor it is replaced by Gradle's test-retry or develocity plugins
+        return if (targetName != null && executor is DefaultTestExecuter) Executor(executor, targetName!!)
+        else executer
+    }
 
     class Executor(
         private val delegate: TestExecuter<JvmTestExecutionSpec>,
