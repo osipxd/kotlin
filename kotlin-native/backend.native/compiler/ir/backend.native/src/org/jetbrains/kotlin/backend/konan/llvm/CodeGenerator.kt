@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.backend.konan.RuntimeNames
 import org.jetbrains.kotlin.backend.konan.binaryTypeIsReference
 import org.jetbrains.kotlin.backend.konan.cgen.CBridgeOrigin
 import org.jetbrains.kotlin.backend.konan.ir.ClassGlobalHierarchyInfo
+import org.jetbrains.kotlin.backend.konan.ir.isAbstract
 import org.jetbrains.kotlin.backend.konan.ir.isAny
 import org.jetbrains.kotlin.backend.konan.llvm.ThreadState.Native
 import org.jetbrains.kotlin.backend.konan.llvm.ThreadState.Runnable
@@ -52,7 +53,8 @@ internal class CodeGenerator(override val generationState: NativeGenerationState
     fun functionEntryPointAddress(function: IrSimpleFunction) = function.entryPointAddress.llvm
 
     fun typeInfoForAllocation(constructedClass: IrClass): LLVMValueRef {
-        assert(!constructedClass.isObjCClass())
+        require(!constructedClass.isObjCClass()) { "Allocation of Obj-C class ${constructedClass.render()} should have been lowered" }
+        require(!constructedClass.isAbstract()) { "Allocation of abstract class ${constructedClass.render()} is not allowed" }
         return typeInfoValue(constructedClass)
     }
 
@@ -343,7 +345,13 @@ private fun CodeGenerator.getVirtualFunctionTrampolineImpl(irFunction: IrSimpleF
                 }
                 val diFunctionScope = fileEntry?.let {
                     with(generationState.debugInfo) {
-                        irFunction.diFunctionScope(it, proto.name, it.line(offset!!), false)
+                        irFunction.diFunctionScope(
+                                it,
+                                proto.name,
+                                it.line(offset!!),
+                                false,
+                                isTransparentStepping = generationState.config.enableDebugTransparentStepping
+                        )
                     }
                 }
                 @Suppress("UNCHECKED_CAST") val location = diFunctionScope?.let {
@@ -897,6 +905,7 @@ internal abstract class FunctionGenerationContext(
     ): LLVMValueRef {
         val typeInfo = codegen.typeInfoValue(irClass)
         return if (lifetime == Lifetime.STACK) {
+            require(LLVMIsConstant(count) != 0) { "Expected a constant for the size of a stack-allocated array" }
             stackLocalsManager.allocArray(irClass, count)
         } else {
             call(llvm.allocArrayFunction, listOf(typeInfo, count), lifetime, exceptionHandler, resultSlot = resultSlot)

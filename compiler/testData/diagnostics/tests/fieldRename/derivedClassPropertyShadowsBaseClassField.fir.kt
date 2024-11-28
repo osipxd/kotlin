@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: BACKEND
 // WITH_STDLIB
 // FILE: Base.java
 
@@ -18,21 +19,21 @@ public class Base {
 // FILE: test.kt
 
 open class Derived : Base() {
-    val regular = "aa"
+    val <!PROPERTY_HIDES_JAVA_FIELD!>regular<!> = "aa"
 
-    val withGetter get() = "bb"
+    val <!PROPERTY_HIDES_JAVA_FIELD!>withGetter<!> get() = "bb"
 
-    lateinit var lateInit: String
+    lateinit var <!PROPERTY_HIDES_JAVA_FIELD!>lateInit<!>: String
 
-    val lazyProp by lazy { "dd" }
+    val <!PROPERTY_HIDES_JAVA_FIELD!>lazyProp<!> by lazy { "dd" }
 
-    var withSetter: String = "ee"
+    var <!PROPERTY_HIDES_JAVA_FIELD!>withSetter<!>: String = "ee"
         set(value) {
             println(value)
             field = value
         }
 
-    open val openProp = "ff"
+    open val <!PROPERTY_HIDES_JAVA_FIELD!>openProp<!> = "ff"
 }
 
 fun test(d: Derived) {

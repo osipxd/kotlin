@@ -5,13 +5,13 @@
 
 package org.jetbrains.kotlin.backend.wasm
 
-import org.jetbrains.kotlin.backend.common.phaser.PhaseConfigBuilder
-import org.jetbrains.kotlin.backend.common.phaser.toPhaseMap
+import org.jetbrains.kotlin.backend.common.phaser.PhaseConfig
 import org.jetbrains.kotlin.backend.wasm.ic.WasmIrProgramFragments
 import org.jetbrains.kotlin.backend.wasm.ir2wasm.WasmModuleMetadataCache
 import org.jetbrains.kotlin.backend.wasm.ir2wasm.compileIrFile
 import org.jetbrains.kotlin.backend.wasm.lower.markExportedDeclarations
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.backend.js.WholeWorldStageController
 import org.jetbrains.kotlin.ir.backend.js.ic.IrICProgramFragments
@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.psi2ir.descriptors.IrBuiltInsOverDescriptors
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 open class WasmCompilerWithIC(
     private val mainModule: IrModuleFragment,
+    irBuiltIns: IrBuiltIns,
     configuration: CompilerConfiguration,
     private val allowIncompleteImplementations: Boolean,
     private val safeFragmentTags: Boolean,
@@ -33,15 +34,14 @@ open class WasmCompilerWithIC(
     private val wasmModuleMetadataCache: WasmModuleMetadataCache
 
     init {
-        val irBuiltIns = mainModule.irBuiltins
         val symbolTable = (irBuiltIns as IrBuiltInsOverDescriptors).symbolTable
 
         //Hack - pre-load functional interfaces in case if IrLoader cut its count (KT-71039)
         repeat(25) {
-            mainModule.irBuiltins.functionN(it)
-            mainModule.irBuiltins.suspendFunctionN(it)
-            mainModule.irBuiltins.kFunctionN(it)
-            mainModule.irBuiltins.kSuspendFunctionN(it)
+            irBuiltIns.functionN(it)
+            irBuiltIns.suspendFunctionN(it)
+            irBuiltIns.kFunctionN(it)
+            irBuiltIns.kSuspendFunctionN(it)
         }
 
         context = WasmBackendContext(
@@ -71,10 +71,7 @@ open class WasmCompilerWithIC(
     }
 
     override fun compile(allModules: Collection<IrModuleFragment>, dirtyFiles: Collection<IrFile>): List<() -> IrICProgramFragments> {
-        val wasmPhases = getWasmPhases(true)
-        val phaseConfig = PhaseConfigBuilder(wasmPhases).also { lowerings ->
-            lowerings.enabled.addAll(wasmPhases.toPhaseMap().values)
-        }.build()
+        val phaseConfig = PhaseConfig()
 
         //TODO: Lower only needed files but not all loaded by IrLoader KT-71041
 
@@ -92,10 +89,11 @@ open class WasmCompilerWithIC(
 
 class WasmCompilerWithICForTesting(
     mainModule: IrModuleFragment,
+    irBuiltIns: IrBuiltIns,
     configuration: CompilerConfiguration,
     allowIncompleteImplementations: Boolean,
     safeFragmentTags: Boolean = false,
-) : WasmCompilerWithIC(mainModule, configuration, allowIncompleteImplementations, safeFragmentTags) {
+) : WasmCompilerWithIC(mainModule, irBuiltIns, configuration, allowIncompleteImplementations, safeFragmentTags) {
     override fun compile(allModules: Collection<IrModuleFragment>, dirtyFiles: Collection<IrFile>): List<() -> IrICProgramFragments> {
         val testFile = dirtyFiles.firstOrNull { file ->
             file.declarations.any { declaration -> declaration is IrFunction && declaration.name.asString() == "box" }

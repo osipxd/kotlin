@@ -11,10 +11,8 @@ import org.jetbrains.kotlin.ir.linkage.partial.PartialLinkageMode
 import org.jetbrains.kotlin.konan.target.Distribution
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.test.blackbox.AbstractNativeBlackBoxTest
-import org.jetbrains.kotlin.konan.test.blackbox.AbstractNativeKlibSyntheticAccessorTest
 import org.jetbrains.kotlin.konan.test.blackbox.AbstractNativeSimpleTest
 import org.jetbrains.kotlin.konan.test.blackbox.support.NativeTestSupport.computeBlackBoxTestInstances
-import org.jetbrains.kotlin.konan.test.blackbox.support.NativeTestSupport.computeKlibSyntheticAccessorTestInstances
 import org.jetbrains.kotlin.konan.test.blackbox.support.NativeTestSupport.createSimpleTestRunSettings
 import org.jetbrains.kotlin.konan.test.blackbox.support.NativeTestSupport.createTestRunSettings
 import org.jetbrains.kotlin.konan.test.blackbox.support.NativeTestSupport.getOrCreateSimpleTestRunProvider
@@ -26,8 +24,6 @@ import org.jetbrains.kotlin.konan.test.blackbox.support.settings.*
 import org.jetbrains.kotlin.konan.test.blackbox.support.settings.CacheMode
 import org.jetbrains.kotlin.konan.test.blackbox.support.util.*
 import org.jetbrains.kotlin.test.TestMetadata
-import org.jetbrains.kotlin.test.builders.RegisteredDirectivesBuilder
-import org.jetbrains.kotlin.test.directives.CodegenTestDirectives
 import org.jetbrains.kotlin.test.directives.model.RegisteredDirectives
 import org.jetbrains.kotlin.test.services.JUnit5Assertions.assertEquals
 import org.jetbrains.kotlin.test.services.JUnit5Assertions.fail
@@ -43,6 +39,8 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.findAnnotation
 import kotlin.time.Duration
+
+const val KLIB_IR_INLINER = "klibIrInliner"
 
 class NativeBlackBoxTestSupport : BeforeEachCallback {
     /**
@@ -74,52 +72,12 @@ class NativeSimpleTestSupport : BeforeEachCallback {
     }
 }
 
-
-
-/**
- * Used to run tests for IR inlining and synthetic accessors. This test helper effectively does the following:
- * - Enables IR visibility validation.
- * - Disables LLVM-related phases, so the compilation effectively ends at the last IR lowering.
- * - Ensures double inlining mode is always turned on.
- *
- * TODO(KT-64570): Migrate these tests to the Core test infrastructure as soon as we move IR inlining to the 1st compilation stage.
- */
-class KlibSyntheticAccessorTestSupport : BeforeEachCallback {
-    override fun beforeEach(extensionContext: ExtensionContext): Unit = with(extensionContext) {
-        val nativeTestInstances = computeKlibSyntheticAccessorTestInstances()
-        val settings = createTestRunSettings(nativeTestInstances) {
-            with(RegisteredDirectivesBuilder()) {
-                +CodegenTestDirectives.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING
-                +CodegenTestDirectives.DUMP_KLIB_SYNTHETIC_ACCESSORS
-
-                TestDirectives.FREE_COMPILER_ARGS with listOfNotNull(
-                    // Don't run LLVM, stop after the last IR lowering.
-                    "-Xdisable-phases=LinkBitcodeDependencies,WriteBitcodeFile,ObjectFiles,Linker",
-
-                    // Enable double-inlining.
-                    "-Xklib-no-double-inlining=false",
-
-                    // Enable narrowing of visibility for synthetic accessors.
-                    "-Xsynthetic-accessors-with-narrowed-visibility".takeIf { nativeTestInstances.enclosingTestInstance.narrowedAccessorVisibility }
-                )
-
-                build()
-            }
-        }
-
-        assumeTrue(settings.get<CacheMode>() == CacheMode.WithoutCache)
-        assumeTrue(settings.get<ThreadStateChecker>() == ThreadStateChecker.DISABLED)
-
-        // Inject the required properties to test instance.
-        with(nativeTestInstances.enclosingTestInstance) {
-            testRunSettings = settings
-            testRunProvider = getOrCreateTestRunProvider()
-        }
-    }
-}
-
 internal object CastCompatibleKotlinNativeClassLoader {
     val kotlinNativeClassLoader = NativeTestSupport.computeNativeClassLoader(this::class.java.classLoader)
+}
+
+internal object RegularKotlinNativeClassLoader {
+    val kotlinNativeClassLoader = NativeTestSupport.computeNativeClassLoader()
 }
 
 fun copyNativeHomeProperty() {
@@ -141,7 +99,7 @@ object NativeTestSupport {
 
             TestProcessSettings(
                 nativeHome,
-                computeNativeClassLoader(),
+                RegularKotlinNativeClassLoader.kotlinNativeClassLoader,
                 computeBaseDirs(),
                 LLDB(nativeHome),
                 computeReleasedCompiler()
@@ -160,7 +118,7 @@ object NativeTestSupport {
      * For this, a cast of mangler object(within K/N classloader) to mangler interface(within app classloader) is needed,
      * which is possible when app classloader is provided as parent.
      */
-    fun computeNativeClassLoader(parent: ClassLoader? = null): KotlinNativeClassLoader = KotlinNativeClassLoader(
+    internal fun computeNativeClassLoader(parent: ClassLoader? = null): KotlinNativeClassLoader = KotlinNativeClassLoader(
         lazy {
             val nativeClassPath = ProcessLevelProperty.COMPILER_CLASSPATH.readValue()
                 .split(File.pathSeparatorChar)
@@ -283,6 +241,7 @@ object NativeTestSupport {
         output += computeBinaryLibraryKind(enforcedProperties)
         output += computeCInterfaceMode(enforcedProperties)
         output += computeXCTestRunner(enforcedProperties, nativeTargets)
+        output += computeKlibIrInlinerMode(tags)
 
         // Compute tests timeouts with regard to already calculated properties that may affect execution time
         output += computeTimeouts(enforcedProperties, output)
@@ -312,6 +271,12 @@ object NativeTestSupport {
             CompilerOutputInterceptor.values(),
             default = CompilerOutputInterceptor.DEFAULT
         )
+
+    private fun computeKlibIrInlinerMode(tags: Set<String>): KlibIrInlinerMode =
+        if (tags.contains(KLIB_IR_INLINER))
+            KlibIrInlinerMode.ON
+        else
+            KlibIrInlinerMode.OFF
 
     private fun computeGCType(enforcedProperties: EnforcedProperties): GCType =
         ClassLevelProperty.GC_TYPE.readValue(enforcedProperties, GCType.values(), default = GCType.UNSPECIFIED)
@@ -653,9 +618,6 @@ object NativeTestSupport {
     }
 
     internal fun ExtensionContext.computeBlackBoxTestInstances(): NativeTestInstances<AbstractNativeBlackBoxTest> =
-        NativeTestInstances(requiredTestInstances.allInstances)
-
-    internal fun ExtensionContext.computeKlibSyntheticAccessorTestInstances(): NativeTestInstances<AbstractNativeKlibSyntheticAccessorTest> =
         NativeTestInstances(requiredTestInstances.allInstances)
 
     /*************** Test run settings (simplified) ***************/

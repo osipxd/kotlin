@@ -39,7 +39,7 @@ internal fun ObjCExportContext.getFunctionMethodBridge(symbol: KaFunctionSymbol)
     }
 
     if (symbol.isSuspend) {
-        valueParameters += MethodBridgeValueParameter.SuspendCompletion(true)
+        valueParameters += MethodBridgeValueParameter.SuspendCompletion(with(analysisSession) { symbol.returnType.isUnitType })
     } else if (symbol.hasThrowsAnnotation) {
         // Add error out parameter before tail block parameters. The convention allows this.
         // Placing it after would trigger https://bugs.swift.org/browse/SR-12201
@@ -49,20 +49,36 @@ internal fun ObjCExportContext.getFunctionMethodBridge(symbol: KaFunctionSymbol)
     }
 
     return MethodBridge(
-        bridgeReturnType(symbol),
-        analysisSession.getBridgeReceiverType(symbol),
-        valueParameters
+        returnBridge = bridgeReturnType(symbol),
+        receiver = analysisSession.getBridgeReceiverType(symbol),
+        valueParameters = valueParameters
     )
 }
 
 internal fun KaSession.getBridgeReceiverType(symbol: KaCallableSymbol): MethodBridgeReceiver {
     return if (isArrayConstructor(symbol)) {
         MethodBridgeReceiver.Factory
-    } else if (!symbol.isConstructor && isTopLevel(symbol)) {
+    } else if (!symbol.isConstructor && isTopLevelCallable(symbol)) {
         MethodBridgeReceiver.Static
     } else {
         MethodBridgeReceiver.Instance
     }
+}
+
+/**
+ * We can't use [KaSymbol.isTopLevel] directly since top level callables in Objective-C handled differently
+ * So we use [isTopLevel] for most cases.
+ * But there is one edge case is when extension receiver is containing class itself, hence property isn't top level:
+ * ```kotlin
+ * class Foo {
+ *   val Foo.bar: Int get() = 42
+ * }
+ * ```
+ */
+private fun KaSession.isTopLevelCallable(symbol: KaCallableSymbol): Boolean {
+    return if (symbol.containingSymbol is KaPropertySymbol) {
+        return (symbol.containingSymbol as KaPropertySymbol).isTopLevel
+    } else isTopLevel(symbol)
 }
 
 /**
@@ -98,7 +114,13 @@ private fun KaSession.bridgeType(
     }
 
     if (primitiveObjCValueType != null) {
-        return ValueTypeBridge(primitiveObjCValueType)
+        /**
+         * Nullable primitives needs to be passed through priority mapping at [mapToReferenceTypeIgnoringNullability]
+         * And either be translated as `id _Nullable` or nullable mapped type
+         */
+        return if (primitiveObjCValueType == ObjCValueType.POINTER) {
+            ValueTypeBridge(primitiveObjCValueType)
+        } else if (type.isMarkedNullable) ReferenceBridge else ValueTypeBridge(primitiveObjCValueType)
     }
 
     /* If type is inlined, then build the bridge for the inlined target type */
@@ -151,7 +173,7 @@ private fun ObjCExportContext.bridgeReturnType(symbol: KaCallableSymbol): Method
         } else {
             return result
         }
-    } else if (with(analysisSession) { sessionReturnType.isSuspendFunctionType }) {
+    } else if (symbol is KaFunctionSymbol && symbol.isSuspend) {
         return MethodBridge.ReturnValue.Suspend
     }
 

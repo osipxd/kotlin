@@ -44,10 +44,13 @@ import org.jetbrains.kotlin.ir.symbols.IrValueParameterSymbol
 import org.jetbrains.kotlin.ir.symbols.IrValueSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
+import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
+import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes.JAVA_STRING_TYPE
@@ -379,11 +382,7 @@ class ExpressionCodegen(
         // If the parameter is an extension receiver parameter or a captured extension receiver from enclosing,
         // then generate name accordingly.
         val name = if (param.origin == BOUND_RECEIVER_PARAMETER || isReceiver) {
-            getNameForReceiverParameter(
-                irFunction.toIrBasedDescriptor(),
-                state.bindingContext,
-                context.config.languageVersionSettings
-            )
+            getNameForReceiverParameter(irFunction.toIrBasedDescriptor(), context.config.languageVersionSettings)
         } else {
             param.name.asString()
         }
@@ -724,7 +723,7 @@ class ExpressionCodegen(
 
         if (state.configuration.getBoolean(JVMConfigurationKeys.USE_INLINE_SCOPES_NUMBERS) &&
             state.configuration.getBoolean(JVMConfigurationKeys.ENABLE_IR_INLINER) &&
-            isFakeLocalVariableForInline(name) &&
+            JvmAbi.isFakeLocalVariableForInline(name) &&
             name.contains(INLINE_SCOPE_NUMBER_SEPARATOR)
         ) {
             declaration.name = Name.identifier(updateCallSiteLineNumber(name, lineNumberMapper.getLineNumber()))
@@ -732,11 +731,18 @@ class ExpressionCodegen(
 
         val initializer = declaration.initializer
         if (initializer != null) {
-            val value = initializer.accept(this, data)
-            initializer.markLineNumber(startOffset = true)
-            value.materializeAt(varType, declaration.type)
-            declaration.markLineNumber(startOffset = true)
-            mv.store(index, varType)
+            val shouldNotGenerateLineNumber =
+                declaration.origin == IrDeclarationOrigin.IR_DESTRUCTURED_PARAMETER_VARIABLE
+            lineNumberMapper.noLineNumberScopeWithCondition(shouldNotGenerateLineNumber) {
+                val value = initializer.accept(this, data)
+                initializer.markLineNumber(startOffset = true)
+                value.materializeAt(varType, declaration.type)
+                declaration.markLineNumber(startOffset = true)
+                mv.store(index, varType)
+                if (declaration.origin == JvmLoweredDeclarationOrigin.SUSPEND_LAMBDA_PARAMETER) {
+                    addSuspendLambdaParameterMarker(mv)
+                }
+            }
         } else if (declaration.isVisibleInLVT) {
             declaration.markLineNumber(startOffset = true)
             pushDefaultValueOnStack(varType, mv)
@@ -764,7 +770,8 @@ class ExpressionCodegen(
         val variableIndex = findLocalIndex(expression.symbol)
         val asmType = frameMap.typeOf(expression.symbol)
         val irValueDeclaration = expression.symbol.owner
-        val kotlinType = if (eraseType) irValueDeclaration.realType.upperBound else irValueDeclaration.realType
+        val realType = irValueDeclaration.realType
+        val kotlinType = if (eraseType) realType.upperBound.withNullability(realType.isNullable()) else realType
         StackValue.local(variableIndex, asmType, kotlinType.toIrBasedKotlinType())
     } else {
         genToStackValue(expression, type, parameterType, data)
@@ -778,7 +785,7 @@ class ExpressionCodegen(
             val isBoxedResult = this is IrValueParameter && parent is IrSimpleFunction &&
                     parent.dispatchReceiverParameter != this &&
                     (parent.parent as? IrClass)?.isClassWithFqName(StandardNames.RESULT_FQ_NAME) != true &&
-                    parent.resultIsActuallyAny(index) == true
+                    parent.resultIsActuallyAny(indexInOldValueParameters) == true
             return if (isBoxedResult) context.irBuiltIns.anyNType else type
         }
 

@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: BACKEND
 // DIAGNOSTICS: -UNUSED_EXPRESSION
 
 fun case_1(a: MutableList<out MutableList<MutableList<MutableList<MutableList<MutableList<MutableList<Int?>?>?>?>?>?>?>?) {
@@ -14,9 +15,9 @@ fun case_1(a: MutableList<out MutableList<MutableList<MutableList<MutableList<Mu
                         if (f != null) {
                             val g = f[0]
                             if (g != null) {
-                                val h = g<!NO_GET_METHOD!>[0]<!>
+                                val h = g[0]
                                 if (h != null) {
-                                    h.<!UNRESOLVED_REFERENCE!>inc<!>()
+                                    h.inc()
                                 }
                             }
                         }
@@ -42,9 +43,9 @@ fun case_2(a: MutableList<out MutableList<MutableList<MutableList<out MutableLis
                         if (f != null) {
                             val g = f[0]
                             if (g != null) {
-                                val h = g<!NO_GET_METHOD!>[0]<!> // no SMARTCAST diagnostic
+                                val h = g[0] // no SMARTCAST diagnostic
                                 if (h != null) {
-                                    h.<!UNRESOLVED_REFERENCE!>inc<!>()
+                                    h.inc()
                                 }
                             }
                         }

@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.config.messageCollector
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.diagnostics.impl.BaseDiagnosticsCollector
 import org.jetbrains.kotlin.idea.MainFunctionDetector
+import org.jetbrains.kotlin.ir.InternalSymbolFinderAPI
 import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.backend.jvm.serialization.JvmDescriptorMangler
@@ -123,6 +124,7 @@ open class JvmIrCodegenFactory(
 
     data class JvmIrBackendInput(
         val irModuleFragment: IrModuleFragment,
+        val irBuiltIns: IrBuiltIns,
         val symbolTable: SymbolTable,
         val phaseConfig: PhaseConfig?,
         val irProviders: List<IrProvider>,
@@ -179,7 +181,8 @@ open class JvmIrCodegenFactory(
         // Built-ins deduplication must be enabled immediately so that there is no chance for duplicate built-in symbols to occur. For
         // example, the creation of `IrPluginContextImpl` might already lead to duplicate built-in symbols via `BuiltinSymbolsBase`.
         if (symbolTable is SymbolTableWithBuiltInsDeduplication) {
-            (psi2irContext.irBuiltIns as? IrBuiltInsOverDescriptors)?.let { symbolTable.bindIrBuiltIns(it) }
+            @OptIn(InternalSymbolFinderAPI::class)
+            (psi2irContext.irBuiltIns as? IrBuiltInsOverDescriptors)?.let { symbolTable.bindSymbolFinder(it.symbolFinder) }
         }
 
         val pluginExtensions = IrGenerationExtension.getInstances(input.project)
@@ -291,6 +294,7 @@ open class JvmIrCodegenFactory(
         }
         return JvmIrBackendInput(
             irModuleFragment,
+            psi2irContext.irBuiltIns,
             symbolTable,
             phaseConfig,
             irProviders,
@@ -318,7 +322,7 @@ open class JvmIrCodegenFactory(
 
         val moduleChunk = sourceFiles.toSet()
         val wholeModule = wholeBackendInput.irModuleFragment
-        val moduleCopy = IrModuleFragmentImpl(wholeModule.descriptor, wholeModule.irBuiltins)
+        val moduleCopy = IrModuleFragmentImpl(wholeModule.descriptor)
         wholeModule.files.filterTo(moduleCopy.files) { file ->
             file.getKtFile() in moduleChunk
         }
@@ -326,16 +330,16 @@ open class JvmIrCodegenFactory(
     }
 
     override fun invokeLowerings(state: GenerationState, input: CodegenFactory.BackendInput): CodegenFactory.CodegenInput {
-        val (irModuleFragment, symbolTable, customPhaseConfig, irProviders, extensions, backendExtension, irPluginContext, notifyCodegenStart) =
+        val (irModuleFragment, irBuiltIns, symbolTable, customPhaseConfig, irProviders, extensions, backendExtension, irPluginContext, notifyCodegenStart) =
             input as JvmIrBackendInput
         val irSerializer = if (
             state.configuration.get(JVMConfigurationKeys.SERIALIZE_IR, JvmSerializeIrMode.NONE) != JvmSerializeIrMode.NONE
         )
             JvmIrSerializerImpl(state.configuration)
         else null
-        val phaseConfig = customPhaseConfig ?: PhaseConfig(jvmLoweringPhases)
+        val phaseConfig = customPhaseConfig ?: PhaseConfig()
         val context = JvmBackendContext(
-            state, irModuleFragment.irBuiltins, symbolTable, phaseConfig, extensions,
+            state, irBuiltIns, symbolTable, phaseConfig, extensions,
             backendExtension, irSerializer, JvmIrDeserializerImpl(), irProviders, irPluginContext
         )
         if (evaluatorFragmentInfoForPsi2Ir != null) {
@@ -343,7 +347,7 @@ open class JvmIrCodegenFactory(
         }
         val generationExtensions = IrGenerationExtension.getInstances(state.project)
             .mapNotNull { it.getPlatformIntrinsicExtension(context) as? JvmIrIntrinsicExtension }
-        val intrinsics by lazy { IrIntrinsicMethods(irModuleFragment.irBuiltins, context.ir.symbols) }
+        val intrinsics by lazy { IrIntrinsicMethods(irBuiltIns, context.ir.symbols) }
         context.getIntrinsic = { symbol: IrFunctionSymbol ->
             intrinsics.getIntrinsic(symbol) ?: generationExtensions.firstNotNullOfOrNull { it.getIntrinsic(symbol) }
         }
@@ -368,7 +372,7 @@ open class JvmIrCodegenFactory(
         if (hasErrors()) return
 
         notifyCodegenStart()
-        jvmCodegenPhases.invokeToplevel(PhaseConfig(jvmCodegenPhases), context, module)
+        jvmCodegenPhases.invokeToplevel(PhaseConfig(), context, module)
 
         if (hasErrors()) return
         // TODO: split classes into groups connected by inline calls; call this after every group
@@ -434,6 +438,7 @@ open class JvmIrCodegenFactory(
             state,
             JvmIrBackendInput(
                 irModuleFragment,
+                irPluginContext.irBuiltIns,
                 symbolTable,
                 phaseConfig,
                 irProviders,

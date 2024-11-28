@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.config.JvmClosureGenerationScheme
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.*
@@ -39,10 +40,10 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.resolve.jvm.annotations.JVM_SERIALIZABLE_LAMBDA_ANNOTATION_FQ_NAME
 
-@PhaseDescription(
-    name = "FunctionReference",
-    description = "Construct instances of anonymous KFunction subclasses for function references"
-)
+/**
+ * Constructs instances of anonymous KFunction subclasses for function references.
+ */
+@PhaseDescription(name = "FunctionReference")
 internal class FunctionReferenceLowering(private val context: JvmBackendContext) : FileLoweringPass, IrElementTransformerVoidWithContext() {
     private val crossinlineLambdas = HashSet<IrSimpleFunction>()
 
@@ -69,11 +70,14 @@ internal class FunctionReferenceLowering(private val context: JvmBackendContext)
     private val shouldGenerateIndySamConversions =
         context.config.samConversionsScheme == JvmClosureGenerationScheme.INDY
 
-    private val shouldGenerateIndyLambdas =
-        context.config.lambdasScheme == JvmClosureGenerationScheme.INDY
+    private val shouldGenerateIndyLambdas: Boolean
+        get() = context.config.lambdasScheme == JvmClosureGenerationScheme.INDY
+                // We prefer CLASS lambdas when evaluating expression in debugger, as such lambdas have pretty toString implementation
+                // However, it's safe to change compilation scheme only for lambdas defined in code fragment, not it's dependencies
+                && allScopes.none { (it.irElement as? IrMetadataSourceOwner)?.metadata is MetadataSource.CodeFragment }
 
-    private val shouldGenerateLightweightLambdas =
-        shouldGenerateIndyLambdas && context.config.languageVersionSettings.supportsFeature(LanguageFeature.LightweightLambdas)
+    private val shouldGenerateLightweightLambdas: Boolean
+        get() = shouldGenerateIndyLambdas && context.config.languageVersionSettings.supportsFeature(LanguageFeature.LightweightLambdas)
 
     private val isJavaSamConversionWithEqualsHashCode =
         context.config.languageVersionSettings.supportsFeature(LanguageFeature.JavaSamConversionEqualsHashCode)
@@ -548,7 +552,7 @@ internal class FunctionReferenceLowering(private val context: JvmBackendContext)
                 // NB this would no longer matter if we generate SAM wrapper classes as synthetic.
                 typeParameters = createFakeFormalTypeParameters(samInterface.typeParameters, this)
             }
-            createImplicitParameterDeclarationWithWrappedDescriptor()
+            createThisReceiverParameter()
             copyAttributes(irFunctionReference)
             if (isHeavyweightLambda) {
                 metadata = irFunctionReference.symbol.owner.metadata
@@ -888,8 +892,8 @@ internal class FunctionReferenceLowering(private val context: JvmBackendContext)
             }
             for (valueParameter in callee.valueParameters) {
                 callArguments[valueParameter] = wrapIntoTemporaryVariableIfNecessary(
-                    irCall.getValueArgument(valueParameter.index)
-                        ?: throw AssertionError("No value argument #${valueParameter.index} in adapter call: ${irCall.dump()}")
+                    irCall.getValueArgument(valueParameter.indexInOldValueParameters)
+                        ?: throw AssertionError("No value argument #${valueParameter.indexInOldValueParameters} in adapter call: ${irCall.dump()}")
                 )
             }
 

@@ -110,7 +110,7 @@ abstract class AbstractAtomicfuTransformer(
         }
     }
 
-    abstract inner class AtomicPropertiesTransformer : IrElementTransformer<IrFunction?> {
+    abstract inner class AtomicPropertiesTransformer : IrTransformer<IrFunction?>() {
 
         override fun visitClass(declaration: IrClass, data: IrFunction?): IrStatement {
             val declarationsToBeRemoved = mutableListOf<IrDeclaration>()
@@ -387,7 +387,7 @@ abstract class AbstractAtomicfuTransformer(
             }
     }
 
-    abstract inner class AtomicFunctionCallTransformer : IrElementTransformer<IrFunction?> {
+    abstract inner class AtomicFunctionCallTransformer : IrTransformer<IrFunction?>() {
 
         override fun visitFunction(declaration: IrFunction, data: IrFunction?): IrStatement {
             return super.visitFunction(declaration, declaration)
@@ -705,7 +705,7 @@ abstract class AbstractAtomicfuTransformer(
      *
      * It's launched as a separate transformation stage to avoid recursive visiting.
      */
-    private inner class RemapValueParameters : IrElementTransformer<IrFunction?> {
+    private inner class RemapValueParameters : IrTransformer<IrFunction?>() {
 
         override fun visitFunction(declaration: IrFunction, data: IrFunction?): IrStatement {
             return super.visitFunction(declaration, declaration)
@@ -734,21 +734,21 @@ abstract class AbstractAtomicfuTransformer(
                         ?: error("Failed to find a transformed atomic extension parent function for ${this.render()}.")
 
         private fun IrValueParameter.remapValueParameters(transformedExtension: IrFunction): IrValueParameter? {
-            if (index < 0 && !type.isAtomicType()) {
+            if (indexInOldValueParameters < 0 && !type.isAtomicType()) {
                 // data is a transformed function
                 // index == -1 for `this` parameter
                 return transformedExtension.dispatchReceiverParameter
                     ?: error("Dispatch receiver of ${transformedExtension.render()} is null" + CONSTRAINTS_MESSAGE)
             }
-            if (index >= 0) {
+            if (indexInOldValueParameters >= 0) {
                 val shift = transformedExtension.valueParameters.map { it.name.asString() }.count { it.endsWith(ATOMICFU) }
-                return transformedExtension.valueParameters[index + shift]
+                return transformedExtension.valueParameters[indexInOldValueParameters + shift]
             }
             return null
         }
     }
 
-    private inner class FinalTransformationChecker : IrElementTransformer<IrFunction?> {
+    private inner class FinalTransformationChecker : IrTransformer<IrFunction?>() {
         override fun visitFunction(declaration: IrFunction, data: IrFunction?): IrStatement {
             return super.visitFunction(declaration, declaration)
         }

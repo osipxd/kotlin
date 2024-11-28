@@ -1,7 +1,7 @@
 // LANGUAGE: +MultiPlatformProjects
 // ISSUE: KT-57963
+
 // MODULE: common
-// TARGET_PLATFORM: Common
 // FILE: common.kt
 
 @file:Ann

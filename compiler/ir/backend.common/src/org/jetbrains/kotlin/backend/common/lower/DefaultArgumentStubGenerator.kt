@@ -22,7 +22,6 @@ import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrValueSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
@@ -33,6 +32,9 @@ import org.jetbrains.kotlin.backend.common.lower.isMovedReceiver as isMovedRecei
 
 // TODO: fix expect/actual default parameters
 
+/**
+ * Generates synthetic stubs for functions with default parameter values.
+ */
 open class DefaultArgumentStubGenerator<TContext : CommonBackendContext>(
     val context: TContext,
     private val factory: DefaultArgumentFunctionFactory,
@@ -81,7 +83,7 @@ open class DefaultArgumentStubGenerator<TContext : CommonBackendContext>(
                 // works correctly so that `f() { "OK" }` returns "OK" and
                 // `f()` throws a NullPointerException.
                 originalDeclaration.valueParameters.forEach {
-                    variables[it.symbol] = newIrFunction.valueParameters[it.index].symbol
+                    variables[it.symbol] = newIrFunction.valueParameters[it.indexInOldValueParameters].symbol
                 }
 
                 generateSuperCallHandlerCheckIfNeeded(originalDeclaration, newIrFunction)
@@ -94,9 +96,9 @@ open class DefaultArgumentStubGenerator<TContext : CommonBackendContext>(
                     if (!valueParameter.isMovedReceiver()) {
                         ++sourceParameterIndex
                     }
-                    val parameter = newIrFunction.valueParameters[valueParameter.index]
+                    val parameter = newIrFunction.valueParameters[valueParameter.indexInOldValueParameters]
                     val remapped = valueParameter.defaultValue?.let { defaultValue ->
-                        val mask = irGet(newIrFunction.valueParameters[originalDeclaration.valueParameters.size + valueParameter.index / 32])
+                        val mask = irGet(newIrFunction.valueParameters[originalDeclaration.valueParameters.size + valueParameter.indexInOldValueParameters / 32])
                         val bit = irInt(1 shl (sourceParameterIndex % 32))
                         val defaultFlag =
                             irCallOp(intAnd, context.irBuiltIns.intType, mask, bit)
@@ -254,6 +256,9 @@ open class DefaultArgumentStubGenerator<TContext : CommonBackendContext>(
     private fun log(msg: () -> String) = context.log { "DEFAULT-REPLACER: ${msg()}" }
 }
 
+/**
+ * Replaces call site with default parameters with the corresponding stub function.
+ */
 open class DefaultParameterInjector<TContext : CommonBackendContext>(
     protected val context: TContext,
     protected val factory: DefaultArgumentFunctionFactory,
@@ -300,7 +305,7 @@ open class DefaultParameterInjector<TContext : CommonBackendContext>(
                     when (parameter) {
                         stubFunction.dispatchReceiverParameter -> log { "call::dispatch@: ${ir2string(argument)}" }
                         stubFunction.extensionReceiverParameter -> log { "call::extension@: ${ir2string(argument)}" }
-                        else -> log { "call::params@$${parameter.index}/${parameter.name}: ${ir2string(argument)}" }
+                        else -> log { "call::params@$${parameter.indexInOldValueParameters}/${parameter.name}: ${ir2string(argument)}" }
                     }
                     if (argument != null) {
                         putArgument(parameter, argument)
@@ -474,7 +479,9 @@ open class DefaultParameterInjector<TContext : CommonBackendContext>(
     protected fun IrValueParameter.isMovedReceiver() = isMovedReceiverImpl()
 }
 
-// Remove default argument initializers.
+/**
+ * Removes default argument initializers.
+ */
 open class DefaultParameterCleaner(
     val context: CommonBackendContext,
     val replaceDefaultValuesWithStubs: Boolean = false
@@ -484,7 +491,7 @@ open class DefaultParameterCleaner(
     override fun transformFlat(declaration: IrDeclaration): List<IrDeclaration>? {
         if (declaration is IrValueParameter && declaration.defaultValue != null) {
             if (replaceDefaultValuesWithStubs) {
-                if (context.mapping.defaultArgumentsOriginalFunction[declaration.parent as IrFunction] == null) {
+                if ((declaration.parent as IrFunction).defaultArgumentsOriginalFunction == null) {
                     declaration.defaultValue = context.irFactory.createExpressionBody(
                         IrErrorExpressionImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, declaration.type, "Default Stub").apply {
                             attributeOwnerId = declaration.defaultValue!!.expression
@@ -499,13 +506,15 @@ open class DefaultParameterCleaner(
     }
 }
 
-// Sets overriden symbols. Should be used in case `forceSetOverrideSymbols = false`
+/**
+ * Patch overrides for fake override dispatch functions. Should be used in case `forceSetOverrideSymbols = false`.
+ */
 class DefaultParameterPatchOverridenSymbolsLowering(
     val context: CommonBackendContext
 ) : DeclarationTransformer {
     override fun transformFlat(declaration: IrDeclaration): List<IrDeclaration>? {
         if (declaration is IrSimpleFunction) {
-            (context.mapping.defaultArgumentsOriginalFunction[declaration] as? IrSimpleFunction)?.run {
+            (declaration.defaultArgumentsOriginalFunction as? IrSimpleFunction)?.run {
                 declaration.overriddenSymbols = declaration.overriddenSymbols memoryOptimizedPlus overriddenSymbols.mapNotNull {
                     (it.owner.defaultArgumentsDispatchFunction as? IrSimpleFunction)?.symbol
                 }

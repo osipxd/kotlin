@@ -30,6 +30,12 @@ public class KlibBasedSwiftExportRunnerTest extends AbstractKlibBasedSwiftRunner
   }
 
   @Test
+  @TestMetadata("annotations")
+  public void testAnnotations() {
+    runTest("native/swift/swift-export-standalone/testData/generation/annotations/");
+  }
+
+  @Test
   @TestMetadata("any")
   public void testAny() {
     runTest("native/swift/swift-export-standalone/testData/generation/any/");
@@ -45,6 +51,18 @@ public class KlibBasedSwiftExportRunnerTest extends AbstractKlibBasedSwiftRunner
   @TestMetadata("consuming_dependencies")
   public void testConsuming_dependencies() {
     runTest("native/swift/swift-export-standalone/testData/generation/consuming_dependencies/");
+  }
+
+  @Test
+  @TestMetadata("enums")
+  public void testEnums() {
+    runTest("native/swift/swift-export-standalone/testData/generation/enums/");
+  }
+
+  @Test
+  @TestMetadata("exceptions")
+  public void testExceptions() {
+    runTest("native/swift/swift-export-standalone/testData/generation/exceptions/");
   }
 
   @Test
@@ -69,6 +87,18 @@ public class KlibBasedSwiftExportRunnerTest extends AbstractKlibBasedSwiftRunner
   @TestMetadata("inner_classes")
   public void testInner_classes() {
     runTest("native/swift/swift-export-standalone/testData/generation/inner_classes/");
+  }
+
+  @Test
+  @TestMetadata("list")
+  public void testList() {
+    runTest("native/swift/swift-export-standalone/testData/generation/list/");
+  }
+
+  @Test
+  @TestMetadata("map")
+  public void testMap() {
+    runTest("native/swift/swift-export-standalone/testData/generation/map/");
   }
 
   @Test
@@ -111,6 +141,12 @@ public class KlibBasedSwiftExportRunnerTest extends AbstractKlibBasedSwiftRunner
   @TestMetadata("package_flattening_missing_target")
   public void testPackage_flattening_missing_target() {
     runTest("native/swift/swift-export-standalone/testData/generation/package_flattening_missing_target/");
+  }
+
+  @Test
+  @TestMetadata("set")
+  public void testSet() {
+    runTest("native/swift/swift-export-standalone/testData/generation/set/");
   }
 
   @Test

@@ -35,7 +35,7 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
   public class Box {
     @Test
     public void testAllFilesPresentInBox() {
-      KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+      KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true, "multiplatform/k1");
     }
 
     @Nested
@@ -1169,6 +1169,36 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("alwaysEnable.kt")
       public void testAlwaysEnable() {
         runTest("compiler/testData/codegen/box/assert/alwaysEnable.kt");
+      }
+
+      @Test
+      @TestMetadata("assertDisabledWithFunctionReference.kt")
+      public void testAssertDisabledWithFunctionReference() {
+        runTest("compiler/testData/codegen/box/assert/assertDisabledWithFunctionReference.kt");
+      }
+
+      @Test
+      @TestMetadata("assertEnabledInConditionAndMessage.kt")
+      public void testAssertEnabledInConditionAndMessage() {
+        runTest("compiler/testData/codegen/box/assert/assertEnabledInConditionAndMessage.kt");
+      }
+
+      @Test
+      @TestMetadata("assertEnabledInlined.kt")
+      public void testAssertEnabledInlined() {
+        runTest("compiler/testData/codegen/box/assert/assertEnabledInlined.kt");
+      }
+
+      @Test
+      @TestMetadata("assertEnabledInlinedCrossModule.kt")
+      public void testAssertEnabledInlinedCrossModule() {
+        runTest("compiler/testData/codegen/box/assert/assertEnabledInlinedCrossModule.kt");
+      }
+
+      @Test
+      @TestMetadata("assertEnabledWithFunctionReference.kt")
+      public void testAssertEnabledWithFunctionReference() {
+        runTest("compiler/testData/codegen/box/assert/assertEnabledWithFunctionReference.kt");
       }
 
       @Nested
@@ -3193,6 +3223,54 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Test
+        @TestMetadata("extensionFunctionAdaptedReferences.kt")
+        public void testExtensionFunctionAdaptedReferences() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionFunctionAdaptedReferences.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionFunctionAnonymous.kt")
+        public void testExtensionFunctionAnonymous() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionFunctionAnonymous.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionFunctionWithNestedReceiver.kt")
+        public void testExtensionFunctionWithNestedReceiver() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionFunctionWithNestedReceiver.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionFunctionWithPassedSupertype.kt")
+        public void testExtensionFunctionWithPassedSupertype() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionFunctionWithPassedSupertype.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionInSamWithPassedSupertype.kt")
+        public void testExtensionInSamWithPassedSupertype() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionInSamWithPassedSupertype.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionParameterToValueParameter.kt")
+        public void testExtensionParameterToValueParameter() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionParameterToValueParameter.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyToFun.kt")
+        public void testExtensionPropertyToFun() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionPropertyToFun.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyWithAnonymousExtensionFun.kt")
+        public void testExtensionPropertyWithAnonymousExtensionFun() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionPropertyWithAnonymousExtensionFun.kt");
+        }
+
+        @Test
         @TestMetadata("inlineBound.kt")
         public void testInlineBound() {
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/inlineBound.kt");
@@ -3220,6 +3298,18 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         @TestMetadata("inlineVarargInts.kt")
         public void testInlineVarargInts() {
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/inlineVarargInts.kt");
+        }
+
+        @Test
+        @TestMetadata("innerConstructorToExtensionFun.kt")
+        public void testInnerConstructorToExtensionFun() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorToExtensionFun.kt");
+        }
+
+        @Test
+        @TestMetadata("innerConstructorToExtensionWithTypeParam.kt")
+        public void testInnerConstructorToExtensionWithTypeParam() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorToExtensionWithTypeParam.kt");
         }
 
         @Test
@@ -3381,6 +3471,24 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           }
 
           @Test
+          @TestMetadata("extensionFunction.kt")
+          public void testExtensionFunction() {
+            runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/extensionFunction.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionFunctionAsASuperType.kt")
+          public void testExtensionFunctionAsASuperType() {
+            runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/extensionFunctionAsASuperType.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionTypeProperty.kt")
+          public void testExtensionTypeProperty() {
+            runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/extensionTypeProperty.kt");
+          }
+
+          @Test
           @TestMetadata("inlineAdaptedWithCoercionToUnit.kt")
           public void testInlineAdaptedWithCoercionToUnit() {
             runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineAdaptedWithCoercionToUnit.kt");
@@ -3411,6 +3519,24 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           }
 
           @Test
+          @TestMetadata("inlineWithExtensionAsASuperType.kt")
+          public void testInlineWithExtensionAsASuperType() {
+            runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithExtensionAsASuperType.kt");
+          }
+
+          @Test
+          @TestMetadata("inlineWithExtensionFunction.kt")
+          public void testInlineWithExtensionFunction() {
+            runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithExtensionFunction.kt");
+          }
+
+          @Test
+          @TestMetadata("inlineWithExtensionProperty.kt")
+          public void testInlineWithExtensionProperty() {
+            runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithExtensionProperty.kt");
+          }
+
+          @Test
           @TestMetadata("inlineWithParameters.kt")
           public void testInlineWithParameters() {
             runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithParameters.kt");
@@ -3426,6 +3552,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           @TestMetadata("nullableParameter.kt")
           public void testNullableParameter() {
             runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/nullableParameter.kt");
+          }
+
+          @Test
+          @TestMetadata("propertyReferenceToSuspendFunction.kt")
+          public void testPropertyReferenceToSuspendFunction() {
+            runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/propertyReferenceToSuspendFunction.kt");
           }
 
           @Test
@@ -3895,6 +4027,18 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Test
+        @TestMetadata("constructorFromInnerClass.kt")
+        public void testConstructorFromInnerClass() {
+          runTest("compiler/testData/codegen/box/callableReference/function/constructorFromInnerClass.kt");
+        }
+
+        @Test
+        @TestMetadata("constructorFromInnerClassWithTypeParam.kt")
+        public void testConstructorFromInnerClassWithTypeParam() {
+          runTest("compiler/testData/codegen/box/callableReference/function/constructorFromInnerClassWithTypeParam.kt");
+        }
+
+        @Test
         @TestMetadata("constructorFromTopLevelNoArgs.kt")
         public void testConstructorFromTopLevelNoArgs() {
           runTest("compiler/testData/codegen/box/callableReference/function/constructorFromTopLevelNoArgs.kt");
@@ -3925,6 +4069,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Test
+        @TestMetadata("extensionFromCompanion.kt")
+        public void testExtensionFromCompanion() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionFromCompanion.kt");
+        }
+
+        @Test
         @TestMetadata("extensionFromExtension.kt")
         public void testExtensionFromExtension() {
           runTest("compiler/testData/codegen/box/callableReference/function/extensionFromExtension.kt");
@@ -3952,6 +4102,60 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         @TestMetadata("extensionFromTopLevelUnitOneStringArg.kt")
         public void testExtensionFromTopLevelUnitOneStringArg() {
           runTest("compiler/testData/codegen/box/callableReference/function/extensionFromTopLevelUnitOneStringArg.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionFunctionAsASuperTypePassToSAMInterface.kt")
+        public void testExtensionFunctionAsASuperTypePassToSAMInterface() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionAsASuperTypePassToSAMInterface.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionFunctionInSAMInterface.kt")
+        public void testExtensionFunctionInSAMInterface() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionInSAMInterface.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionFunctionLocal.kt")
+        public void testExtensionFunctionLocal() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionLocal.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionFunctionPassToSAMInterface.kt")
+        public void testExtensionFunctionPassToSAMInterface() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionPassToSAMInterface.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionFunctionWithExtensionInSAMInterface.kt")
+        public void testExtensionFunctionWithExtensionInSAMInterface() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionWithExtensionInSAMInterface.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionInDelegatedSam.kt")
+        public void testExtensionInDelegatedSam() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionInDelegatedSam.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPassedToDelegatedSam.kt")
+        public void testExtensionPassedToDelegatedSam() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionPassedToDelegatedSam.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionWithNestedFunction.kt")
+        public void testExtensionWithNestedFunction() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionWithNestedFunction.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionWithTypeParam.kt")
+        public void testExtensionWithTypeParam() {
+          runTest("compiler/testData/codegen/box/callableReference/function/extensionWithTypeParam.kt");
         }
 
         @Test
@@ -4057,9 +4261,21 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Test
+        @TestMetadata("nestedExtensionInSAMInterface.kt")
+        public void testNestedExtensionInSAMInterface() {
+          runTest("compiler/testData/codegen/box/callableReference/function/nestedExtensionInSAMInterface.kt");
+        }
+
+        @Test
         @TestMetadata("newArray.kt")
         public void testNewArray() {
           runTest("compiler/testData/codegen/box/callableReference/function/newArray.kt");
+        }
+
+        @Test
+        @TestMetadata("nullableExtension.kt")
+        public void testNullableExtension() {
+          runTest("compiler/testData/codegen/box/callableReference/function/nullableExtension.kt");
         }
 
         @Test
@@ -4339,6 +4555,54 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Test
+        @TestMetadata("extensionProperty.kt")
+        public void testExtensionProperty() {
+          runTest("compiler/testData/codegen/box/callableReference/property/extensionProperty.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyInDelegatedSam.kt")
+        public void testExtensionPropertyInDelegatedSam() {
+          runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyInDelegatedSam.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyInSamInterface.kt")
+        public void testExtensionPropertyInSamInterface() {
+          runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyInSamInterface.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyPassedToDelegatedSam.kt")
+        public void testExtensionPropertyPassedToDelegatedSam() {
+          runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyPassedToDelegatedSam.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyReferenceWithExplicitType.kt")
+        public void testExtensionPropertyReferenceWithExplicitType() {
+          runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyReferenceWithExplicitType.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyReferenceWithTypeParameter.kt")
+        public void testExtensionPropertyReferenceWithTypeParameter() {
+          runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyReferenceWithTypeParameter.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyWithExtensionReceiver.kt")
+        public void testExtensionPropertyWithExtensionReceiver() {
+          runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyWithExtensionReceiver.kt");
+        }
+
+        @Test
+        @TestMetadata("extensionPropertyWithExtensionType.kt")
+        public void testExtensionPropertyWithExtensionType() {
+          runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyWithExtensionType.kt");
+        }
+
+        @Test
         @TestMetadata("extensionToArray.kt")
         public void testExtensionToArray() {
           runTest("compiler/testData/codegen/box/callableReference/property/extensionToArray.kt");
@@ -4420,6 +4684,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         @TestMetadata("localClassVar.kt")
         public void testLocalClassVar() {
           runTest("compiler/testData/codegen/box/callableReference/property/localClassVar.kt");
+        }
+
+        @Test
+        @TestMetadata("nullableExtensionProperty.kt")
+        public void testNullableExtensionProperty() {
+          runTest("compiler/testData/codegen/box/callableReference/property/nullableExtensionProperty.kt");
         }
 
         @Test
@@ -5042,6 +5312,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("delegationToOutTypeParameter.kt")
       public void testDelegationToOutTypeParameter() {
         runTest("compiler/testData/codegen/box/classDelegation/delegationToOutTypeParameter.kt");
+      }
+
+      @Test
+      @TestMetadata("delegationToStarProjectedType.kt")
+      public void testDelegationToStarProjectedType() {
+        runTest("compiler/testData/codegen/box/classDelegation/delegationToStarProjectedType.kt");
       }
 
       @Test
@@ -7497,6 +7773,21 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
     }
 
     @Nested
+    @TestMetadata("compiler/testData/codegen/box/contextParameters")
+    @TestDataPath("$PROJECT_ROOT")
+    @Tag("frontend-fir")
+    @FirPipeline()
+    @UseExtTestCaseGroupProvider()
+    @UsePartialLinkage(mode = Mode.DISABLED)
+    @Tag("no-partial-linkage-may-be-skipped")
+    public class ContextParameters {
+      @Test
+      public void testAllFilesPresentInContextParameters() {
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/contextParameters"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+      }
+    }
+
+    @Nested
     @TestMetadata("compiler/testData/codegen/box/contracts")
     @TestDataPath("$PROJECT_ROOT")
     @Tag("frontend-fir")
@@ -7655,6 +7946,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("bottles.kt")
       public void testBottles() {
         runTest("compiler/testData/codegen/box/controlStructures/bottles.kt");
+      }
+
+      @Test
+      @TestMetadata("breakInDoWhile.kt")
+      public void testBreakInDoWhile() {
+        runTest("compiler/testData/codegen/box/controlStructures/breakInDoWhile.kt");
       }
 
       @Test
@@ -10396,6 +10693,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Test
+        @TestMetadata("kt72464.kt")
+        public void testKt72464() {
+          runTest("compiler/testData/codegen/box/coroutines/controlFlow/kt72464.kt");
+        }
+
+        @Test
         @TestMetadata("labeledWhile.kt")
         public void testLabeledWhile() {
           runTest("compiler/testData/codegen/box/coroutines/controlFlow/labeledWhile.kt");
@@ -12634,6 +12937,21 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Nested
+        @TestMetadata("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction")
+        @TestDataPath("$PROJECT_ROOT")
+        @Tag("frontend-fir")
+        @FirPipeline()
+        @UseExtTestCaseGroupProvider()
+        @UsePartialLinkage(mode = Mode.DISABLED)
+        @Tag("no-partial-linkage-may-be-skipped")
+        public class CleanupWithoutStdlibFunction {
+          @Test
+          public void testAllFilesPresentInCleanupWithoutStdlibFunction() {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+          }
+        }
+
+        @Nested
         @TestMetadata("compiler/testData/codegen/box/coroutines/varSpilling/debugMode")
         @TestDataPath("$PROJECT_ROOT")
         @Tag("frontend-fir")
@@ -12645,6 +12963,21 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           @Test
           public void testAllFilesPresentInDebugMode() {
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/coroutines/varSpilling/debugMode"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+          }
+        }
+
+        @Nested
+        @TestMetadata("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup")
+        @TestDataPath("$PROJECT_ROOT")
+        @Tag("frontend-fir")
+        @FirPipeline()
+        @UseExtTestCaseGroupProvider()
+        @UsePartialLinkage(mode = Mode.DISABLED)
+        @Tag("no-partial-linkage-may-be-skipped")
+        public class NoCleanup {
+          @Test
+          public void testAllFilesPresentInNoCleanup() {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
           }
         }
       }
@@ -15806,9 +16139,9 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       }
 
       @Test
-      @TestMetadata("enumEntriesCompatibilityCheckNoPrioritizedEnumEntries.kt")
-      public void testEnumEntriesCompatibilityCheckNoPrioritizedEnumEntries() {
-        runTest("compiler/testData/codegen/box/enum/enumEntriesCompatibilityCheckNoPrioritizedEnumEntries.kt");
+      @TestMetadata("enumEntriesCompatibilityCheckPrioritized.kt")
+      public void testEnumEntriesCompatibilityCheckPrioritized() {
+        runTest("compiler/testData/codegen/box/enum/enumEntriesCompatibilityCheckPrioritized.kt");
       }
 
       @Test
@@ -16628,6 +16961,11 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
     @UsePartialLinkage(mode = Mode.DISABLED)
     @Tag("no-partial-linkage-may-be-skipped")
     public class ExtensionFunctions {
+      public ExtensionFunctions() {
+        register("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsASupertypeOfValueClass.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
+        register("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInValueClass.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
+      }
+
       @Test
       public void testAllFilesPresentInExtensionFunctions() {
         KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
@@ -16646,15 +16984,179 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       }
 
       @Test
+      @TestMetadata("delegatedPropertyWithExtensionType.kt")
+      public void testDelegatedPropertyWithExtensionType() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/delegatedPropertyWithExtensionType.kt");
+      }
+
+      @Test
       @TestMetadata("executionOrder.kt")
       public void testExecutionOrder() {
         runTest("compiler/testData/codegen/box/extensionFunctions/executionOrder.kt");
       }
 
       @Test
+      @TestMetadata("extensionFunctionAndSpreadOperator.kt")
+      public void testExtensionFunctionAndSpreadOperator() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAndSpreadOperator.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionAsASupertypeOfValueClass.kt")
+      public void testExtensionFunctionAsASupertypeOfValueClass() {
+        // There is a registered source transformer for the testcase: TransformersFunctions.getRemoveOptionalJvmInlineAnnotation()
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsASupertypeOfValueClass.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionAsATypeLocal.kt")
+      public void testExtensionFunctionAsATypeLocal() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsATypeLocal.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionAsAnExpression.kt")
+      public void testExtensionFunctionAsAnExpression() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsAnExpression.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionAsAnExpressionWithNestedType.kt")
+      public void testExtensionFunctionAsAnExpressionWithNestedType() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsAnExpressionWithNestedType.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionAsAnonymous.kt")
+      public void testExtensionFunctionAsAnonymous() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsAnonymous.kt");
+      }
+
+      @Test
       @TestMetadata("extensionFunctionAsSupertype.kt")
       public void testExtensionFunctionAsSupertype() {
         runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsSupertype.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionAsType.kt")
+      public void testExtensionFunctionAsType() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsType.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionClassLevelLocal.kt")
+      public void testExtensionFunctionClassLevelLocal() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionClassLevelLocal.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionDifferentReceivers.kt")
+      public void testExtensionFunctionDifferentReceivers() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionDifferentReceivers.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionFakeOverride.kt")
+      public void testExtensionFunctionFakeOverride() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionFakeOverride.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionInDelegatedSam.kt")
+      public void testExtensionFunctionInDelegatedSam() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInDelegatedSam.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionInInnerClass.kt")
+      public void testExtensionFunctionInInnerClass() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInInnerClass.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionInNestedClass.kt")
+      public void testExtensionFunctionInNestedClass() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInNestedClass.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionInSAMInterface.kt")
+      public void testExtensionFunctionInSAMInterface() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInSAMInterface.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionInValueClass.kt")
+      public void testExtensionFunctionInValueClass() {
+        // There is a registered source transformer for the testcase: TransformersFunctions.getRemoveOptionalJvmInlineAnnotation()
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInValueClass.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionLocal.kt")
+      public void testExtensionFunctionLocal() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionLocal.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionNestedInExtensionFunction.kt")
+      public void testExtensionFunctionNestedInExtensionFunction() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionNestedInExtensionFunction.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionOverride.kt")
+      public void testExtensionFunctionOverride() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionOverride.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionWithExtensionAsAReceiver.kt")
+      public void testExtensionFunctionWithExtensionAsAReceiver() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithExtensionAsAReceiver.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionWithExtensionInSAMInterface.kt")
+      public void testExtensionFunctionWithExtensionInSAMInterface() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithExtensionInSAMInterface.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionWithInlineModifier.kt")
+      public void testExtensionFunctionWithInlineModifier() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithInlineModifier.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionWithNestedReceiver.kt")
+      public void testExtensionFunctionWithNestedReceiver() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithNestedReceiver.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionFunctionWithReceiverConflict.kt")
+      public void testExtensionFunctionWithReceiverConflict() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithReceiverConflict.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionMemberWithTypeParameter.kt")
+      public void testExtensionMemberWithTypeParameter() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionMemberWithTypeParameter.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionReceiverIsNotInlined.kt")
+      public void testExtensionReceiverIsNotInlined() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/extensionReceiverIsNotInlined.kt");
+      }
+
+      @Test
+      @TestMetadata("functionWithTheSameDispatchAndExtensionReceiver.kt")
+      public void testFunctionWithTheSameDispatchAndExtensionReceiver() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/functionWithTheSameDispatchAndExtensionReceiver.kt");
       }
 
       @Test
@@ -16772,6 +17274,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       }
 
       @Test
+      @TestMetadata("nestedExtensionFunctionAsASupertype.kt")
+      public void testNestedExtensionFunctionAsASupertype() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/nestedExtensionFunctionAsASupertype.kt");
+      }
+
+      @Test
       @TestMetadata("shared.kt")
       public void testShared() {
         runTest("compiler/testData/codegen/box/extensionFunctions/shared.kt");
@@ -16781,6 +17289,24 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("simple.kt")
       public void testSimple() {
         runTest("compiler/testData/codegen/box/extensionFunctions/simple.kt");
+      }
+
+      @Test
+      @TestMetadata("suspendConversionForExtensionFunAsAFunType.kt")
+      public void testSuspendConversionForExtensionFunAsAFunType() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/suspendConversionForExtensionFunAsAFunType.kt");
+      }
+
+      @Test
+      @TestMetadata("suspendConversionForExtensionFunAsAPropertyType.kt")
+      public void testSuspendConversionForExtensionFunAsAPropertyType() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/suspendConversionForExtensionFunAsAPropertyType.kt");
+      }
+
+      @Test
+      @TestMetadata("suspendConversionForExtensionFunAsASuperType.kt")
+      public void testSuspendConversionForExtensionFunAsASuperType() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/suspendConversionForExtensionFunAsASuperType.kt");
       }
 
       @Test
@@ -16850,6 +17376,84 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @Test
       public void testAllFilesPresentInExtensionProperties() {
         KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionProperties"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+      }
+
+      @Test
+      @TestMetadata("extensionMemberWithTypeParameter.kt")
+      public void testExtensionMemberWithTypeParameter() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionMemberWithTypeParameter.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyDelegated.kt")
+      public void testExtensionPropertyDelegated() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyDelegated.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyDifferentReceiver.kt")
+      public void testExtensionPropertyDifferentReceiver() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyDifferentReceiver.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyInInnerClass.kt")
+      public void testExtensionPropertyInInnerClass() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyInInnerClass.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyInNestedClass.kt")
+      public void testExtensionPropertyInNestedClass() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyInNestedClass.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyInSAMInterface.kt")
+      public void testExtensionPropertyInSAMInterface() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyInSAMInterface.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyWithAnonymoesExtensionWithALabel.kt")
+      public void testExtensionPropertyWithAnonymoesExtensionWithALabel() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithAnonymoesExtensionWithALabel.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyWithAnonymousExtensionFun.kt")
+      public void testExtensionPropertyWithAnonymousExtensionFun() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithAnonymousExtensionFun.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyWithAnonymousExtensionFunWithTypeParam.kt")
+      public void testExtensionPropertyWithAnonymousExtensionFunWithTypeParam() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithAnonymousExtensionFunWithTypeParam.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyWithExtensionAsReceiver.kt")
+      public void testExtensionPropertyWithExtensionAsReceiver() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithExtensionAsReceiver.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyWithExtensionNestedType.kt")
+      public void testExtensionPropertyWithExtensionNestedType() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithExtensionNestedType.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionPropertyWithInline.kt")
+      public void testExtensionPropertyWithInline() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithInline.kt");
+      }
+
+      @Test
+      @TestMetadata("extensionProperyWithExtensionType.kt")
+      public void testExtensionProperyWithExtensionType() {
+        runTest("compiler/testData/codegen/box/extensionProperties/extensionProperyWithExtensionType.kt");
       }
 
       @Test
@@ -16928,6 +17532,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("nonAbstractInInterface.kt")
       public void testNonAbstractInInterface() {
         runTest("compiler/testData/codegen/box/extensionProperties/nonAbstractInInterface.kt");
+      }
+
+      @Test
+      @TestMetadata("propertyWithExtensionNestedType.kt")
+      public void testPropertyWithExtensionNestedType() {
+        runTest("compiler/testData/codegen/box/extensionProperties/propertyWithExtensionNestedType.kt");
       }
 
       @Test
@@ -17702,6 +18312,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("suspendFunInterfaceConversionCodegen.kt")
       public void testSuspendFunInterfaceConversionCodegen() {
         runTest("compiler/testData/codegen/box/funInterface/suspendFunInterfaceConversionCodegen.kt");
+      }
+
+      @Test
+      @TestMetadata("typealiasedFunInterface.kt")
+      public void testTypealiasedFunInterface() {
+        runTest("compiler/testData/codegen/box/funInterface/typealiasedFunInterface.kt");
       }
 
       @Nested
@@ -20501,6 +21117,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       }
 
       @Test
+      @TestMetadata("correctOrder3.kt")
+      public void testCorrectOrder3() {
+        runTest("compiler/testData/codegen/box/initializers/correctOrder3.kt");
+      }
+
+      @Test
       @TestMetadata("initializers0.kt")
       public void testInitializers0() {
         runTest("compiler/testData/codegen/box/initializers/initializers0.kt");
@@ -20690,6 +21312,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("defaultArgs.kt")
       public void testDefaultArgs() {
         runTest("compiler/testData/codegen/box/inline/defaultArgs.kt");
+      }
+
+      @Test
+      @TestMetadata("defaultArgsLowering.kt")
+      public void testDefaultArgsLowering() {
+        runTest("compiler/testData/codegen/box/inline/defaultArgsLowering.kt");
       }
 
       @Test
@@ -21364,6 +21992,7 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         register("compiler/testData/codegen/box/inlineClasses/kt54455.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
         register("compiler/testData/codegen/box/inlineClasses/kt57973.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
         register("compiler/testData/codegen/box/inlineClasses/kt70461.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
+        register("compiler/testData/codegen/box/inlineClasses/kt71649.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
         register("compiler/testData/codegen/box/inlineClasses/lateinitInlineClasses.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
         register("compiler/testData/codegen/box/inlineClasses/mangledDefaultParameterFunction.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
         register("compiler/testData/codegen/box/inlineClasses/mangledDefaultParameterFunctionGeneric.kt", TransformersFunctions.getRemoveOptionalJvmInlineAnnotation());
@@ -23253,6 +23882,13 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       public void testKt70461() {
         // There is a registered source transformer for the testcase: TransformersFunctions.getRemoveOptionalJvmInlineAnnotation()
         runTest("compiler/testData/codegen/box/inlineClasses/kt70461.kt");
+      }
+
+      @Test
+      @TestMetadata("kt71649.kt")
+      public void testKt71649() {
+        // There is a registered source transformer for the testcase: TransformersFunctions.getRemoveOptionalJvmInlineAnnotation()
+        runTest("compiler/testData/codegen/box/inlineClasses/kt71649.kt");
       }
 
       @Test
@@ -28522,6 +29158,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       }
 
       @Test
+      @TestMetadata("enumWithDifferentFileOrder.kt")
+      public void testEnumWithDifferentFileOrder() {
+        runTest("compiler/testData/codegen/box/involvesIrInterpreter/enumWithDifferentFileOrder.kt");
+      }
+
+      @Test
       @TestMetadata("floatOperations.kt")
       public void testFloatOperations() {
         runTest("compiler/testData/codegen/box/involvesIrInterpreter/floatOperations.kt");
@@ -28743,6 +29385,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         @TestMetadata("annotationInArguments.kt")
         public void testAnnotationInArguments() {
           runTest("compiler/testData/codegen/box/involvesIrInterpreter/serialization/annotationInArguments.kt");
+        }
+
+        @Test
+        @TestMetadata("annotationOnFakeOverride.kt")
+        public void testAnnotationOnFakeOverride() {
+          runTest("compiler/testData/codegen/box/involvesIrInterpreter/serialization/annotationOnFakeOverride.kt");
         }
 
         @Test
@@ -29480,6 +30128,21 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
             public void testAllFilesPresentInDelegationBy() {
               KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/jvm8/defaults/allCompatibility/delegationBy"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
             }
+          }
+        }
+
+        @Nested
+        @TestMetadata("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges")
+        @TestDataPath("$PROJECT_ROOT")
+        @Tag("frontend-fir")
+        @FirPipeline()
+        @UseExtTestCaseGroupProvider()
+        @UsePartialLinkage(mode = Mode.DISABLED)
+        @Tag("no-partial-linkage-may-be-skipped")
+        public class DefaultCompatibilityBridges {
+          @Test
+          public void testAllFilesPresentInDefaultCompatibilityBridges() {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
           }
         }
 
@@ -31416,259 +32079,7 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
     public class Multiplatform {
       @Test
       public void testAllFilesPresentInMultiplatform() {
-        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
-      }
-
-      @Test
-      @TestMetadata("expectProperty.kt")
-      public void testExpectProperty() {
-        runTest("compiler/testData/codegen/box/multiplatform/expectProperty.kt");
-      }
-
-      @Test
-      @TestMetadata("kt57391.kt")
-      public void testKt57391() {
-        runTest("compiler/testData/codegen/box/multiplatform/kt57391.kt");
-      }
-
-      @Test
-      @TestMetadata("kt59613.kt")
-      public void testKt59613() {
-        runTest("compiler/testData/codegen/box/multiplatform/kt59613.kt");
-      }
-
-      @Test
-      @TestMetadata("optionalExpectation.kt")
-      public void testOptionalExpectation() {
-        runTest("compiler/testData/codegen/box/multiplatform/optionalExpectation.kt");
-      }
-
-      @Test
-      @TestMetadata("starImportOfExpectEnumWithActualTypeAlias.kt")
-      public void testStarImportOfExpectEnumWithActualTypeAlias() {
-        runTest("compiler/testData/codegen/box/multiplatform/starImportOfExpectEnumWithActualTypeAlias.kt");
-      }
-
-      @Nested
-      @TestMetadata("compiler/testData/codegen/box/multiplatform/complexMatchings")
-      @TestDataPath("$PROJECT_ROOT")
-      @Tag("frontend-fir")
-      @FirPipeline()
-      @UseExtTestCaseGroupProvider()
-      @UsePartialLinkage(mode = Mode.DISABLED)
-      @Tag("no-partial-linkage-may-be-skipped")
-      public class ComplexMatchings {
-        @Test
-        public void testAllFilesPresentInComplexMatchings() {
-          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/complexMatchings"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
-        }
-
-        @Test
-        @TestMetadata("expectCtorlessFinalToActualObject.kt")
-        public void testExpectCtorlessFinalToActualObject() {
-          runTest("compiler/testData/codegen/box/multiplatform/complexMatchings/expectCtorlessFinalToActualObject.kt");
-        }
-
-        @Test
-        @TestMetadata("expectCtorlessFinalToActualUnit.kt")
-        public void testExpectCtorlessFinalToActualUnit() {
-          runTest("compiler/testData/codegen/box/multiplatform/complexMatchings/expectCtorlessFinalToActualUnit.kt");
-        }
-      }
-
-      @Nested
-      @TestMetadata("compiler/testData/codegen/box/multiplatform/defaultArguments")
-      @TestDataPath("$PROJECT_ROOT")
-      @Tag("frontend-fir")
-      @FirPipeline()
-      @UseExtTestCaseGroupProvider()
-      @UsePartialLinkage(mode = Mode.DISABLED)
-      @Tag("no-partial-linkage-may-be-skipped")
-      public class DefaultArguments {
-        @Test
-        public void testAllFilesPresentInDefaultArguments() {
-          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/defaultArguments"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
-        }
-
-        @Test
-        @TestMetadata("bothInExpectAndActual.kt")
-        public void testBothInExpectAndActual() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/bothInExpectAndActual.kt");
-        }
-
-        @Test
-        @TestMetadata("bothInExpectAndActual2.kt")
-        public void testBothInExpectAndActual2() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/bothInExpectAndActual2.kt");
-        }
-
-        @Test
-        @TestMetadata("constructor.kt")
-        public void testConstructor() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/constructor.kt");
-        }
-
-        @Test
-        @TestMetadata("delegatedExpectedInterface.kt")
-        public void testDelegatedExpectedInterface() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/delegatedExpectedInterface.kt");
-        }
-
-        @Test
-        @TestMetadata("dispatchReceiverValue.kt")
-        public void testDispatchReceiverValue() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/dispatchReceiverValue.kt");
-        }
-
-        @Test
-        @TestMetadata("extensionReceiverValue.kt")
-        public void testExtensionReceiverValue() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/extensionReceiverValue.kt");
-        }
-
-        @Test
-        @TestMetadata("function.kt")
-        public void testFunction() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/function.kt");
-        }
-
-        @Test
-        @TestMetadata("functionFromOtherModule.kt")
-        public void testFunctionFromOtherModule() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/functionFromOtherModule.kt");
-        }
-
-        @Test
-        @TestMetadata("inheritedFromCommonClass.kt")
-        public void testInheritedFromCommonClass() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedFromCommonClass.kt");
-        }
-
-        @Test
-        @TestMetadata("inheritedFromExpectedClass.kt")
-        public void testInheritedFromExpectedClass() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedFromExpectedClass.kt");
-        }
-
-        @Test
-        @TestMetadata("inheritedFromExpectedInterface.kt")
-        public void testInheritedFromExpectedInterface() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedFromExpectedInterface.kt");
-        }
-
-        @Test
-        @TestMetadata("inheritedFromExpectedMethod.kt")
-        public void testInheritedFromExpectedMethod() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedFromExpectedMethod.kt");
-        }
-
-        @Test
-        @TestMetadata("inheritedInExpectedDeclarations.kt")
-        public void testInheritedInExpectedDeclarations() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedInExpectedDeclarations.kt");
-        }
-
-        @Test
-        @TestMetadata("inheritedViaAnotherInterfaceIndirectly.kt")
-        public void testInheritedViaAnotherInterfaceIndirectly() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedViaAnotherInterfaceIndirectly.kt");
-        }
-
-        @Test
-        @TestMetadata("inlineFunctionWithDefaultLambda.kt")
-        public void testInlineFunctionWithDefaultLambda() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inlineFunctionWithDefaultLambda.kt");
-        }
-
-        @Test
-        @TestMetadata("kt23239.kt")
-        public void testKt23239() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/kt23239.kt");
-        }
-
-        @Test
-        @TestMetadata("kt23739.kt")
-        public void testKt23739() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/kt23739.kt");
-        }
-
-        @Test
-        @TestMetadata("kt67488.kt")
-        public void testKt67488() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/kt67488.kt");
-        }
-
-        @Test
-        @TestMetadata("nestedEnumEntryValue.kt")
-        public void testNestedEnumEntryValue() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/nestedEnumEntryValue.kt");
-        }
-
-        @Test
-        @TestMetadata("parametersInArgumentValues.kt")
-        public void testParametersInArgumentValues() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/parametersInArgumentValues.kt");
-        }
-
-        @Test
-        @TestMetadata("superCall.kt")
-        public void testSuperCall() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/superCall.kt");
-        }
-
-        @Test
-        @TestMetadata("suspend.kt")
-        public void testSuspend() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/suspend.kt");
-        }
-
-        @Test
-        @TestMetadata("typeAlias.kt")
-        public void testTypeAlias() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/typeAlias.kt");
-        }
-
-        @Test
-        @TestMetadata("typeAlias2.kt")
-        public void testTypeAlias2() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/typeAlias2.kt");
-        }
-
-        @Test
-        @TestMetadata("withTypeParameter.kt")
-        public void testWithTypeParameter() {
-          runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/withTypeParameter.kt");
-        }
-      }
-
-      @Nested
-      @TestMetadata("compiler/testData/codegen/box/multiplatform/exhaustiveness")
-      @TestDataPath("$PROJECT_ROOT")
-      @Tag("frontend-fir")
-      @FirPipeline()
-      @UseExtTestCaseGroupProvider()
-      @UsePartialLinkage(mode = Mode.DISABLED)
-      @Tag("no-partial-linkage-may-be-skipped")
-      public class Exhaustiveness {
-        @Test
-        public void testAllFilesPresentInExhaustiveness() {
-          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/exhaustiveness"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
-        }
-      }
-
-      @Nested
-      @TestMetadata("compiler/testData/codegen/box/multiplatform/hmpp")
-      @TestDataPath("$PROJECT_ROOT")
-      @Tag("frontend-fir")
-      @FirPipeline()
-      @UseExtTestCaseGroupProvider()
-      @UsePartialLinkage(mode = Mode.DISABLED)
-      @Tag("no-partial-linkage-may-be-skipped")
-      public class Hmpp {
-        @Test
-        public void testAllFilesPresentInHmpp() {
-          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/hmpp"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
-        }
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true, "k1");
       }
 
       @Nested
@@ -31704,9 +32115,39 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Test
+        @TestMetadata("assertDisabledAsActualFunction.kt")
+        public void testAssertDisabledAsActualFunction() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/assertDisabledAsActualFunction.kt");
+        }
+
+        @Test
+        @TestMetadata("assertDisabledAsActualFunctionHmpp.kt")
+        public void testAssertDisabledAsActualFunctionHmpp() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/assertDisabledAsActualFunctionHmpp.kt");
+        }
+
+        @Test
+        @TestMetadata("assertEnabledAsActualFunction.kt")
+        public void testAssertEnabledAsActualFunction() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/assertEnabledAsActualFunction.kt");
+        }
+
+        @Test
+        @TestMetadata("assertEnabledAsActualFunctionHmpp.kt")
+        public void testAssertEnabledAsActualFunctionHmpp() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/assertEnabledAsActualFunctionHmpp.kt");
+        }
+
+        @Test
         @TestMetadata("commonFakeOverridePropertyRef.kt")
         public void testCommonFakeOverridePropertyRef() {
           runTest("compiler/testData/codegen/box/multiplatform/k2/commonFakeOverridePropertyRef.kt");
+        }
+
+        @Test
+        @TestMetadata("commonInternal.kt")
+        public void testCommonInternal() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/commonInternal.kt");
         }
 
         @Test
@@ -31722,9 +32163,9 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         }
 
         @Test
-        @TestMetadata("directJavaActualization.kt")
-        public void testDirectJavaActualization() {
-          runTest("compiler/testData/codegen/box/multiplatform/k2/directJavaActualization.kt");
+        @TestMetadata("enumStaticMethods.kt")
+        public void testEnumStaticMethods() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/enumStaticMethods.kt");
         }
 
         @Test
@@ -31755,6 +32196,24 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         @TestMetadata("internalOverride2.kt")
         public void testInternalOverride2() {
           runTest("compiler/testData/codegen/box/multiplatform/k2/internalOverride2.kt");
+        }
+
+        @Test
+        @TestMetadata("kt57391.kt")
+        public void testKt57391() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/kt57391.kt");
+        }
+
+        @Test
+        @TestMetadata("kt59613.kt")
+        public void testKt59613() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/kt59613.kt");
+        }
+
+        @Test
+        @TestMetadata("kt61166.kt")
+        public void testKt61166() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/kt61166.kt");
         }
 
         @Test
@@ -31791,6 +32250,18 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         @TestMetadata("regularAndDeprecatedOverloads.kt")
         public void testRegularAndDeprecatedOverloads() {
           runTest("compiler/testData/codegen/box/multiplatform/k2/regularAndDeprecatedOverloads.kt");
+        }
+
+        @Test
+        @TestMetadata("starImportOfExpectEnumWithActualTypeAlias.kt")
+        public void testStarImportOfExpectEnumWithActualTypeAlias() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/starImportOfExpectEnumWithActualTypeAlias.kt");
+        }
+
+        @Test
+        @TestMetadata("unsignedArrayForLoop.kt")
+        public void testUnsignedArrayForLoop() {
+          runTest("compiler/testData/codegen/box/multiplatform/k2/unsignedArrayForLoop.kt");
         }
 
         @Nested
@@ -31842,6 +32313,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           }
 
           @Test
+          @TestMetadata("actualFunctionWithArgumentOfExpectType.kt")
+          public void testActualFunctionWithArgumentOfExpectType() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/actualFunctionWithArgumentOfExpectType.kt");
+          }
+
+          @Test
           public void testAllFilesPresentInBasic() {
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/k2/basic"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
           }
@@ -31856,6 +32333,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           @TestMetadata("correctParentForTypeParameter.kt")
           public void testCorrectParentForTypeParameter() {
             runTest("compiler/testData/codegen/box/multiplatform/k2/basic/correctParentForTypeParameter.kt");
+          }
+
+          @Test
+          @TestMetadata("delegatedByExpectExtensionProperty.kt")
+          public void testDelegatedByExpectExtensionProperty() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/delegatedByExpectExtensionProperty.kt");
           }
 
           @Test
@@ -31988,6 +32471,72 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           @TestMetadata("expectProperty.kt")
           public void testExpectProperty() {
             runTest("compiler/testData/codegen/box/multiplatform/k2/basic/expectProperty.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionAndFakeOverride.kt")
+          public void testExtensionAndFakeOverride() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionAndFakeOverride.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionFunction.kt")
+          public void testExtensionFunction() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionFunction.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionFunctionAsASupertype.kt")
+          public void testExtensionFunctionAsASupertype() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionFunctionAsASupertype.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionFunctionAsASupertypeConversion.kt")
+          public void testExtensionFunctionAsASupertypeConversion() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionFunctionAsASupertypeConversion.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionFunctionAsAType.kt")
+          public void testExtensionFunctionAsAType() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionFunctionAsAType.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionFunctionAsAnonymous.kt")
+          public void testExtensionFunctionAsAnonymous() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionFunctionAsAnonymous.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionFunctionInDelegatedSam.kt")
+          public void testExtensionFunctionInDelegatedSam() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionFunctionInDelegatedSam.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionFunctionOnExpect.kt")
+          public void testExtensionFunctionOnExpect() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionFunctionOnExpect.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionMember.kt")
+          public void testExtensionMember() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionMember.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionOnNestedReceiver.kt")
+          public void testExtensionOnNestedReceiver() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionOnNestedReceiver.kt");
+          }
+
+          @Test
+          @TestMetadata("extensionPropertyWithAnonymousExtension.kt")
+          public void testExtensionPropertyWithAnonymousExtension() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/basic/extensionPropertyWithAnonymousExtension.kt");
           }
 
           @Test
@@ -32273,6 +32822,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           }
 
           @Test
+          @TestMetadata("typeAlias2.kt")
+          public void testTypeAlias2() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/defaultArguments/typeAlias2.kt");
+          }
+
+          @Test
           @TestMetadata("withTypeParameter.kt")
           public void testWithTypeParameter() {
             runTest("compiler/testData/codegen/box/multiplatform/k2/defaultArguments/withTypeParameter.kt");
@@ -32297,6 +32852,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           @TestMetadata("delegationToExpectInterfaceByExpectFun.kt")
           public void testDelegationToExpectInterfaceByExpectFun() {
             runTest("compiler/testData/codegen/box/multiplatform/k2/delegation/delegationToExpectInterfaceByExpectFun.kt");
+          }
+
+          @Test
+          @TestMetadata("delegationToExpectInterfaceWithOverride_noNewMembers.kt")
+          public void testDelegationToExpectInterfaceWithOverride_noNewMembers() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/delegation/delegationToExpectInterfaceWithOverride_noNewMembers.kt");
           }
 
           @Test
@@ -32327,6 +32888,54 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           @TestMetadata("delegationWithIntersection.kt")
           public void testDelegationWithIntersection() {
             runTest("compiler/testData/codegen/box/multiplatform/k2/delegation/delegationWithIntersection.kt");
+          }
+        }
+
+        @Nested
+        @TestMetadata("compiler/testData/codegen/box/multiplatform/k2/exhaustiveness")
+        @TestDataPath("$PROJECT_ROOT")
+        @Tag("frontend-fir")
+        @FirPipeline()
+        @UseExtTestCaseGroupProvider()
+        @UsePartialLinkage(mode = Mode.DISABLED)
+        @Tag("no-partial-linkage-may-be-skipped")
+        public class Exhaustiveness {
+          @Test
+          public void testAllFilesPresentInExhaustiveness() {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/k2/exhaustiveness"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+          }
+
+          @Test
+          @TestMetadata("commonEnum.kt")
+          public void testCommonEnum() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/exhaustiveness/commonEnum.kt");
+          }
+
+          @Test
+          @TestMetadata("commonSealedClass.kt")
+          public void testCommonSealedClass() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/exhaustiveness/commonSealedClass.kt");
+          }
+
+          @Test
+          @TestMetadata("commonSealedInterface.kt")
+          public void testCommonSealedInterface() {
+            runTest("compiler/testData/codegen/box/multiplatform/k2/exhaustiveness/commonSealedInterface.kt");
+          }
+        }
+
+        @Nested
+        @TestMetadata("compiler/testData/codegen/box/multiplatform/k2/hmpp")
+        @TestDataPath("$PROJECT_ROOT")
+        @Tag("frontend-fir")
+        @FirPipeline()
+        @UseExtTestCaseGroupProvider()
+        @UsePartialLinkage(mode = Mode.DISABLED)
+        @Tag("no-partial-linkage-may-be-skipped")
+        public class Hmpp {
+          @Test
+          public void testAllFilesPresentInHmpp() {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/k2/hmpp"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
           }
         }
 
@@ -32374,59 +32983,20 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
             runTest("compiler/testData/codegen/box/multiplatform/k2/migratedOldTests/remap_expect_property_ref.kt");
           }
         }
-      }
 
-      @Nested
-      @TestMetadata("compiler/testData/codegen/box/multiplatform/migratedOldTests")
-      @TestDataPath("$PROJECT_ROOT")
-      @Tag("frontend-fir")
-      @FirPipeline()
-      @UseExtTestCaseGroupProvider()
-      @UsePartialLinkage(mode = Mode.DISABLED)
-      @Tag("no-partial-linkage-may-be-skipped")
-      public class MigratedOldTests {
-        @Test
-        public void testAllFilesPresentInMigratedOldTests() {
-          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/migratedOldTests"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
-        }
-
-        @Test
-        @TestMetadata("mpp1.kt")
-        public void testMpp1() {
-          runTest("compiler/testData/codegen/box/multiplatform/migratedOldTests/mpp1.kt");
-        }
-
-        @Test
-        @TestMetadata("mpp2.kt")
-        public void testMpp2() {
-          runTest("compiler/testData/codegen/box/multiplatform/migratedOldTests/mpp2.kt");
-        }
-
-        @Test
-        @TestMetadata("mpp_default_args.kt")
-        public void testMpp_default_args() {
-          runTest("compiler/testData/codegen/box/multiplatform/migratedOldTests/mpp_default_args.kt");
-        }
-
-        @Test
-        @TestMetadata("remap_expect_property_ref.kt")
-        public void testRemap_expect_property_ref() {
-          runTest("compiler/testData/codegen/box/multiplatform/migratedOldTests/remap_expect_property_ref.kt");
-        }
-      }
-
-      @Nested
-      @TestMetadata("compiler/testData/codegen/box/multiplatform/multiModule")
-      @TestDataPath("$PROJECT_ROOT")
-      @Tag("frontend-fir")
-      @FirPipeline()
-      @UseExtTestCaseGroupProvider()
-      @UsePartialLinkage(mode = Mode.DISABLED)
-      @Tag("no-partial-linkage-may-be-skipped")
-      public class MultiModule {
-        @Test
-        public void testAllFilesPresentInMultiModule() {
-          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/multiModule"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+        @Nested
+        @TestMetadata("compiler/testData/codegen/box/multiplatform/k2/multiModule")
+        @TestDataPath("$PROJECT_ROOT")
+        @Tag("frontend-fir")
+        @FirPipeline()
+        @UseExtTestCaseGroupProvider()
+        @UsePartialLinkage(mode = Mode.DISABLED)
+        @Tag("no-partial-linkage-may-be-skipped")
+        public class MultiModule {
+          @Test
+          public void testAllFilesPresentInMultiModule() {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/k2/multiModule"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+          }
         }
       }
     }
@@ -32461,6 +33031,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("returnInsideTwoLambdas.kt")
       public void testReturnInsideTwoLambdas() {
         runTest("compiler/testData/codegen/box/nonLocalReturns/returnInsideTwoLambdas.kt");
+      }
+
+      @Test
+      @TestMetadata("suspendConversion.kt")
+      public void testSuspendConversion() {
+        runTest("compiler/testData/codegen/box/nonLocalReturns/suspendConversion.kt");
       }
     }
 
@@ -32503,6 +33079,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("nothingValueException.kt")
       public void testNothingValueException() {
         runTest("compiler/testData/codegen/box/nothingValue/nothingValueException.kt");
+      }
+
+      @Test
+      @TestMetadata("toStringOnNothing.kt")
+      public void testToStringOnNothing() {
+        runTest("compiler/testData/codegen/box/nothingValue/toStringOnNothing.kt");
       }
     }
 
@@ -33559,18 +34141,6 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       }
 
       @Test
-      @TestMetadata("remAssignmentOperation.kt")
-      public void testRemAssignmentOperation() {
-        runTest("compiler/testData/codegen/box/operatorConventions/remAssignmentOperation.kt");
-      }
-
-      @Test
-      @TestMetadata("remOverModOperation.kt")
-      public void testRemOverModOperation() {
-        runTest("compiler/testData/codegen/box/operatorConventions/remOverModOperation.kt");
-      }
-
-      @Test
       @TestMetadata("suspendOperators.kt")
       public void testSuspendOperators() {
         runTest("compiler/testData/codegen/box/operatorConventions/suspendOperators.kt");
@@ -34513,6 +35083,21 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       }
 
       @Nested
+      @TestMetadata("compiler/testData/codegen/box/primitiveTypes/identityEqualsWithNullable")
+      @TestDataPath("$PROJECT_ROOT")
+      @Tag("frontend-fir")
+      @FirPipeline()
+      @UseExtTestCaseGroupProvider()
+      @UsePartialLinkage(mode = Mode.DISABLED)
+      @Tag("no-partial-linkage-may-be-skipped")
+      public class IdentityEqualsWithNullable {
+        @Test
+        public void testAllFilesPresentInIdentityEqualsWithNullable() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/primitiveTypes/identityEqualsWithNullable"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+        }
+      }
+
+      @Nested
       @TestMetadata("compiler/testData/codegen/box/primitiveTypes/numberToChar")
       @TestDataPath("$PROJECT_ROOT")
       @Tag("frontend-fir")
@@ -35384,12 +35969,6 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
           @TestMetadata("topLevelProperty.kt")
           public void testTopLevelProperty() {
             runTest("compiler/testData/codegen/box/properties/lateinit/isInitializedAndDeinitialize/topLevelProperty.kt");
-          }
-
-          @Test
-          @TestMetadata("topLevelPropertyMultiModule.kt")
-          public void testTopLevelPropertyMultiModule() {
-            runTest("compiler/testData/codegen/box/properties/lateinit/isInitializedAndDeinitialize/topLevelPropertyMultiModule.kt");
           }
         }
 
@@ -42526,6 +43105,18 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/reflection/properties/getDelegate"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
           }
 
+          @Test
+          @TestMetadata("delegatedByExtensionMemberProperty.kt")
+          public void testDelegatedByExtensionMemberProperty() {
+            runTest("compiler/testData/codegen/box/reflection/properties/getDelegate/delegatedByExtensionMemberProperty.kt");
+          }
+
+          @Test
+          @TestMetadata("delegatedByExtensionProperty.kt")
+          public void testDelegatedByExtensionProperty() {
+            runTest("compiler/testData/codegen/box/reflection/properties/getDelegate/delegatedByExtensionProperty.kt");
+          }
+
           @Nested
           @TestMetadata("compiler/testData/codegen/box/reflection/properties/getDelegate/method")
           @TestDataPath("$PROJECT_ROOT")
@@ -42651,6 +43242,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
         @TestMetadata("manyTypeArguments.kt")
         public void testManyTypeArguments() {
           runTest("compiler/testData/codegen/box/reflection/typeOf/manyTypeArguments.kt");
+        }
+
+        @Test
+        @TestMetadata("multiModuleNullCheck.kt")
+        public void testMultiModuleNullCheck() {
+          runTest("compiler/testData/codegen/box/reflection/typeOf/multiModuleNullCheck.kt");
         }
 
         @Test
@@ -43219,6 +43816,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("kt68727.kt")
       public void testKt68727() {
         runTest("compiler/testData/codegen/box/regressions/kt68727.kt");
+      }
+
+      @Test
+      @TestMetadata("kt71119.kt")
+      public void testKt71119() {
+        runTest("compiler/testData/codegen/box/regressions/kt71119.kt");
       }
 
       @Test
@@ -44359,6 +44962,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("kt52432.kt")
       public void testKt52432() {
         runTest("compiler/testData/codegen/box/smartCasts/kt52432.kt");
+      }
+
+      @Test
+      @TestMetadata("kt72391.kt")
+      public void testKt72391() {
+        runTest("compiler/testData/codegen/box/smartCasts/kt72391.kt");
       }
 
       @Test
@@ -46162,6 +46771,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       }
 
       @Test
+      @TestMetadata("genericTypeAliasConstructor_implicitTypeArguments.kt")
+      public void testGenericTypeAliasConstructor_implicitTypeArguments() {
+        runTest("compiler/testData/codegen/box/typealias/genericTypeAliasConstructor_implicitTypeArguments.kt");
+      }
+
+      @Test
       @TestMetadata("incorrectTypeOfTypealiasForSuspendFTMM.kt")
       public void testIncorrectTypeOfTypealiasForSuspendFTMM() {
         runTest("compiler/testData/codegen/box/typealias/incorrectTypeOfTypealiasForSuspendFTMM.kt");
@@ -46468,6 +47083,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("unitClassObject.kt")
       public void testUnitClassObject() {
         runTest("compiler/testData/codegen/box/unit/unitClassObject.kt");
+      }
+
+      @Test
+      @TestMetadata("unitCoercionWithElvis.kt")
+      public void testUnitCoercionWithElvis() {
+        runTest("compiler/testData/codegen/box/unit/unitCoercionWithElvis.kt");
       }
 
       @Test
@@ -46807,6 +47428,12 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @Test
       public void testAllFilesPresentInValueClasses() {
         KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/valueClasses"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+      }
+
+      @Test
+      @TestMetadata("uLongInValueClass.kt")
+      public void testULongInValueClass() {
+        runTest("compiler/testData/codegen/box/valueClasses/uLongInValueClass.kt");
       }
 
       @Nested
@@ -50164,6 +50791,39 @@ public class FirNativeCodegenBoxTestNoPLGenerated extends AbstractNativeCodegenB
       @TestMetadata("kt71659.kt")
       public void testKt71659() {
         runTest("compiler/testData/codegen/boxInline/functionExpression/kt71659.kt");
+      }
+    }
+
+    @Nested
+    @TestMetadata("compiler/testData/codegen/boxInline/functionReference")
+    @TestDataPath("$PROJECT_ROOT")
+    @Tag("frontend-fir")
+    @FirPipeline()
+    @UseExtTestCaseGroupProvider()
+    @UsePartialLinkage(mode = Mode.DISABLED)
+    @Tag("no-partial-linkage-may-be-skipped")
+    public class FunctionReference {
+      @Test
+      public void testAllFilesPresentInFunctionReference() {
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/boxInline/functionReference"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.NATIVE, true);
+      }
+
+      @Test
+      @TestMetadata("fourthOrder.kt")
+      public void testFourthOrder() {
+        runTest("compiler/testData/codegen/boxInline/functionReference/fourthOrder.kt");
+      }
+
+      @Test
+      @TestMetadata("noInlineForLambda.kt")
+      public void testNoInlineForLambda() {
+        runTest("compiler/testData/codegen/boxInline/functionReference/noInlineForLambda.kt");
+      }
+
+      @Test
+      @TestMetadata("thirdOrder.kt")
+      public void testThirdOrder() {
+        runTest("compiler/testData/codegen/boxInline/functionReference/thirdOrder.kt");
       }
     }
 

@@ -11,7 +11,6 @@ import com.sun.management.OperatingSystemMXBean
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemOperations
@@ -131,6 +130,11 @@ fun Project.projectTest(
     defineJDKEnvVariables: List<JdkMajorVersion> = emptyList(),
     body: Test.() -> Unit = {},
 ): TaskProvider<Test> {
+    if (jUnitMode == JUnitMode.JUnit5) {
+        project.dependencies {
+            "testImplementation"(project(":compiler:tests-mutes:mutes-junit5"))
+        }
+    }
     val shouldInstrument = project.providers.gradleProperty("kotlin.test.instrumentation.disable")
         .orNull?.toBoolean() != true
     if (shouldInstrument) {
@@ -139,6 +143,10 @@ fun Project.projectTest(
     return getOrCreateTask<Test>(taskName) {
         dependsOn(":createIdeaHomeForTests")
         inputs.dir(File(rootDir, "build/ideaHomeForTests")).withPathSensitivity(PathSensitivity.RELATIVE)
+        if (jUnitMode == JUnitMode.JUnit5) {
+            systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
+        }
+        inputs.file(File(rootDir, "tests/mute-common.csv")).withPathSensitivity(PathSensitivity.NONE).withPropertyName("muteDatabase")
 
         doFirst {
             if (jUnitMode == JUnitMode.JUnit5) return@doFirst
@@ -247,6 +255,9 @@ fun Project.projectTest(
         project.kotlinBuildProperties.junit5NumberOfThreadsForParallelExecution?.let { n ->
             systemProperty("junit.jupiter.execution.parallel.config.strategy", "fixed")
             systemProperty("junit.jupiter.execution.parallel.config.fixed.parallelism", n)
+        }
+        project.providers.gradleProperty("teamcity.build.parallelTests.excludesFile").orNull?.let { parallelTestsExcludesFile ->
+            systemProperty("teamcity.build.parallelTests.excludesFile", parallelTestsExcludesFile)
         }
 
         systemProperty("idea.ignore.disabled.plugins", "true")

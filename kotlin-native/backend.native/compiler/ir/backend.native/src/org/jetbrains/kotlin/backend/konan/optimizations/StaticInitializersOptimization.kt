@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.backend.konan.Context
 import org.jetbrains.kotlin.backend.konan.DirectedGraphCondensationBuilder
 import org.jetbrains.kotlin.backend.konan.DirectedGraphMultiNode
 import org.jetbrains.kotlin.backend.konan.ir.actualCallee
-import org.jetbrains.kotlin.backend.konan.ir.isVirtualCall
 import org.jetbrains.kotlin.backend.konan.logMultiple
 import org.jetbrains.kotlin.backend.konan.lower.*
 import org.jetbrains.kotlin.ir.IrElement
@@ -24,9 +23,9 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrReturnTargetSymbol
 import org.jetbrains.kotlin.ir.util.*
-import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
+import org.jetbrains.kotlin.ir.visitors.IrTransformer
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import java.util.*
 
@@ -318,7 +317,7 @@ internal object StaticInitializersOptimization {
                 override fun visitSetField(expression: IrSetField, data: BitSet) =
                         expression.value.accept(this, expression.receiver?.accept(this, data) ?: data)
 
-                override fun visitFunctionReference(expression: IrFunctionReference, data: BitSet) = data
+                override fun visitRawFunctionReference(expression: IrRawFunctionReference, data: BitSet) = data
                 override fun visitVararg(expression: IrVararg, data: BitSet) = data
 
                 override fun visitConstantValue(expression: IrConstantValue, data: BitSet) = data
@@ -523,7 +522,7 @@ internal object StaticInitializersOptimization {
         var numberOfCallSitesWithExtractedGlobalInitializerCall = 0
         var numberOfCallSitesWithExtractedThreadLocalInitializerCall = 0
 
-        irModule.transformChildren(object : IrElementTransformer<IrBuilderWithScope?> {
+        irModule.transformChildren(object : IrTransformer<IrBuilderWithScope?>() {
             override fun visitDeclaration(declaration: IrDeclarationBase, data: IrBuilderWithScope?): IrStatement {
                 return super.visitDeclaration(declaration, context.createIrBuilder(declaration.symbol, SYNTHETIC_OFFSET, SYNTHETIC_OFFSET))
             }

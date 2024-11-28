@@ -6,6 +6,7 @@
 #include "GCImpl.hpp"
 
 #include "Common.h"
+#include "GC.hpp"
 #include "GCStatistics.hpp"
 #include "KAssert.h"
 #include "Logging.hpp"
@@ -77,6 +78,12 @@ ALWAYS_INLINE bool gc::tryResetMark(GC::ObjectData& objectData) noexcept {
     RuntimeAssert(false, "Should not reach here");
     return true;
 }
+
+ALWAYS_INLINE bool gc::barriers::SpecialRefReleaseGuard::isNoop() { return true; }
+ALWAYS_INLINE gc::barriers::SpecialRefReleaseGuard::SpecialRefReleaseGuard(mm::DirectRefAccessor) noexcept {}
+ALWAYS_INLINE gc::barriers::SpecialRefReleaseGuard::SpecialRefReleaseGuard(SpecialRefReleaseGuard&&) noexcept = default;
+ALWAYS_INLINE gc::barriers::SpecialRefReleaseGuard::~SpecialRefReleaseGuard() noexcept = default;
+ALWAYS_INLINE gc::barriers::SpecialRefReleaseGuard& gc::barriers::SpecialRefReleaseGuard::SpecialRefReleaseGuard::operator=(SpecialRefReleaseGuard&&) noexcept = default;
 
 // static
 ALWAYS_INLINE uint64_t type_layout::descriptor<gc::GC::ObjectData>::type::size() noexcept {

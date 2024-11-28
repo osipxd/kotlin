@@ -1,7 +1,8 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // FILE: main.kt
 
 fun foo(p: AAA<String>, s: Int?) {
-    p.<!CANNOT_INFER_PARAMETER_TYPE!>process<!>(<!ARGUMENT_TYPE_MISMATCH("Q!; kotlin.Int?")!>s<!>)
+    p.<!CANNOT_INFER_PARAMETER_TYPE!>process<!>(<!ARGUMENT_TYPE_MISMATCH("Q! (of fun <Q : String!> process); kotlin.Int?")!>s<!>)
 }
 
 // FILE: AAA.java

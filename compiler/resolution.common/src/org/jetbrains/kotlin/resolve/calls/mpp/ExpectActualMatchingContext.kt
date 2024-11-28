@@ -86,7 +86,8 @@ interface ExpectActualMatchingContext<T : DeclarationSymbolMarker> : TypeSystemC
     ): TypeSubstitutorMarker
 
     fun RegularClassSymbolMarker.collectAllMembers(isActualDeclaration: Boolean): List<DeclarationSymbolMarker>
-    fun RegularClassSymbolMarker.getMembersForExpectClass(name: Name): List<DeclarationSymbolMarker>
+    fun RegularClassSymbolMarker.collectAllStaticCallables(isActualDeclaration: Boolean): List<CallableSymbolMarker>
+    fun RegularClassSymbolMarker.getCallablesForExpectClass(name: Name): List<CallableSymbolMarker>
 
     fun RegularClassSymbolMarker.collectEnumEntryNames(): List<Name>
     fun RegularClassSymbolMarker.collectEnumEntries(): List<DeclarationSymbolMarker>

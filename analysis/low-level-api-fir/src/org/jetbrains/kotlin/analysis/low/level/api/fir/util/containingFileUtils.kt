@@ -19,7 +19,7 @@ fun FirElementWithResolveState.getContainingFile(): FirFile? {
         is FirScript -> provider.getFirScriptContainerFile(symbol)
         is FirTypeParameter -> containingDeclarationSymbol.fir.getContainingFile()
         is FirPropertyAccessor -> propertySymbol.fir.getContainingFile()
-        is FirValueParameter -> containingFunctionSymbol.fir.getContainingFile()
+        is FirValueParameter -> containingDeclarationSymbol.fir.getContainingFile()
         is FirBackingField -> propertySymbol.fir.getContainingFile()
         is FirCallableDeclaration -> provider.getFirCallableContainerFile(symbol)
         is FirClassLikeDeclaration -> provider.getFirClassifierContainerFileIfAny(symbol)
@@ -42,6 +42,7 @@ fun FirElementWithResolveState.getContainingFile(): FirFile? {
             moduleComponents.cache.getCachedFirFile(ktFile)
                 ?: error("Fir file for dandling modifier list cannot be null")
         }
+        is FirReceiverParameter -> containingDeclarationSymbol.fir.getContainingFile()
         else -> errorWithFirSpecificEntries("Unsupported declaration ${this::class}", fir = this)
     }
 }

@@ -67,6 +67,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -134,6 +135,7 @@ KaNamedFunctionSymbol:
     type: test/E
   getContainingFileSymbol: KaFileSymbol(enumClassWithAbstractMembers.kt)
   getContainingJvmClassName: test.E
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 

@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.test.directives.DiagnosticsDirectives
 import org.jetbrains.kotlin.test.directives.DiagnosticsDirectives.DIAGNOSTICS
 import org.jetbrains.kotlin.test.directives.JsEnvironmentConfigurationDirectives
 import org.jetbrains.kotlin.test.directives.LanguageSettingsDirectives
+import org.jetbrains.kotlin.test.directives.model.ValueDirective
 import org.jetbrains.kotlin.test.frontend.classic.handlers.ClassicDiagnosticsHandler
 import org.jetbrains.kotlin.test.frontend.fir.handlers.FirDiagnosticsHandler
 import org.jetbrains.kotlin.test.model.*
@@ -27,6 +28,7 @@ import org.jetbrains.kotlin.test.services.LibraryProvider
 import org.jetbrains.kotlin.test.services.configuration.CommonEnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.configuration.JsEnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.sourceProviders.CoroutineHelpersSourceFilesProvider
+import org.jetbrains.kotlin.utils.bind
 import java.lang.Boolean.getBoolean
 
 abstract class AbstractJsBlackBoxCodegenTestBase<R : ResultingArtifact.FrontendOutput<R>, I : ResultingArtifact.BackendInput<I>, A : ResultingArtifact.Binary<A>>(
@@ -37,6 +39,7 @@ abstract class AbstractJsBlackBoxCodegenTestBase<R : ResultingArtifact.FrontendO
 ) : AbstractKotlinCompilerWithTargetBackendTest(targetBackend) {
     abstract val frontendFacade: Constructor<FrontendFacade<R>>
     abstract val frontendToBackendConverter: Constructor<Frontend2BackendConverter<R, I>>
+    abstract val irInliningFacade: Constructor<IrInliningFacade<I>>
     abstract val backendFacade: Constructor<BackendFacade<I, A>>
     abstract val afterBackendFacade: Constructor<AbstractTestFacade<A, BinaryArtifacts.Js>>?
     abstract val recompileFacade: Constructor<AbstractTestFacade<BinaryArtifacts.Js, BinaryArtifacts.Js>>
@@ -52,8 +55,8 @@ abstract class AbstractJsBlackBoxCodegenTestBase<R : ResultingArtifact.FrontendO
         }
     }
 
-    protected fun TestConfigurationBuilder.commonConfigurationForJsBlackBoxCodegenTest() {
-        commonConfigurationForJsCodegenTest(targetFrontend, frontendFacade, frontendToBackendConverter, backendFacade)
+    protected fun TestConfigurationBuilder.commonConfigurationForJsBlackBoxCodegenTest(customIgnoreDirective: ValueDirective<TargetBackend>? = null) {
+        commonConfigurationForJsCodegenTest(targetFrontend, frontendFacade, frontendToBackendConverter, irInliningFacade, backendFacade, customIgnoreDirective)
 
         val pathToRootOutputDir = System.getProperty("kotlin.js.test.root.out.dir") ?: error("'kotlin.js.test.root.out.dir' is not set")
         defaultDirectives {
@@ -69,7 +72,10 @@ abstract class AbstractJsBlackBoxCodegenTestBase<R : ResultingArtifact.FrontendO
             ::CoroutineHelpersSourceFilesProvider,
         )
 
-        forTestsNotMatching("compiler/testData/codegen/box/diagnostics/functions/tailRecursion/*") {
+        forTestsNotMatching(
+            "compiler/testData/codegen/box/diagnostics/functions/tailRecursion/*" or
+                    "compiler/testData/diagnostics/*"
+        ) {
             defaultDirectives {
                 DIAGNOSTICS with "-warnings"
             }
@@ -121,7 +127,9 @@ fun <
     targetFrontend: FrontendKind<R>,
     frontendFacade: Constructor<FrontendFacade<R>>,
     frontendToBackendConverter: Constructor<Frontend2BackendConverter<R, I>>,
+    irInliningFacade: Constructor<IrInliningFacade<I>>,
     backendFacade: Constructor<BackendFacade<I, A>>,
+    customIgnoreDirective: ValueDirective<TargetBackend>? = null,
 ) {
     globalDefaults {
         frontend = targetFrontend
@@ -142,7 +150,7 @@ fun <
 
     useAfterAnalysisCheckers(
         ::JsFailingTestSuppressor,
-        ::BlackBoxCodegenSuppressor,
+        ::BlackBoxCodegenSuppressor.bind(customIgnoreDirective),
     )
 
     facadeStep(frontendFacade)
@@ -157,6 +165,8 @@ fun <
 
     facadeStep(frontendToBackendConverter)
     irHandlersStep()
+
+    facadeStep(irInliningFacade)
 
     facadeStep(backendFacade)
     klibArtifactsHandlersStep {

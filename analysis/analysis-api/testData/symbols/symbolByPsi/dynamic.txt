@@ -65,6 +65,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -182,6 +183,7 @@ KaNamedFunctionSymbol:
     type: Foo
   getContainingFileSymbol: KaFileSymbol(dynamic.kt)
   getContainingJvmClassName: Foo
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 

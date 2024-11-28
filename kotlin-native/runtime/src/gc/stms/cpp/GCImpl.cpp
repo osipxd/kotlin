@@ -94,6 +94,12 @@ PERFORMANCE_INLINE bool gc::tryResetMark(GC::ObjectData& objectData) noexcept {
     return objectData.tryResetMark();
 }
 
+ALWAYS_INLINE bool gc::barriers::SpecialRefReleaseGuard::isNoop() { return true; }
+ALWAYS_INLINE gc::barriers::SpecialRefReleaseGuard::SpecialRefReleaseGuard(mm::DirectRefAccessor) noexcept {}
+ALWAYS_INLINE gc::barriers::SpecialRefReleaseGuard::SpecialRefReleaseGuard(SpecialRefReleaseGuard&&) noexcept = default;
+ALWAYS_INLINE gc::barriers::SpecialRefReleaseGuard::~SpecialRefReleaseGuard() noexcept = default;
+ALWAYS_INLINE gc::barriers::SpecialRefReleaseGuard& gc::barriers::SpecialRefReleaseGuard::SpecialRefReleaseGuard::operator=(SpecialRefReleaseGuard&&) noexcept = default;
+
 // static
 ALWAYS_INLINE uint64_t type_layout::descriptor<gc::GC::ObjectData>::type::size() noexcept {
     return sizeof(gc::GC::ObjectData);

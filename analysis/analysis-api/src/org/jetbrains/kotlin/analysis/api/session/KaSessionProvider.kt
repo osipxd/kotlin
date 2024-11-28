@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -7,9 +7,8 @@ package org.jetbrains.kotlin.analysis.api.session
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import org.jetbrains.annotations.TestOnly
-import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
+import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.psi.KtElement
 
@@ -19,7 +18,7 @@ import org.jetbrains.kotlin.psi.KtElement
  * This provider should not be used directly.
  * Please use [analyze][org.jetbrains.kotlin.analysis.api.analyze] or [analyzeCopy][org.jetbrains.kotlin.analysis.api.analyzeCopy] instead.
  */
-@OptIn(KaImplementationDetail::class)
+@KaImplementationDetail
 public abstract class KaSessionProvider(public val project: Project) : Disposable {
     public abstract fun getAnalysisSession(useSiteElement: KtElement): KaSession
 
@@ -104,12 +103,10 @@ public abstract class KaSessionProvider(public val project: Project) : Disposabl
 
     override fun dispose() {}
 
+    @KaImplementationDetail
     public companion object {
         @KaImplementationDetail
         public fun getInstance(project: Project): KaSessionProvider =
             project.getService(KaSessionProvider::class.java)
     }
 }
-
-@Deprecated("Use 'KaSessionProvider' instead", ReplaceWith("KaSessionProvider"))
-public typealias KtAnalysisSessionProvider = KaSessionProvider

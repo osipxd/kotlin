@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.gradle.unitTests
 
 import org.gradle.api.internal.project.ProjectInternal
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.internal.KOTLIN_COMPILER_EMBEDDABLE
 import org.jetbrains.kotlin.gradle.internal.KOTLIN_MODULE_GROUP
@@ -20,6 +21,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 
 class KotlinCompileApiTest {
 
@@ -145,6 +148,7 @@ class KotlinCompileApiTest {
     @Test
     fun testTopLevelExtension() {
         @Suppress("DEPRECATION") val task = plugin.registerKotlinJvmCompileTask("customCompileKotlin", "some-module")
+        @Suppress("DEPRECATION")
         plugin.kotlinExtension.explicitApi = ExplicitApiMode.Strict
         project.evaluate()
         assertEquals(ExplicitApiMode.Strict, (task.get() as KotlinCompile).explicitApiMode.orNull)
@@ -181,5 +185,77 @@ class KotlinCompileApiTest {
             "$KOTLIN_MODULE_GROUP:$KOTLIN_COMPILER_EMBEDDABLE:${plugin.pluginVersion}",
             "${compilerDependency.group}:${compilerDependency.name}:${compilerDependency.version}"
         )
+    }
+
+    @Test
+    fun testCreatingJvmExtension() {
+        val jvmExtension = plugin.createKotlinJvmExtension()
+
+        val jvmTask = plugin.registerKotlinJvmCompileTask(
+            "jvmTask",
+            jvmExtension.compilerOptions,
+            plugin.providerFactory.provider {  jvmExtension.explicitApi }
+        )
+
+        jvmExtension.compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
+        jvmExtension.compilerOptions.javaParameters.set(true)
+        jvmExtension.explicitApi = ExplicitApiMode.Strict
+        jvmExtension.sourceSets.register("main")
+        jvmExtension.target.withSourcesJar(false)
+        jvmExtension.target.compilations.register("main")
+
+        project.evaluate()
+
+        assertEquals(JvmTarget.JVM_21, jvmTask.get().compilerOptions.jvmTarget.get())
+        assertEquals(true, jvmTask.get().compilerOptions.javaParameters.get())
+        assertEquals(
+            ExplicitApiMode.Strict,
+            (jvmTask.get() as KotlinCompile).explicitApiMode.get()
+        )
+        assertNotNull(jvmExtension.sourceSets.findByName("main"))
+    }
+
+    @Test
+    fun testEachUniqueCreatedJvmExtensionUnique() {
+        val jvmExtension1 = plugin.createKotlinJvmExtension()
+        val jvmExtension2 = plugin.createKotlinJvmExtension()
+
+        assertNotEquals(jvmExtension1, jvmExtension2)
+    }
+
+    @Test
+    fun testCreatingAndroidExtension() {
+        val androidExtension = plugin.createKotlinAndroidExtension()
+
+        val androidTask = plugin.registerKotlinJvmCompileTask(
+            "jvmTask",
+            androidExtension.compilerOptions,
+            plugin.providerFactory.provider { androidExtension.explicitApi }
+        )
+
+        androidExtension.compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
+        androidExtension.compilerOptions.javaParameters.set(true)
+        androidExtension.explicitApi = ExplicitApiMode.Strict
+        androidExtension.sourceSets.register("main")
+        androidExtension.target.withSourcesJar(false)
+        androidExtension.target.compilations.register("main")
+
+        project.evaluate()
+
+        assertEquals(JvmTarget.JVM_21, androidTask.get().compilerOptions.jvmTarget.get())
+        assertEquals(true, androidTask.get().compilerOptions.javaParameters.get())
+        assertEquals(
+            ExplicitApiMode.Strict,
+            (androidTask.get() as KotlinCompile).explicitApiMode.get()
+        )
+        assertNotNull(androidExtension.sourceSets.findByName("main"))
+    }
+
+    @Test
+    fun testEachUniqueCreatedAndroidExtensionUnique() {
+        val androidExtension1 = plugin.createKotlinAndroidExtension()
+        val androidExtension2 = plugin.createKotlinAndroidExtension()
+
+        assertNotEquals(androidExtension1, androidExtension2)
     }
 }

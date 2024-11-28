@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // ISSUE: KT-57905
 
 // FILE: Base.java
@@ -8,7 +9,7 @@ public class Base {
 
 // FILE: Main.kt
 class Derived: Base() {
-    val value: Int = 42
+    val <!PROPERTY_HIDES_JAVA_FIELD!>value<!>: Int = 42
     val something: String = <!INITIALIZER_TYPE_MISMATCH!>value<!>
 
     val String.extension: Int get() = 42

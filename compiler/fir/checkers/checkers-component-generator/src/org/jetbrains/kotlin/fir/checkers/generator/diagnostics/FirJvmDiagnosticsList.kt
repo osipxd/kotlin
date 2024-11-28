@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.fir.checkers.generator.diagnostics.model.DiagnosticL
 import org.jetbrains.kotlin.fir.checkers.generator.diagnostics.model.PositioningStrategy
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirFieldSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
@@ -52,7 +53,18 @@ object JVM_DIAGNOSTICS_LIST : DiagnosticList("FirJvmErrors") {
             parameter<FirNamedFunctionSymbol>("regular")
         }
 
+        val IMPLEMENTATION_BY_DELEGATION_WITH_DIFFERENT_GENERIC_SIGNATURE by deprecationError<KtTypeReference>(
+            ForbidImplementationByDelegationWithDifferentGenericSignature
+        ) {
+            parameter<FirNamedFunctionSymbol>("base")
+            parameter<FirNamedFunctionSymbol>("override")
+        }
+
         val NOT_YET_SUPPORTED_LOCAL_INLINE_FUNCTION by error<KtDeclaration>(PositioningStrategy.NOT_SUPPORTED_IN_INLINE_MOST_RELEVANT)
+
+        val PROPERTY_HIDES_JAVA_FIELD by warning<KtCallableDeclaration>(PositioningStrategy.DECLARATION_NAME) {
+            parameter<FirFieldSymbol>("hidden")
+        }
     }
 
     val TYPES by object : DiagnosticGroup("Types") {
@@ -120,6 +132,10 @@ object JVM_DIAGNOSTICS_LIST : DiagnosticList("FirJvmErrors") {
             parameter<FqName>("kotlinRepeatable")
             parameter<FqName>("javaRepeatable")
         }
+        val THROWS_IN_ANNOTATION by deprecationError<KtAnnotationEntry>(ForbidJvmAnnotationsOnAnnotationParameters)
+        val JVM_SERIALIZABLE_LAMBDA_ON_INLINED_FUNCTION_LITERALS by deprecationError<KtAnnotationEntry>(
+            featureForError = ForbidJvmSerializableLambdaOnInlinedFunctionLiterals
+        )
     }
 
     val SUPER by object : DiagnosticGroup("Super") {
@@ -245,6 +261,9 @@ object JVM_DIAGNOSTICS_LIST : DiagnosticList("FirJvmErrors") {
         }
         val MISSING_BUILT_IN_DECLARATION by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<FirBasedSymbol<*>>("symbol")
+        }
+        val DANGEROUS_CHARACTERS by warning<KtNamedDeclaration>(PositioningStrategy.NAME_IDENTIFIER) {
+            parameter<String>("characters")
         }
     }
 }

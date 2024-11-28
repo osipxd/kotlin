@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: BACKEND
 // DIAGNOSTICS: -UNUSED_PARAMETER, -UNUSED_VARIABLE
 // WITH_STDLIB
 
@@ -29,7 +30,7 @@ fun test3() {
 
 fun test4() {
     throwException()
-    <!UNREACHABLE_CODE!>fun() {
+    <!UNREACHABLE_CODE, UNUSED_EXPRESSION!>fun() {
         val a = 0
         val b = 0
     }<!>

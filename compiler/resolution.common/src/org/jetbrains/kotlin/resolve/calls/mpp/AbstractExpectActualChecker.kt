@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.descriptors.isAnnotationClass
 import org.jetbrains.kotlin.mpp.*
+import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.resolve.calls.mpp.AbstractExpectActualMatcher.matchSingleExpectAgainstPotentialActuals
@@ -182,40 +183,38 @@ object AbstractExpectActualChecker {
         substitutor: TypeSubstitutorMarker,
         languageVersionSettings: LanguageVersionSettings,
     ): ExpectActualCheckingCompatibility.Incompatible<*>? {
-        val mismatchedMembers =
-            arrayListOf<Pair<DeclarationSymbolMarker, Map<ExpectActualMatchingCompatibility.Mismatch, List<DeclarationSymbolMarker?>>>>()
-        val incompatibleMembers =
-            arrayListOf<Pair<DeclarationSymbolMarker, Map<ExpectActualCheckingCompatibility.Incompatible<*>, List<DeclarationSymbolMarker?>>>>()
+        val mismatchedMembers: ArrayList<Pair<DeclarationSymbolMarker, Map<ExpectActualMatchingCompatibility.Mismatch, List<DeclarationSymbolMarker?>>>> =
+            ArrayList()
+        val incompatibleMembers: ArrayList<Pair<DeclarationSymbolMarker, Map<ExpectActualCheckingCompatibility.Incompatible<*>, List<DeclarationSymbolMarker?>>>> =
+            ArrayList()
 
         val actualMembersByName = actualClassSymbol.collectAllMembers(isActualDeclaration = true).groupBy { nameOf(it) }
-
         val expectMembers = expectClassSymbol.collectAllMembers(isActualDeclaration = false)
             // private expect constructors are yet allowed KT-68688
             .filterNot { it is CallableSymbolMarker && it !is ConstructorSymbolMarker && it.visibility == Visibilities.Private }
-        for (expectMember in expectMembers) {
-            val actualMembers = getPossibleActualsByExpectName(expectMember, actualMembersByName)
+        matchAndCheckExpectMembersAgainstPotentialActuals(
+            expectClassSymbol,
+            actualClassSymbol,
+            substitutor,
+            languageVersionSettings,
+            expectMembers,
+            actualMembersByName,
+            outToMismatchedMembers = mismatchedMembers,
+            outToIncompatibleMembers = incompatibleMembers
+        )
 
-            val matched = matchSingleExpectAgainstPotentialActuals(
-                expectMember,
-                actualMembers,
-                substitutor,
-                expectClassSymbol,
-                actualClassSymbol,
-                mismatchedMembers,
-            )
-
-            matched.forEach {
-                checkSingleExpectAgainstMatchedActual(
-                    expectMember,
-                    it,
-                    substitutor,
-                    expectClassSymbol,
-                    actualClassSymbol,
-                    incompatibleMembers,
-                    languageVersionSettings,
-                )
-            }
-        }
+        val actualStaticMembersByName = actualClassSymbol.collectAllStaticCallables(isActualDeclaration = true).groupBy { nameOf(it) }
+        val expectStaticMembers = expectClassSymbol.collectAllStaticCallables(isActualDeclaration = false)
+        matchAndCheckExpectMembersAgainstPotentialActuals(
+            expectClassSymbol,
+            actualClassSymbol,
+            substitutor,
+            languageVersionSettings,
+            expectStaticMembers,
+            actualStaticMembersByName,
+            outToMismatchedMembers = mismatchedMembers,
+            outToIncompatibleMembers = incompatibleMembers
+        )
 
         if (expectClassSymbol.classKind == ClassKind.ENUM_CLASS) {
             val aEntries = expectClassSymbol.collectEnumEntryNames()
@@ -229,6 +228,41 @@ object AbstractExpectActualChecker {
         return when (mismatchedMembers.isNotEmpty() || incompatibleMembers.isNotEmpty()) {
             true -> ExpectActualCheckingCompatibility.ClassScopes(mismatchedMembers, incompatibleMembers)
             false -> null
+        }
+    }
+
+    private fun ExpectActualMatchingContext<*>.matchAndCheckExpectMembersAgainstPotentialActuals(
+        expectClassSymbol: RegularClassSymbolMarker,
+        actualClassSymbol: RegularClassSymbolMarker,
+        substitutor: TypeSubstitutorMarker,
+        languageVersionSettings: LanguageVersionSettings,
+        expectMembers: List<DeclarationSymbolMarker>,
+        actualMembersByName: Map<Name, List<DeclarationSymbolMarker>>,
+        // out
+        outToMismatchedMembers: ArrayList<Pair<DeclarationSymbolMarker, Map<ExpectActualMatchingCompatibility.Mismatch, List<DeclarationSymbolMarker?>>>>,
+        outToIncompatibleMembers: ArrayList<Pair<DeclarationSymbolMarker, Map<ExpectActualCheckingCompatibility.Incompatible<*>, List<DeclarationSymbolMarker?>>>>
+    ) {
+        for (expectMember in expectMembers) {
+            val actualMembers = getPossibleActualsByExpectName(expectMember, actualMembersByName)
+            val matched = matchSingleExpectAgainstPotentialActuals(
+                expectMember,
+                actualMembers,
+                substitutor,
+                expectClassSymbol,
+                actualClassSymbol,
+                outToMismatchedMembers
+            )
+            for (it in matched) {
+                checkSingleExpectAgainstMatchedActual(
+                    expectMember,
+                    it,
+                    substitutor,
+                    expectClassSymbol,
+                    actualClassSymbol,
+                    outToIncompatibleMembers,
+                    languageVersionSettings
+                )
+            }
         }
     }
 
@@ -465,9 +499,10 @@ object AbstractExpectActualChecker {
     ): Boolean {
         // In the case of actualization by a Java declaration such as a field or a method normalize the Java visibility
         // to the closest Kotlin visibility.Example: "protected_and_package" -> "protected".
+        val normalizedExpectVisibility = expectVisibility.normalize()
         val normalizedActualVisibility = actualVisibility.normalize()
 
-        val compare = Visibilities.compare(expectVisibility, normalizedActualVisibility)
+        val compare = Visibilities.compare(normalizedExpectVisibility, normalizedActualVisibility)
 
         val effectiveModality =
             when (languageVersionSettings.supportsFeature(LanguageFeature.SupportEffectivelyFinalInExpectActualVisibilityCheck)) {
@@ -580,7 +615,7 @@ object AbstractExpectActualChecker {
         selector(first) == selector(second)
 
     private fun ExpectActualMatchingContext<*>.isCtorless(regularClass: RegularClassSymbolMarker): Boolean {
-        return regularClass.getMembersForExpectClass(SpecialNames.INIT).isEmpty()
+        return regularClass.getCallablesForExpectClass(SpecialNames.INIT).isEmpty()
     }
 
     private fun ExpectActualMatchingContext<*>.isFinal(regularClassSymbolMarker: RegularClassSymbolMarker): Boolean {

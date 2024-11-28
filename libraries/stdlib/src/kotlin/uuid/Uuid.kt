@@ -196,8 +196,7 @@ public class Uuid internal constructor(
     }
 
     override fun hashCode(): Int {
-        val x = mostSignificantBits xor leastSignificantBits
-        return (x shr 32).toInt() xor x.toInt()
+        return (mostSignificantBits xor leastSignificantBits).hashCode()
     }
 
     private fun writeReplace(): Any = serializedUuid(this)
@@ -266,7 +265,9 @@ public class Uuid internal constructor(
          * @sample samples.uuid.Uuids.fromByteArray
          */
         public fun fromByteArray(byteArray: ByteArray): Uuid {
-            require(byteArray.size == SIZE_BYTES) { "Expected exactly $SIZE_BYTES bytes" }
+            require(byteArray.size == SIZE_BYTES) {
+                "Expected exactly $SIZE_BYTES bytes, but was ${byteArray.truncateForErrorMessage(32)} of size ${byteArray.size}"
+            }
 
             return fromLongs(byteArray.toLong(startIndex = 0), byteArray.toLong(startIndex = 8))
         }
@@ -294,7 +295,9 @@ public class Uuid internal constructor(
          */
         @OptIn(ExperimentalStdlibApi::class)
         public fun parse(uuidString: String): Uuid {
-            require(uuidString.length == 36) { "Expected a 36-char string in the standard uuid format." }
+            require(uuidString.length == 36) {
+                "Expected a 36-char string in the standard hex-and-dash UUID format, but was \"${uuidString.truncateForErrorMessage(64)}\" of length ${uuidString.length}"
+            }
 
             val part1 = uuidString.hexToLong(startIndex = 0, endIndex = 8)
             uuidString.checkHyphenAt(8)
@@ -329,7 +332,9 @@ public class Uuid internal constructor(
          */
         @OptIn(ExperimentalStdlibApi::class)
         public fun parseHex(hexString: String): Uuid {
-            require(hexString.length == 32) { "Expected a 32-char hexadecimal string." }
+            require(hexString.length == 32) {
+                "Expected a 32-char hexadecimal string, but was \"${hexString.truncateForErrorMessage(64)}\" of length ${hexString.length}"
+            }
 
             val msb = hexString.hexToLong(startIndex = 0, endIndex = 16)
             val lsb = hexString.hexToLong(startIndex = 16, endIndex = 32)
@@ -355,7 +360,7 @@ public class Uuid internal constructor(
          * The following APIs are used for producing the random uuid in each of the supported targets:
          *   - Kotlin/JVM - [java.security.SecureRandom](https://docs.oracle.com/javase/8/docs/api/java/security/SecureRandom.html)
          *   - Kotlin/JS - [Crypto.getRandomValues()](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues)
-         *   - Kotlin/WasmJs - [Crypto.randomUUID()](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID)
+         *   - Kotlin/WasmJs - [Crypto.getRandomValues()](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues)
          *   - Kotlin/WasmWasi - [random_get](https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md#random_get)
          *   - Kotlin/Native:
          *       - Linux targets - [getrandom](https://www.man7.org/linux/man-pages/man2/getrandom.2.html)
@@ -374,7 +379,7 @@ public class Uuid internal constructor(
             secureRandomUuid()
 
         /**
-         * A Comparator that lexically orders uuids.
+         * A [Comparator] that lexically orders uuids.
          *
          * This comparator compares the given two 128-bit uuids bit by bit sequentially,
          * starting from the most significant bit to the least significant.
@@ -448,4 +453,12 @@ private fun Long.toByteArray(dst: ByteArray, dstOffset: Int) {
         val shift = 8 * (7 - index)
         dst[dstOffset + index] = (this ushr shift).toByte()
     }
+}
+
+private fun String.truncateForErrorMessage(maxLength: Int): String {
+    return if (length <= maxLength) this else substring(0, maxLength) + "..."
+}
+
+private fun ByteArray.truncateForErrorMessage(maxSize: Int): String {
+    return joinToString(prefix = "[", postfix = "]", limit = maxSize)
 }

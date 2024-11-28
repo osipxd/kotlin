@@ -17,10 +17,14 @@ import org.jetbrains.kotlin.ir.declarations.IrTypeAlias
 import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.name.Name
 
-@PhaseDescription(
-    name = "TypeAliasAnnotationMethodsLowering",
-    description = "Generate method stubs for type alias annotations"
-)
+/**
+ * Generates method stubs for type alias annotations.
+ *
+ * For a `typealias T` annotated with something, we generate a private static method `T$annotations` with an empty body and generate
+ * annotations on that method (similarly to properties), so that if this typealias is used in another module, the compiler would be able
+ * to know where to look for the annotations.
+ */
+@PhaseDescription(name = "TypeAliasAnnotationMethodsLowering")
 internal class TypeAliasAnnotationMethodsLowering(val context: CommonBackendContext) : ClassLoweringPass {
     override fun lower(irClass: IrClass) {
         irClass.visitTypeAliases()

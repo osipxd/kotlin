@@ -5,8 +5,10 @@
 
 package org.jetbrains.kotlin.js.test.fir
 
+import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.js.test.converters.FirJsKlibSerializerFacade
 import org.jetbrains.kotlin.js.test.converters.JsIrBackendFacade
+import org.jetbrains.kotlin.js.test.converters.JsIrInliningFacade
 import org.jetbrains.kotlin.js.test.converters.incremental.RecompileModuleJsIrBackendFacade
 import org.jetbrains.kotlin.js.test.handlers.JsIrRecompiledArtifactsIdentityHandler
 import org.jetbrains.kotlin.js.test.handlers.JsWrongModuleHandler
@@ -22,6 +24,8 @@ import org.jetbrains.kotlin.test.TargetBackend
 import org.jetbrains.kotlin.test.backend.ir.IrBackendInput
 import org.jetbrains.kotlin.test.builders.*
 import org.jetbrains.kotlin.test.directives.*
+import org.jetbrains.kotlin.test.directives.KlibIrInlinerTestDirectives.IGNORE_SYNTHETIC_ACCESSORS_CHECKS
+import org.jetbrains.kotlin.test.directives.LanguageSettingsDirectives.LANGUAGE
 import org.jetbrains.kotlin.test.frontend.fir.Fir2IrResultsConverter
 import org.jetbrains.kotlin.test.frontend.fir.FirFrontendFacade
 import org.jetbrains.kotlin.test.frontend.fir.FirMetaInfoDiffSuppressor
@@ -49,6 +53,9 @@ open class AbstractFirJsTest(
 
     override val frontendToBackendConverter: Constructor<Frontend2BackendConverter<FirOutputArtifact, IrBackendInput>>
         get() = ::Fir2IrResultsConverter
+
+    override val irInliningFacade: Constructor<IrInliningFacade<IrBackendInput>>
+        get() = ::JsIrInliningFacade
 
     override val backendFacade: Constructor<BackendFacade<IrBackendInput, BinaryArtifacts.KLib>>
         get() = ::FirJsKlibSerializerFacade
@@ -112,9 +119,9 @@ open class AbstractFirLightTreeJsBoxTest : AbstractFirJsTest(
     parser = FirParser.LightTree,
 )
 
-open class AbstractFirJsCodegenBoxTest : AbstractFirJsTest(
+open class AbstractFirJsCodegenBoxTestBase(testGroupOutputDirPrefix: String) : AbstractFirJsTest(
     pathToTestDir = "compiler/testData/codegen/box/",
-    testGroupOutputDirPrefix = "codegen/firBox/"
+    testGroupOutputDirPrefix = testGroupOutputDirPrefix
 ) {
     override fun configure(builder: TestConfigurationBuilder) {
         super.configure(builder)
@@ -125,6 +132,22 @@ open class AbstractFirJsCodegenBoxTest : AbstractFirJsTest(
         builder.useAfterAnalysisCheckers(
             ::FirMetaInfoDiffSuppressor
         )
+    }
+}
+
+open class AbstractFirJsCodegenBoxTest : AbstractFirJsCodegenBoxTestBase(
+    testGroupOutputDirPrefix = "codegen/firBox/"
+)
+open class AbstractFirJsCodegenBoxWithInlinedFunInKlibTest : AbstractFirJsCodegenBoxTestBase(
+    testGroupOutputDirPrefix = "codegen/firBoxWithInlinedFunInKlib"
+) {
+    override fun configure(builder: TestConfigurationBuilder) {
+        super.configure(builder)
+        with(builder) {
+            defaultDirectives {
+                LANGUAGE with "+${LanguageFeature.IrInlinerBeforeKlibSerialization.name}"
+            }
+        }
     }
 }
 
@@ -218,11 +241,11 @@ abstract class AbstractFirJsKlibSyntheticAccessorTest(
     testGroupOutputDirPrefix,
 ) {
     override fun TestConfigurationBuilder.configuration() {
-        commonConfigurationForJsBlackBoxCodegenTest()
+        commonConfigurationForJsBlackBoxCodegenTest(IGNORE_SYNTHETIC_ACCESSORS_CHECKS)
         defaultDirectives {
-            +CodegenTestDirectives.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING
-            +CodegenTestDirectives.DUMP_KLIB_SYNTHETIC_ACCESSORS
-            if (narrowedAccessorVisibility) +CodegenTestDirectives.KLIB_SYNTHETIC_ACCESSORS_WITH_NARROWED_VISIBILITY
+            +KlibIrInlinerTestDirectives.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING
+            +KlibIrInlinerTestDirectives.DUMP_KLIB_SYNTHETIC_ACCESSORS
+            if (narrowedAccessorVisibility) +KlibIrInlinerTestDirectives.KLIB_SYNTHETIC_ACCESSORS_WITH_NARROWED_VISIBILITY
         }
     }
 }

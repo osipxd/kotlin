@@ -20,15 +20,10 @@ import org.jetbrains.kotlin.backend.konan.serialization.SerializedInlineFunction
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrSuspensionPoint
 
-internal class InlineFunctionOriginInfo(val irFunction: IrFunction, val irFile: IrFile, val startOffset: Int, val endOffset: Int)
-
 internal class FileLowerState {
     private var functionReferenceCount = 0
     private var coroutineCount = 0
     private var cStubCount = 0
-
-    fun getFunctionReferenceImplUniqueName(targetFunction: IrFunction): String =
-            getFunctionReferenceImplUniqueName("${targetFunction.name}\$FUNCTION_REFERENCE\$")
 
     fun getCoroutineImplUniqueName(function: IrFunction): String =
             "${function.name}COROUTINE\$${coroutineCount++}"
@@ -73,18 +68,8 @@ internal class NativeGenerationState(
     val eagerInitializedFiles = mutableListOf<SerializedEagerInitializedFile>()
     val calledFromExportedInlineFunctions = mutableSetOf<IrFunction>()
     val constructedFromExportedInlineFunctions = mutableSetOf<IrClass>()
-    val inlineFunctionOrigins = mutableMapOf<IrFunction, InlineFunctionOriginInfo>()
     val liveVariablesAtSuspensionPoints = mutableMapOf<IrSuspensionPoint, List<IrVariable>>()
     val visibleVariablesAtSuspensionPoints = mutableMapOf<IrSuspensionPoint, List<IrVariable>>()
-
-    private val localClassNames = mutableMapOf<IrAttributeContainer, String>()
-    fun getLocalClassName(container: IrAttributeContainer): String? = localClassNames[container.attributeOwnerId]
-    fun putLocalClassName(container: IrAttributeContainer, name: String) {
-        localClassNames[container.attributeOwnerId] = name
-    }
-    fun copyLocalClassName(source: IrAttributeContainer, destination: IrAttributeContainer) {
-        getLocalClassName(source)?.let { name -> putLocalClassName(destination, name) }
-    }
 
     lateinit var fileLowerState: FileLowerState
 

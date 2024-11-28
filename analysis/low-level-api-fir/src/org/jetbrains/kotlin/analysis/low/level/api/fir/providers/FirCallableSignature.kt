@@ -43,7 +43,7 @@ class FirCallableSignature private constructor(
 
         val receivers = declaration.contextReceivers
         for ((index, parameter) in contextReceiverTypes.withIndex()) {
-            if (receivers[index].typeRef.renderType() != parameter) return false
+            if (receivers[index].returnTypeRef.renderType() != parameter) return false
         }
 
         if (declaration is FirFunction) {
@@ -85,7 +85,7 @@ class FirCallableSignature private constructor(
 
             return FirCallableSignature(
                 receiverType = callableDeclaration.receiverParameter?.typeRef?.renderType(),
-                contextReceiverTypes = callableDeclaration.contextReceivers.map { it.typeRef.renderType() },
+                contextReceiverTypes = callableDeclaration.contextReceivers.map { it.returnTypeRef.renderType() },
                 parameters = if (callableDeclaration is FirFunction) {
                     callableDeclaration.valueParameters.map { it.returnTypeRef.renderType() }
                 } else {
@@ -112,7 +112,7 @@ private fun FirTypeRef.renderType(builder: StringBuilder = StringBuilder()): Str
     propertyAccessorRenderer = null,
     resolvePhaseRenderer = null,
     typeRenderer = ConeTypeRenderer(attributeRenderer = MinimalConeTypeAttributeRenderer),
-    valueParameterRenderer = null,
+    callableSignatureRenderer = null,
     errorExpressionRenderer = null,
 ).renderElementAsString(this)
 

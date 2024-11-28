@@ -14,18 +14,17 @@ import org.jetbrains.kotlin.fir.backend.toIrType
 import org.jetbrains.kotlin.fir.builder.buildPackageDirective
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.buildFile
-import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.declarations.utils.isInline
 import org.jetbrains.kotlin.fir.extensions.FirExtensionApiInternals
 import org.jetbrains.kotlin.fir.extensions.declarationGenerators
 import org.jetbrains.kotlin.fir.extensions.extensionService
 import org.jetbrains.kotlin.fir.extensions.generatedDeclarationsSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.providers.FirSymbolProvider
-import org.jetbrains.kotlin.fir.resolve.providers.impl.FirCachingCompositeSymbolProvider
-import org.jetbrains.kotlin.fir.resolve.providers.impl.FirStdlibBuiltinSyntheticFunctionInterfaceProvider
-import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
+import org.jetbrains.kotlin.fir.resolve.providers.impl.syntheticFunctionInterfacesSymbolProvider
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.declarations.impl.IrFactoryImpl
@@ -38,6 +37,8 @@ import org.jetbrains.kotlin.ir.symbols.IrValueSymbol
 import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.IrTypeArgument
+import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.name.*
 
@@ -45,6 +46,7 @@ internal fun IrDeclarationParent.declareThisReceiverParameter(
     c: Fir2IrComponents,
     thisType: IrType,
     thisOrigin: IrDeclarationOrigin,
+    kind: IrParameterKind? = null,
     startOffset: Int = this.startOffset,
     endOffset: Int = this.endOffset,
     name: Name = SpecialNames.THIS,
@@ -55,6 +57,7 @@ internal fun IrDeclarationParent.declareThisReceiverParameter(
         startOffset = startOffset,
         endOffset = endOffset,
         origin = thisOrigin,
+        kind = kind,
         name = name,
         type = thisType,
         isAssignable = isAssignable,
@@ -67,6 +70,19 @@ internal fun IrDeclarationParent.declareThisReceiverParameter(
         this.parent = this@declareThisReceiverParameter
         explicitReceiver?.let { c.annotationGenerator.generate(this, it) }
     }
+}
+
+internal fun IrClass.setThisReceiver(c: Fir2IrComponents, typeParameters: List<FirTypeParameterRef>) {
+    val typeArguments = typeParameters.map {
+        val typeParameter = c.classifierStorage.getIrTypeParameterSymbol(it.symbol, ConversionTypeOrigin.DEFAULT)
+        IrSimpleTypeImpl(typeParameter, hasQuestionMark = false, emptyList(), emptyList())
+    }
+    thisReceiver = declareThisReceiverParameter(
+        c,
+        kind = IrParameterKind.DispatchReceiver,
+        thisType = IrSimpleTypeImpl(symbol, false, typeArguments, emptyList()),
+        thisOrigin = IrDeclarationOrigin.INSTANCE_RECEIVER
+    )
 }
 
 fun Fir2IrComponents.createSafeCallConstruction(
@@ -154,16 +170,14 @@ fun FirSession.createFilesWithBuiltinsSyntheticDeclarationsIfNeeded(): List<FirF
     ) {
         return emptyList()
     }
-    val symbolProvider =
-        (symbolProvider as FirCachingCompositeSymbolProvider).providers.filterIsInstance<FirStdlibBuiltinSyntheticFunctionInterfaceProvider>()
-            .single()
+    val symbolProvider = syntheticFunctionInterfacesSymbolProvider
 
     return createSyntheticFiles(
         this@createFilesWithBuiltinsSyntheticDeclarationsIfNeeded.moduleData,
         generatedBuiltinsDeclarationsFileName,
         FirDeclarationOrigin.Synthetic.Builtins,
         symbolProvider,
-        topLevelClasses = symbolProvider.generatedClasses.map { it.classId }.groupBy { it.packageFqName },
+        topLevelClasses = symbolProvider.generatedClassIds.groupBy { it.packageFqName },
         topLevelCallables = emptyMap(),
     )
 }

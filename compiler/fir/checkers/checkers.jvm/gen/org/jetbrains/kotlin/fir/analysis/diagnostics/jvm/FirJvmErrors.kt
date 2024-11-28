@@ -6,7 +6,9 @@
 package org.jetbrains.kotlin.fir.analysis.diagnostics.jvm
 
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.config.LanguageFeature.ForbidImplementationByDelegationWithDifferentGenericSignature
 import org.jetbrains.kotlin.config.LanguageFeature.ForbidJvmAnnotationsOnAnnotationParameters
+import org.jetbrains.kotlin.config.LanguageFeature.ForbidJvmSerializableLambdaOnInlinedFunctionLiterals
 import org.jetbrains.kotlin.config.LanguageFeature.ProhibitConcurrentHashMapContains
 import org.jetbrains.kotlin.config.LanguageFeature.ProhibitJvmOverloadsOnConstructorsOfAnnotationClasses
 import org.jetbrains.kotlin.config.LanguageFeature.ProhibitSpreadOnSignaturePolymorphicCall
@@ -29,6 +31,7 @@ import org.jetbrains.kotlin.diagnostics.rendering.RootDiagnosticRendererFactory
 import org.jetbrains.kotlin.fir.analysis.diagnostics.*
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirFieldSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
@@ -36,10 +39,13 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
+import org.jetbrains.kotlin.psi.KtCallableDeclaration
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtTypeReference
 
 /**
  * Generated from: [org.jetbrains.kotlin.fir.checkers.generator.diagnostics.JVM_DIAGNOSTICS_LIST]
@@ -60,7 +66,9 @@ object FirJvmErrors {
     val JVM_INLINE_WITHOUT_VALUE_CLASS: KtDiagnosticFactory0 = KtDiagnosticFactory0("JVM_INLINE_WITHOUT_VALUE_CLASS", ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class)
     val WRONG_NULLABILITY_FOR_JAVA_OVERRIDE: KtDiagnosticFactory2<FirCallableSymbol<*>, FirCallableSymbol<*>> = KtDiagnosticFactory2("WRONG_NULLABILITY_FOR_JAVA_OVERRIDE", WARNING, SourceElementPositioningStrategies.OVERRIDE_MODIFIER, PsiElement::class)
     val ACCIDENTAL_OVERRIDE_CLASH_BY_JVM_SIGNATURE: KtDiagnosticFactory3<FirNamedFunctionSymbol, String, FirNamedFunctionSymbol> = KtDiagnosticFactory3("ACCIDENTAL_OVERRIDE_CLASH_BY_JVM_SIGNATURE", ERROR, SourceElementPositioningStrategies.DECLARATION_NAME, KtNamedFunction::class)
+    val IMPLEMENTATION_BY_DELEGATION_WITH_DIFFERENT_GENERIC_SIGNATURE: KtDiagnosticFactoryForDeprecation2<FirNamedFunctionSymbol, FirNamedFunctionSymbol> = KtDiagnosticFactoryForDeprecation2("IMPLEMENTATION_BY_DELEGATION_WITH_DIFFERENT_GENERIC_SIGNATURE", ForbidImplementationByDelegationWithDifferentGenericSignature, SourceElementPositioningStrategies.DEFAULT, KtTypeReference::class)
     val NOT_YET_SUPPORTED_LOCAL_INLINE_FUNCTION: KtDiagnosticFactory0 = KtDiagnosticFactory0("NOT_YET_SUPPORTED_LOCAL_INLINE_FUNCTION", ERROR, SourceElementPositioningStrategies.NOT_SUPPORTED_IN_INLINE_MOST_RELEVANT, KtDeclaration::class)
+    val PROPERTY_HIDES_JAVA_FIELD: KtDiagnosticFactory1<FirFieldSymbol> = KtDiagnosticFactory1("PROPERTY_HIDES_JAVA_FIELD", WARNING, SourceElementPositioningStrategies.DECLARATION_NAME, KtCallableDeclaration::class)
 
     // Types
     val JAVA_TYPE_MISMATCH: KtDiagnosticFactory2<ConeKotlinType, ConeKotlinType> = KtDiagnosticFactory2("JAVA_TYPE_MISMATCH", ERROR, SourceElementPositioningStrategies.DEFAULT, KtExpression::class)
@@ -93,6 +101,8 @@ object FirJvmErrors {
     val JVM_PACKAGE_NAME_NOT_SUPPORTED_IN_FILES_WITH_CLASSES: KtDiagnosticFactory0 = KtDiagnosticFactory0("JVM_PACKAGE_NAME_NOT_SUPPORTED_IN_FILES_WITH_CLASSES", ERROR, SourceElementPositioningStrategies.DEFAULT, KtAnnotationEntry::class)
     val POSITIONED_VALUE_ARGUMENT_FOR_JAVA_ANNOTATION: KtDiagnosticFactory0 = KtDiagnosticFactory0("POSITIONED_VALUE_ARGUMENT_FOR_JAVA_ANNOTATION", ERROR, SourceElementPositioningStrategies.DEFAULT, KtExpression::class)
     val REDUNDANT_REPEATABLE_ANNOTATION: KtDiagnosticFactory2<FqName, FqName> = KtDiagnosticFactory2("REDUNDANT_REPEATABLE_ANNOTATION", WARNING, SourceElementPositioningStrategies.DEFAULT, KtAnnotationEntry::class)
+    val THROWS_IN_ANNOTATION: KtDiagnosticFactoryForDeprecation0 = KtDiagnosticFactoryForDeprecation0("THROWS_IN_ANNOTATION", ForbidJvmAnnotationsOnAnnotationParameters, SourceElementPositioningStrategies.DEFAULT, KtAnnotationEntry::class)
+    val JVM_SERIALIZABLE_LAMBDA_ON_INLINED_FUNCTION_LITERALS: KtDiagnosticFactoryForDeprecation0 = KtDiagnosticFactoryForDeprecation0("JVM_SERIALIZABLE_LAMBDA_ON_INLINED_FUNCTION_LITERALS", ForbidJvmSerializableLambdaOnInlinedFunctionLiterals, SourceElementPositioningStrategies.DEFAULT, KtAnnotationEntry::class)
 
     // Super
     val INTERFACE_CANT_CALL_DEFAULT_METHOD_VIA_SUPER: KtDiagnosticFactory0 = KtDiagnosticFactory0("INTERFACE_CANT_CALL_DEFAULT_METHOD_VIA_SUPER", ERROR, SourceElementPositioningStrategies.REFERENCE_BY_QUALIFIED, PsiElement::class)
@@ -156,6 +166,7 @@ object FirJvmErrors {
     val SYNTHETIC_PROPERTY_WITHOUT_JAVA_ORIGIN: KtDiagnosticFactory2<FirNamedFunctionSymbol, Name> = KtDiagnosticFactory2("SYNTHETIC_PROPERTY_WITHOUT_JAVA_ORIGIN", WARNING, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class)
     val JAVA_FIELD_SHADOWED_BY_KOTLIN_PROPERTY: KtDiagnosticFactory1<FirPropertySymbol> = KtDiagnosticFactory1("JAVA_FIELD_SHADOWED_BY_KOTLIN_PROPERTY", ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class)
     val MISSING_BUILT_IN_DECLARATION: KtDiagnosticFactory1<FirBasedSymbol<*>> = KtDiagnosticFactory1("MISSING_BUILT_IN_DECLARATION", ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class)
+    val DANGEROUS_CHARACTERS: KtDiagnosticFactory1<String> = KtDiagnosticFactory1("DANGEROUS_CHARACTERS", WARNING, SourceElementPositioningStrategies.NAME_IDENTIFIER, KtNamedDeclaration::class)
 
     init {
         RootDiagnosticRendererFactory.registerFactory(FirJvmErrorsDefaultMessages)

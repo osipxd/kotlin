@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.ir.interpreter.state.reflection.KTypeState
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.util.OperatorNameConventions
 
 class IrInterpreter(internal val environment: IrInterpreterEnvironment, internal val bodyMap: Map<IdSignature, IrBody> = emptyMap()) {
@@ -37,8 +38,6 @@ class IrInterpreter(internal val environment: IrInterpreterEnvironment, internal
 
     constructor(irBuiltIns: IrBuiltIns, bodyMap: Map<IdSignature, IrBody> = emptyMap()) :
             this(IrInterpreterEnvironment(irBuiltIns), bodyMap)
-
-    constructor(irModule: IrModuleFragment) : this(IrInterpreterEnvironment(irModule), emptyMap())
 
     private fun incrementAndCheckCommands() {
         commandCount++

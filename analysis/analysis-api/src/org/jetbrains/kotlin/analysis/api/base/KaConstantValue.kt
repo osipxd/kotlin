@@ -1,12 +1,11 @@
 /*
- * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package org.jetbrains.kotlin.analysis.api.base
 
 import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.types.ConstantValueKind
 
 /**
  * Represents a constant value.
@@ -25,9 +24,6 @@ public sealed interface KaConstantValue {
      */
     public val value: Any?
 
-    @Deprecated("Check the class type instead.")
-    public val constantValueKind: ConstantValueKind
-
     /**
      * A source element from which the value was created.
      * Might be `null` for constants from non-source files.
@@ -39,9 +35,6 @@ public sealed interface KaConstantValue {
      * E.g., `1`, `2f, `3u` `null`, `"text"`.
      */
     public fun render(): String
-
-    @Deprecated("Use 'render()' instead.", replaceWith = ReplaceWith("render()"))
-    public fun renderAsKotlinConstant(): String = render()
 
     /** Represents a `null` value of some class type. */
     public interface NullValue : KaConstantValue
@@ -116,52 +109,4 @@ public sealed interface KaConstantValue {
         public val errorMessage: String
         override val value: Nothing
     }
-
-    @Deprecated("Use 'NullValue' instead.", replaceWith = ReplaceWith("NullValue"))
-    public interface KaNullConstantValue : NullValue
-
-    @Deprecated("Use 'BooleanValue' instead.", replaceWith = ReplaceWith("BooleanValue"))
-    public interface KaBooleanConstantValue : BooleanValue
-
-    @Deprecated("Use 'CharValue' instead.", replaceWith = ReplaceWith("CharValue"))
-    public interface KaCharConstantValue : CharValue
-
-    @Deprecated("Use 'ByteValue' instead.", replaceWith = ReplaceWith("ByteValue"))
-    public interface KaByteConstantValue : ByteValue
-
-    @Deprecated("Use 'UByteValue' instead.", replaceWith = ReplaceWith("UByteValue"))
-    public interface KaUnsignedByteConstantValue : UByteValue
-
-    @Deprecated("Use 'ShortValue' instead.", replaceWith = ReplaceWith("ShortValue"))
-    public interface KaShortConstantValue : ShortValue
-
-    @Deprecated("Use 'UShortValue' instead.", replaceWith = ReplaceWith("UShortValue"))
-    public interface KaUnsignedShortConstantValue : UShortValue
-
-    @Deprecated("Use 'IntValue' instead.", replaceWith = ReplaceWith("IntValue"))
-    public interface KaIntConstantValue : IntValue
-
-    @Deprecated("Use 'UIntValue' instead.", replaceWith = ReplaceWith("UIntValue"))
-    public interface KaUnsignedIntConstantValue : UIntValue
-
-    @Deprecated("Use 'LongValue' instead.", replaceWith = ReplaceWith("LongValue"))
-    public interface KaLongConstantValue : LongValue
-
-    @Deprecated("Use 'ULongValue' instead.", replaceWith = ReplaceWith("ULongValue"))
-    public interface KaUnsignedLongConstantValue : ULongValue
-
-    @Deprecated("Use 'FloatValue' instead.", replaceWith = ReplaceWith("FloatValue"))
-    public interface KaFloatConstantValue : FloatValue
-
-    @Deprecated("Use 'DoubleValue' instead.", replaceWith = ReplaceWith("DoubleValue"))
-    public interface KaDoubleConstantValue : DoubleValue
-
-    @Deprecated("Use 'StringValue' instead.", replaceWith = ReplaceWith("StringValue"))
-    public interface KaStringConstantValue : StringValue
-
-    @Deprecated("Use 'ErrorValue' instead.", replaceWith = ReplaceWith("ErrorValue"))
-    public interface KaErrorConstantValue : ErrorValue
 }
-
-@Deprecated("Use 'KaConstantValue' instead.", ReplaceWith("KaConstantValue"))
-public typealias KtConstantValue = KaConstantValue

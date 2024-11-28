@@ -47,7 +47,6 @@ import org.jetbrains.kotlin.psi.KtPsiFactory;
 import org.jetbrains.kotlin.resolve.lazy.JvmResolveUtil;
 import org.jetbrains.kotlin.storage.LockBasedStorageManager;
 import org.jetbrains.kotlin.test.testFramework.KtUsefulTestCase;
-import org.jetbrains.kotlin.test.util.JUnit4Assertions;
 import org.jetbrains.kotlin.test.util.KtTestUtil;
 import org.jetbrains.kotlin.test.util.StringUtilsKt;
 import org.jetbrains.kotlin.utils.ExceptionUtilsKt;
@@ -284,24 +283,13 @@ public class KotlinTestUtils {
         }
     }
 
-    public static boolean compileKotlinWithJava(
+    public static JavaCompilationResult compileKotlinWithJava(
             @NotNull List<File> javaFiles,
             @NotNull List<File> ktFiles,
             @NotNull File outDir,
             @NotNull Disposable disposable,
-            @Nullable File javaErrorFile
-    ) throws IOException {
-        return compileKotlinWithJava(javaFiles, ktFiles, outDir, disposable, javaErrorFile, null);
-    }
-
-    public static boolean compileKotlinWithJava(
-            @NotNull List<File> javaFiles,
-            @NotNull List<File> ktFiles,
-            @NotNull File outDir,
-            @NotNull Disposable disposable,
-            @Nullable File javaErrorFile,
             @Nullable Function1<CompilerConfiguration, Unit> updateConfiguration
-    ) throws IOException {
+    ) {
         if (!ktFiles.isEmpty()) {
             KotlinCoreEnvironment environment = createEnvironmentWithFullJdkAndIdeaAnnotations(disposable);
             CompilerTestLanguageVersionSettingsKt.setupLanguageVersionSettingsForMultifileCompilerTests(ktFiles, environment);
@@ -314,12 +302,13 @@ public class KotlinTestUtils {
             boolean mkdirs = outDir.mkdirs();
             assert mkdirs : "Not created: " + outDir;
         }
-        if (javaFiles.isEmpty()) return true;
+        if (javaFiles.isEmpty()) return JavaCompilationResult.Success.INSTANCE;
 
-        return compileJavaFiles(javaFiles, Arrays.asList(
+        List<String> options = Arrays.asList(
                 "-classpath", outDir.getPath() + File.pathSeparator + ForTestCompileRuntime.runtimeJarForTests(),
                 "-d", outDir.getPath()
-        ), javaErrorFile);
+        );
+        return JvmCompilationUtils.compileJavaFiles(javaFiles, options);
     }
 
     @NotNull
@@ -410,22 +399,6 @@ public class KotlinTestUtils {
         return comments;
     }
 
-    public static boolean compileJavaFiles(@NotNull Collection<File> files, List<String> options) throws IOException {
-        return compileJavaFiles(files, options, null);
-    }
-
-    private static boolean compileJavaFiles(@NotNull Collection<File> files, List<String> options, @Nullable File javaErrorFile) throws IOException {
-        return JvmCompilationUtils.compileJavaFiles(files, options, javaErrorFile, JUnit4Assertions.INSTANCE);
-    }
-
-    public static boolean compileJavaFilesExternallyWithJava11(@NotNull Collection<File> files, @NotNull List<String> options) {
-        return JvmCompilationUtils.compileJavaFilesExternally(files, options, KtTestUtil.getJdk11Home());
-    }
-
-    public static boolean compileJavaFilesExternally(@NotNull Collection<File> files, @NotNull List<String> options, @NotNull File jdkHome) {
-        return JvmCompilationUtils.compileJavaFilesExternally(files, options, jdkHome);
-    }
-
     public static String navigationMetadata(@TestDataFile String testFile) {
         return testFile;
     }
@@ -439,11 +412,11 @@ public class KotlinTestUtils {
     }
 
     public static void runTest(@NotNull TestCase testCase, @NotNull Function0<Unit> test) {
-        MuteWithDatabaseKt.runTest(testCase, test);
+        MuteWithDatabaseJunit4Kt.runTest(testCase, test);
     }
 
     public static void runTestWithThrowable(@NotNull TestCase testCase, @NotNull RunnableWithThrowable test) {
-        MuteWithDatabaseKt.runTest(testCase, () -> {
+        MuteWithDatabaseJunit4Kt.runTest(testCase, () -> {
             try {
                 test.run();
             }
@@ -481,7 +454,7 @@ public class KotlinTestUtils {
 
     private static void runTestImpl(@NotNull DoTest test, @Nullable TestCase testCase, String testDataFilePath) {
         if (testCase != null && !isRunTestOverridden(testCase)) {
-            Function0<Unit> wrapWithMuteInDatabase = MuteWithDatabaseKt.wrapWithMuteInDatabase(testCase, () -> {
+            Function0<Unit> wrapWithMuteInDatabase = MuteWithDatabaseJunit4Kt.wrapWithMuteInDatabase(testCase, () -> {
                 try {
                     test.invoke(testDataFilePath);
                 }

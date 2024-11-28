@@ -11,30 +11,25 @@ import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.KaInitializerValue
 import org.jetbrains.kotlin.analysis.api.base.KaContextReceiver
 import org.jetbrains.kotlin.analysis.api.lifetime.withValidityAssertion
-import org.jetbrains.kotlin.analysis.api.symbols.markers.*
+import org.jetbrains.kotlin.analysis.api.symbols.markers.KaAnnotatedSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.markers.KaDeclarationContainerSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.markers.KaNamedSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.markers.KaTypeParameterOwnerSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.pointers.KaSymbolPointer
-import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.Visibility
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
+import org.jetbrains.kotlin.psi.KtProperty
 
-public sealed class KaVariableSymbol :
-    KaCallableSymbol(),
-    KaNamedSymbol,
-    @Suppress("DEPRECATION") KaSymbolWithKind {
+public sealed class KaVariableSymbol : KaCallableSymbol(), KaNamedSymbol {
     public abstract val isVal: Boolean
 
     abstract override fun createPointer(): KaSymbolPointer<KaVariableSymbol>
 }
-
-@Deprecated("Use 'KaVariableSymbol' instead", ReplaceWith("KaVariableSymbol"))
-public typealias KaVariableLikeSymbol = KaVariableSymbol
-
-@Deprecated("Use 'KaVariableSymbol' instead", ReplaceWith("KaVariableSymbol"))
-public typealias KtVariableLikeSymbol = KaVariableSymbol
 
 /**
  * Backing field of some member property
@@ -75,9 +70,6 @@ public abstract class KaBackingFieldSymbol : KaVariableSymbol() {
     abstract override fun createPointer(): KaSymbolPointer<KaBackingFieldSymbol>
 }
 
-@Deprecated("Use 'KaBackingFieldSymbol' instead", ReplaceWith("KaBackingFieldSymbol"))
-public typealias KtBackingFieldSymbol = KaBackingFieldSymbol
-
 /**
  * An entry of an enum class.
  *
@@ -101,7 +93,7 @@ public typealias KtBackingFieldSymbol = KaBackingFieldSymbol
  *
  * `A` is an enum entry of enum class `E`. `x` is a property of `A`'s initializer and thus not accessible outside the initializer.
  */
-public abstract class KaEnumEntrySymbol : KaVariableSymbol(), @Suppress("DEPRECATION") KaSymbolWithKind {
+public abstract class KaEnumEntrySymbol : KaVariableSymbol() {
     final override val location: KaSymbolLocation get() = withValidityAssertion { KaSymbolLocation.CLASS }
     final override val isExtension: Boolean get() = withValidityAssertion { false }
     final override val receiverParameter: KaReceiverParameterSymbol? get() = withValidityAssertion { null }
@@ -123,9 +115,6 @@ public abstract class KaEnumEntrySymbol : KaVariableSymbol(), @Suppress("DEPRECA
 
     abstract override fun createPointer(): KaSymbolPointer<KaEnumEntrySymbol>
 }
-
-@Deprecated("Use 'KaEnumEntrySymbol' instead", ReplaceWith("KaEnumEntrySymbol"))
-public typealias KtEnumEntrySymbol = KaEnumEntrySymbol
 
 /**
  * An initializer for enum entries with a body. The initializer may contain its own declarations (especially overrides of members declared
@@ -150,18 +139,13 @@ public typealias KtEnumEntrySymbol = KaEnumEntrySymbol
  */
 public interface KaEnumEntryInitializerSymbol : KaDeclarationContainerSymbol
 
-@Deprecated("Use 'KaEnumEntryInitializerSymbol' instead", ReplaceWith("KaEnumEntryInitializerSymbol"))
-public typealias KtEnumEntryInitializerSymbol = KaEnumEntryInitializerSymbol
-
-@Deprecated("Use 'KaVariableLikeSymbol' instead", ReplaceWith("KaVariableLikeSymbol"))
-public typealias KtVariableSymbol = KaVariableSymbol
-
-public abstract class KaJavaFieldSymbol :
-    KaVariableSymbol(),
-    @Suppress("DEPRECATION") KaSymbolWithKind {
+public abstract class KaJavaFieldSymbol : KaVariableSymbol() {
     final override val location: KaSymbolLocation get() = withValidityAssertion { KaSymbolLocation.CLASS }
     final override val isExtension: Boolean get() = withValidityAssertion { false }
     final override val receiverParameter: KaReceiverParameterSymbol? get() = withValidityAssertion { null }
+    final override val modality: KaSymbolModality get() = withValidityAssertion { KaSymbolModality.FINAL }
+    final override val isExpect: Boolean get() = withValidityAssertion { false }
+    final override val isActual: Boolean get() = withValidityAssertion { false }
 
     @KaExperimentalApi
     final override val contextReceivers: List<KaContextReceiver> get() = withValidityAssertion { emptyList() }
@@ -171,14 +155,10 @@ public abstract class KaJavaFieldSymbol :
     abstract override fun createPointer(): KaSymbolPointer<KaJavaFieldSymbol>
 }
 
-@Deprecated("Use 'KaJavaFieldSymbol' instead", ReplaceWith("KaJavaFieldSymbol"))
-public typealias KtJavaFieldSymbol = KaJavaFieldSymbol
-
 @OptIn(KaImplementationDetail::class)
 public sealed class KaPropertySymbol :
     KaVariableSymbol(),
-    KaTypeParameterOwnerSymbol,
-    @Suppress("DEPRECATION") KaSymbolWithKind {
+    KaTypeParameterOwnerSymbol {
 
     /**
      * Checks if the property has a non-null [getter].
@@ -204,6 +184,7 @@ public sealed class KaPropertySymbol :
     public abstract val isFromPrimaryConstructor: Boolean
     public abstract val isOverride: Boolean
     public abstract val isStatic: Boolean
+    public abstract val isExternal: Boolean
 
     /**
      * Value which is provided for as property initializer.
@@ -220,9 +201,6 @@ public sealed class KaPropertySymbol :
     abstract override fun createPointer(): KaSymbolPointer<KaPropertySymbol>
 }
 
-@Deprecated("Use 'KaPropertySymbol' instead", ReplaceWith("KaPropertySymbol"))
-public typealias KtPropertySymbol = KaPropertySymbol
-
 public abstract class KaKotlinPropertySymbol : KaPropertySymbol() {
     public abstract val isLateInit: Boolean
 
@@ -230,9 +208,6 @@ public abstract class KaKotlinPropertySymbol : KaPropertySymbol() {
 
     abstract override fun createPointer(): KaSymbolPointer<KaKotlinPropertySymbol>
 }
-
-@Deprecated("Use 'KaKotlinPropertySymbol' instead", ReplaceWith("KaKotlinPropertySymbol"))
-public typealias KtKotlinPropertySymbol = KaKotlinPropertySymbol
 
 public abstract class KaSyntheticJavaPropertySymbol : KaPropertySymbol() {
     final override val hasBackingField: Boolean get() = withValidityAssertion { true }
@@ -254,11 +229,7 @@ public abstract class KaSyntheticJavaPropertySymbol : KaPropertySymbol() {
     abstract override fun createPointer(): KaSymbolPointer<KaSyntheticJavaPropertySymbol>
 }
 
-@Deprecated("Use 'KaSyntheticJavaPropertySymbol' instead", ReplaceWith("KaSyntheticJavaPropertySymbol"))
-public typealias KtSyntheticJavaPropertySymbol = KaSyntheticJavaPropertySymbol
-
-public abstract class KaLocalVariableSymbol : KaVariableSymbol(),
-    @Suppress("DEPRECATION") KaSymbolWithKind {
+public abstract class KaLocalVariableSymbol : KaVariableSymbol() {
     final override val callableId: CallableId? get() = withValidityAssertion { null }
     final override val isExtension: Boolean get() = withValidityAssertion { false }
     final override val receiverParameter: KaReceiverParameterSymbol? get() = withValidityAssertion { null }
@@ -275,9 +246,6 @@ public abstract class KaLocalVariableSymbol : KaVariableSymbol(),
 
     abstract override fun createPointer(): KaSymbolPointer<KaLocalVariableSymbol>
 }
-
-@Deprecated("Use 'KaLocalVariableSymbol' instead", ReplaceWith("KaLocalVariableSymbol"))
-public typealias KtLocalVariableSymbol = KaLocalVariableSymbol
 
 public sealed class KaParameterSymbol : KaVariableSymbol() {
     final override val location: KaSymbolLocation get() = withValidityAssertion { KaSymbolLocation.LOCAL }
@@ -296,11 +264,7 @@ public sealed class KaParameterSymbol : KaVariableSymbol() {
     abstract override fun createPointer(): KaSymbolPointer<KaParameterSymbol>
 }
 
-@Deprecated("Use 'KaParameterSymbol' instead", ReplaceWith("KaParameterSymbol"))
-public typealias KtParameterSymbol = KaParameterSymbol
-
-public abstract class KaValueParameterSymbol : KaParameterSymbol(),
-    @Suppress("DEPRECATION") KaSymbolWithKind, KaAnnotatedSymbol {
+public abstract class KaValueParameterSymbol : KaParameterSymbol(), KaAnnotatedSymbol {
     /**
      * Returns true if the function parameter is marked with `noinline` modifier
      */
@@ -345,18 +309,11 @@ public abstract class KaValueParameterSymbol : KaParameterSymbol(),
     public open val generatedPrimaryConstructorProperty: KaKotlinPropertySymbol? get() = null
 }
 
-@Deprecated("Use 'KaValueParameterSymbol' instead", ReplaceWith("KaValueParameterSymbol"))
-public typealias KtValueParameterSymbol = KaValueParameterSymbol
-
 /**
  * Symbol for a receiver parameter of a function or property. For example, consider code `fun String.foo() {...}`, the declaration of
  * `String` receiver parameter is such a symbol.
  */
 public abstract class KaReceiverParameterSymbol : KaParameterSymbol() {
-    @Deprecated("Use 'returnType' instead", ReplaceWith("returnType"))
-    public val type: KaType
-        get() = withValidityAssertion { returnType }
-
     /**
      * Link to the corresponding function or property.
      * In terms of the example above -- this is link to the function foo.
@@ -368,6 +325,3 @@ public abstract class KaReceiverParameterSymbol : KaParameterSymbol() {
 
     abstract override fun createPointer(): KaSymbolPointer<KaReceiverParameterSymbol>
 }
-
-@Deprecated("Use 'KaReceiverParameterSymbol' instead.", ReplaceWith("KaReceiverParameterSymbol"))
-public typealias KtReceiverParameterSymbol = KaReceiverParameterSymbol

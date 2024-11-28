@@ -5,12 +5,10 @@
 
 package org.jetbrains.kotlin.backend.jvm
 
-import org.jetbrains.kotlin.backend.common.ModuleLoweringPass
 import org.jetbrains.kotlin.backend.common.lower.*
 import org.jetbrains.kotlin.backend.common.lower.loops.ForLoopsLowering
 import org.jetbrains.kotlin.backend.common.phaser.*
 import org.jetbrains.kotlin.backend.jvm.lower.*
-import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 
 private val jvmFilePhases = createFilePhases<JvmBackendContext>(
     ::TypeAliasAnnotationMethodsLowering,
@@ -59,7 +57,7 @@ private val jvmFilePhases = createFilePhases<JvmBackendContext>(
     ::AssertionLowering,
     ::JvmReturnableBlockLowering,
     ::SingletonReferencesLowering,
-    ::SharedVariablesLowering,
+    ::JvmSharedVariablesLowering,
     ::JvmLocalDeclarationsLowering,
 
     ::RemoveDuplicatedInlinedLocalClassesLowering,
@@ -80,6 +78,7 @@ private val jvmFilePhases = createFilePhases<JvmBackendContext>(
 
     ::InterfaceLowering,
     ::InheritedDefaultMethodsOnClassesLowering,
+    ::GenerateJvmDefaultCompatibilityBridges,
     ::InterfaceSuperCallsLowering,
     ::InterfaceDefaultCallsLowering,
     ::InterfaceObjectCallsLowering,
@@ -125,7 +124,6 @@ private val jvmFilePhases = createFilePhases<JvmBackendContext>(
 
 val jvmLoweringPhases = SameTypeNamedCompilerPhase(
     name = "IrLowering",
-    description = "IR lowering",
     nlevels = 1,
     actions = DEFAULT_IR_ACTIONS,
     lower = buildModuleLoweringsPhase(
@@ -151,7 +149,6 @@ val jvmLoweringPhases = SameTypeNamedCompilerPhase(
     ).then(
         performByIrFile(
             name = "PerformByIrFile",
-            description = "Perform phases by IrFile",
             lower = jvmFilePhases,
             supportParallel = false,
         )
@@ -161,8 +158,3 @@ val jvmLoweringPhases = SameTypeNamedCompilerPhase(
         ::JvmIrValidationAfterLoweringPhase
     )
 )
-
-private typealias JvmPhase = CompilerPhase<JvmBackendContext, IrModuleFragment, IrModuleFragment>
-
-private fun buildModuleLoweringsPhase(vararg phases: (JvmBackendContext) -> ModuleLoweringPass): JvmPhase =
-    createModulePhases(*phases).reduce(JvmPhase::then)

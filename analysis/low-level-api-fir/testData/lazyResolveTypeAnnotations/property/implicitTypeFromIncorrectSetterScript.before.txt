@@ -1,18 +1,18 @@
-@R|low/Anno|(<strcat>(String(setter parameter type ), prop#))  kotlin/collections/List<@R|low/Anno|(<strcat>(String(setter nested parameter type ), prop#))  kotlin/collections/Collection<@R|low/Anno|(<strcat>(String(setter nested nested parameter type ), prop#))  kotlin/String>>
+@R|low/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|low/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|low/Anno|(LAZY_EXPRESSION)  kotlin/String>>
   context -> FirValueParameterSymbol <local>/value from FirPropertyAccessorSymbol special/accessor from FirPropertySymbol low/resolveMe
   anchor -> [FirPropertySymbol low/resolveMe]
 
-@R|low/Anno|(<strcat>(String(setter nested parameter type ), prop#))  kotlin/collections/Collection<@R|low/Anno|(<strcat>(String(setter nested nested parameter type ), prop#))  kotlin/String>
+@R|low/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|low/Anno|(LAZY_EXPRESSION)  kotlin/String>
   context -> FirValueParameterSymbol <local>/value from FirPropertyAccessorSymbol special/accessor from FirPropertySymbol low/resolveMe
   anchor -> [FirPropertySymbol low/resolveMe]
 
-@R|low/Anno|(<strcat>(String(setter nested nested parameter type ), prop#))  kotlin/String
+@R|low/Anno|(LAZY_EXPRESSION)  kotlin/String
   context -> FirValueParameterSymbol <local>/value from FirPropertyAccessorSymbol special/accessor from FirPropertySymbol low/resolveMe
   anchor -> [FirPropertySymbol low/resolveMe]
 
 FILE: [ResolvedTo(IMPORTS)] implicitTypeFromIncorrectSetterScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-implicitTypeFromIncorrectSetterScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol low.<script-implicitTypeFromIncorrectSetterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -32,7 +32,7 @@ FILE: [ResolvedTo(IMPORTS)] implicitTypeFromIncorrectSetterScript.kts
             public [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] get(): <ERROR TYPE REF: Unresolved name: field> {
                 ^ <Unresolved name: field>#
             }
-            public [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] set([ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] value: R|@R|low/Anno|(<strcat>(String(setter parameter type ), prop#))  kotlin/collections/List<@R|low/Anno|(<strcat>(String(setter nested parameter type ), prop#))  kotlin/collections/Collection<@R|low/Anno|(<strcat>(String(setter nested nested parameter type ), prop#))  kotlin/String>>|): R|kotlin/Unit| {
+            public [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] set([ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] value: R|@R|low/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|low/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|low/Anno|(LAZY_EXPRESSION)  kotlin/String>>|): R|kotlin/Unit| {
                 ^ value#
             }
 

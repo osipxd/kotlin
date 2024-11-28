@@ -18,8 +18,7 @@ Tower Data Context:
                 Type: Test
     Element 7
         Context receivers:
-            FirRegularClassSymbol context(R|Foo|)
-            public final class Test : R|kotlin/Any|
+            FirValueParameterSymbol R|Foo|
                 Type: Foo
                 Label: Foo
     Element 8
@@ -32,14 +31,14 @@ FILE: [ResolvedTo(IMPORTS)] contextReceiversClass.kt
         public? final? [ResolvedTo(RAW_FIR)] fun foo(): Int
 
     }
-    context(Foo)
+    context([ResolvedTo(RAW_FIR)] Foo)
     public final? [ResolvedTo(RAW_FIR)] class Test : R|kotlin/Any| {
         public? [ResolvedTo(RAW_FIR)] constructor(): R|Test| {
             LAZY_super<R|kotlin/Any|>
         }
 
         public final [ResolvedTo(BODY_RESOLVE)] fun test(): R|kotlin/Unit| {
-            this@R|/Test|.R|/Foo.foo|()
+            this@R|context of /Test|.R|/Foo.foo|()
         }
 
     }

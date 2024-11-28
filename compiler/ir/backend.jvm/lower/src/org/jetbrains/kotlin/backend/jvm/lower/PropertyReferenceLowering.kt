@@ -42,9 +42,11 @@ import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.types.Variance
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Constructs `KProperty` instances returned by expressions such as `A::x` and `A()::x`.
+ */
 @PhaseDescription(
     name = "PropertyReference",
-    description = "Construct KProperty instances returned by expressions such as A::x and A()::x",
     // This must be done after contents of functions are extracted into separate classes, or else the `$$delegatedProperties`
     // field will end up in the wrong class (not the one that declares the delegated property).
     prerequisite = [FunctionReferenceLowering::class, SuspendLambdaLowering::class, PropertyReferenceDelegationLowering::class],
@@ -277,8 +279,14 @@ internal class PropertyReferenceLowering(val context: JvmBackendContext) : IrEle
             val localIndex = signature.valueParameters.take(index + if (replaced.extensionReceiverParameter != null) 1 else 0)
                 .sumOf { it.asmType.size } + (if (replaced.dispatchReceiverParameter != null) 1 else 0)
             // Null checks are removed during inlining, so we can ignore them.
-            return loadCompiledInlineFunction(containerId, signature.asmMethod, isSuspend, hasMangledReturnType, context.state)
-                .node.usesLocalExceptParameterNullCheck(localIndex)
+            return loadCompiledInlineFunction(
+                containerId,
+                signature.asmMethod,
+                isSuspend,
+                hasMangledReturnType,
+                context.evaluatorData != null && visibility == DescriptorVisibilities.INTERNAL,
+                context.state
+            ).node.usesLocalExceptParameterNullCheck(localIndex)
         }
         return hasChild { it is IrGetValue && it.symbol == valueParameters[index].symbol }
     }
@@ -400,7 +408,7 @@ internal class PropertyReferenceLowering(val context: JvmBackendContext) : IrEle
         }.apply {
             parent = currentDeclarationParent!!
             superTypes = listOf(superClass.defaultType)
-            createImplicitParameterDeclarationWithWrappedDescriptor()
+            createThisReceiverParameter()
         }.copyAttributes(expression)
 
         addConstructor(expression, referenceClass, superClass)

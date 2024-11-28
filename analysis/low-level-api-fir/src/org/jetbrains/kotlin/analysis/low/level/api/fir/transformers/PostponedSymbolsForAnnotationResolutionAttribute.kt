@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.fir.declarations.FirDeclarationDataKey
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationDataRegistry
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirReceiverParameterSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 
 private object PostponedSymbolsForAnnotationResolutionKey : FirDeclarationDataKey()
@@ -78,7 +79,8 @@ internal fun FirDeclaration.forEachDeclarationWhichCanHavePostponedSymbols(actio
  * @see postponedSymbolsForAnnotationResolution
  */
 internal fun FirBasedSymbol<*>.unwrapSymbolToPostpone(): FirBasedSymbol<*> = when (this) {
-    is FirValueParameterSymbol -> containingFunctionSymbol
+    is FirValueParameterSymbol -> containingDeclarationSymbol
+    is FirReceiverParameterSymbol -> containingDeclarationSymbol
     else -> this
 }
 

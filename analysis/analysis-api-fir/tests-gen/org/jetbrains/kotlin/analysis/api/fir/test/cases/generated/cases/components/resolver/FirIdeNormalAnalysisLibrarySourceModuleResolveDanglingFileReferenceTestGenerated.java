@@ -80,6 +80,12 @@ public class FirIdeNormalAnalysisLibrarySourceModuleResolveDanglingFileReference
     }
 
     @Test
+    @TestMetadata("classPrivateConstructorParameter.kt")
+    public void testClassPrivateConstructorParameter() {
+      runTest("analysis/analysis-api/testData/danglingFileReferenceResolve/ignoreSelf/classPrivateConstructorParameter.kt");
+    }
+
+    @Test
     @TestMetadata("classTypeParameter.kt")
     public void testClassTypeParameter() {
       runTest("analysis/analysis-api/testData/danglingFileReferenceResolve/ignoreSelf/classTypeParameter.kt");
@@ -92,9 +98,21 @@ public class FirIdeNormalAnalysisLibrarySourceModuleResolveDanglingFileReference
     }
 
     @Test
+    @TestMetadata("constructorValueParameterFromPrecedingParameterDefaultValue.kt")
+    public void testConstructorValueParameterFromPrecedingParameterDefaultValue() {
+      runTest("analysis/analysis-api/testData/danglingFileReferenceResolve/ignoreSelf/constructorValueParameterFromPrecedingParameterDefaultValue.kt");
+    }
+
+    @Test
     @TestMetadata("functionTypeParameter.kt")
     public void testFunctionTypeParameter() {
       runTest("analysis/analysis-api/testData/danglingFileReferenceResolve/ignoreSelf/functionTypeParameter.kt");
+    }
+
+    @Test
+    @TestMetadata("functionValueParameterFromPrecedingParameterDefaultValue.kt")
+    public void testFunctionValueParameterFromPrecedingParameterDefaultValue() {
+      runTest("analysis/analysis-api/testData/danglingFileReferenceResolve/ignoreSelf/functionValueParameterFromPrecedingParameterDefaultValue.kt");
     }
 
     @Test

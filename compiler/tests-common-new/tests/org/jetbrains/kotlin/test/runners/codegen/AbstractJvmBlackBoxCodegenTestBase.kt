@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.test.frontend.fir.handlers.FirDiagnosticsHandler
 import org.jetbrains.kotlin.test.model.*
 import org.jetbrains.kotlin.test.runners.AbstractKotlinCompilerWithTargetBackendTest
 import org.jetbrains.kotlin.test.services.configuration.JavaForeignAnnotationType
+import org.jetbrains.kotlin.test.services.sourceProviders.MainFunctionForBlackBoxTestsSourceProvider
 import org.jetbrains.kotlin.utils.bind
 
 abstract class AbstractJvmBlackBoxCodegenTestBase<R : ResultingArtifact.FrontendOutput<R>>(
@@ -38,7 +39,7 @@ abstract class AbstractJvmBlackBoxCodegenTestBase<R : ResultingArtifact.Frontend
     abstract val frontendToBackendConverter: Constructor<Frontend2BackendConverter<R, IrBackendInput>>
 
     override fun TestConfigurationBuilder.configuration() {
-        commonConfigurationForTest(targetFrontend, frontendFacade, frontendToBackendConverter)
+        commonConfigurationForTest(targetFrontend, frontendFacade, frontendToBackendConverter, ::MainFunctionForBlackBoxTestsSourceProvider)
 
         configureClassicFrontendHandlersStep {
             useHandlers(
@@ -54,50 +55,65 @@ abstract class AbstractJvmBlackBoxCodegenTestBase<R : ResultingArtifact.Frontend
 
         configureCommonHandlersForBoxTest()
 
-        configureJvmArtifactsHandlersStep {
+        useAfterAnalysisCheckers(
+            ::BlackBoxCodegenSuppressor,
+        )
+
+        configureJvmBoxCodegenSettings(includeAllDumpHandlers = true)
+        enableMetaInfoHandler()
+    }
+}
+
+fun TestConfigurationBuilder.configureJvmBoxCodegenSettings(includeAllDumpHandlers: Boolean) {
+    configureJvmArtifactsHandlersStep {
+        if (includeAllDumpHandlers) {
             useHandlers(
                 ::BytecodeListingHandler,
-                ::BytecodeTextHandler.bind(true)
             )
         }
 
-        useAfterAnalysisCheckers(
-            ::BlackBoxCodegenSuppressor,
-            ::BlackBoxInlinerCodegenSuppressor,
+        useHandlers(
+            ::BytecodeTextHandler.bind(true)
         )
+    }
 
+    useAfterAnalysisCheckers(
+        ::BlackBoxInlinerCodegenSuppressor,
+    )
+
+    defaultDirectives {
+        +REPORT_ONLY_EXPLICITLY_DEFINED_DEBUG_INFO
+    }
+
+    forTestsNotMatching(
+        "compiler/testData/codegen/box/diagnostics/functions/tailRecursion/*" or
+                "compiler/testData/diagnostics/*" or
+                "compiler/fir/analysis-tests/testData/*"
+    ) {
         defaultDirectives {
-            +REPORT_ONLY_EXPLICITLY_DEFINED_DEBUG_INFO
+            DIAGNOSTICS with "-warnings"
         }
+    }
 
-        forTestsNotMatching("compiler/testData/codegen/box/diagnostics/functions/tailRecursion/*") {
-            defaultDirectives {
-                DIAGNOSTICS with "-warnings"
-            }
+    configureModernJavaWhenNeeded()
+
+    forTestsMatching("compiler/testData/codegen/box/coroutines/varSpilling/debugMode/*") {
+        defaultDirectives {
+            +ENABLE_DEBUG_MODE
         }
+    }
 
-        configureModernJavaWhenNeeded()
-
-        forTestsMatching("compiler/testData/codegen/box/coroutines/varSpilling/debugMode/*") {
-            defaultDirectives {
-                +ENABLE_DEBUG_MODE
-            }
+    forTestsMatching("compiler/testData/codegen/box/javaInterop/foreignAnnotationsTests/tests/*") {
+        defaultDirectives {
+            +ENABLE_FOREIGN_ANNOTATIONS
+            ForeignAnnotationsDirectives.ANNOTATIONS_PATH with JavaForeignAnnotationType.Annotations
         }
+    }
 
-        forTestsMatching("compiler/testData/codegen/box/javaInterop/foreignAnnotationsTests/tests/*") {
-            defaultDirectives {
-                +ENABLE_FOREIGN_ANNOTATIONS
-                ForeignAnnotationsDirectives.ANNOTATIONS_PATH with JavaForeignAnnotationType.Annotations
-            }
+    forTestsMatching("compiler/testData/codegen/box/involvesIrInterpreter/*") {
+        configureJvmArtifactsHandlersStep {
+            useHandlers(::JvmIrInterpreterDumpHandler)
         }
-
-        forTestsMatching("compiler/testData/codegen/box/involvesIrInterpreter/*") {
-            configureJvmArtifactsHandlersStep {
-                useHandlers(::JvmIrInterpreterDumpHandler)
-            }
-        }
-
-        enableMetaInfoHandler()
     }
 }
 

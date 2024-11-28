@@ -12,9 +12,9 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.backend.js.utils.isJsImplicitExport
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.superTypes
 
 private typealias SubstitutionMap = Map<IrTypeParameterSymbol, IrType>
 

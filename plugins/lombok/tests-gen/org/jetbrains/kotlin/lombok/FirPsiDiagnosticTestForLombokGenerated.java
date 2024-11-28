@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.lombok;
 import com.intellij.testFramework.TestDataPath;
 import org.jetbrains.kotlin.test.util.KtTestUtil;
 import org.jetbrains.kotlin.test.TestMetadata;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -19,67 +20,143 @@ import java.util.regex.Pattern;
 @TestDataPath("$PROJECT_ROOT")
 public class FirPsiDiagnosticTestForLombokGenerated extends AbstractFirPsiDiagnosticTestForLombok {
   @Test
-  @TestMetadata("accessorsStripPrefixCombined.kt")
-  public void testAccessorsStripPrefixCombined() {
-    runTest("plugins/lombok/testData/diagnostics/accessorsStripPrefixCombined.kt");
-  }
-
-  @Test
   public void testAllFilesPresentInDiagnostics() {
-    KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("plugins/lombok/testData/diagnostics"), Pattern.compile("^(.+)\\.kt$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+    KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("plugins/lombok/testData/diagnostics"), Pattern.compile("^(.+)\\.kt$"), null, true);
   }
 
   @Test
-  @TestMetadata("annotationTypes.kt")
-  public void testAnnotationTypes() {
-    runTest("plugins/lombok/testData/diagnostics/annotationTypes.kt");
+  @TestMetadata("builderMethodPreserving.kt")
+  public void testBuilderMethodPreserving() {
+    runTest("plugins/lombok/testData/diagnostics/builderMethodPreserving.kt");
   }
 
   @Test
-  @TestMetadata("builderAnnotationArguments.kt")
-  public void testBuilderAnnotationArguments() {
-    runTest("plugins/lombok/testData/diagnostics/builderAnnotationArguments.kt");
+  @TestMetadata("builderOnMultipleConstructors.kt")
+  public void testBuilderOnMultipleConstructors() {
+    runTest("plugins/lombok/testData/diagnostics/builderOnMultipleConstructors.kt");
   }
 
   @Test
-  @TestMetadata("builderConfig.kt")
-  public void testBuilderConfig() {
-    runTest("plugins/lombok/testData/diagnostics/builderConfig.kt");
+  @TestMetadata("superBuilderAnnotationArguments.kt")
+  public void testSuperBuilderAnnotationArguments() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderAnnotationArguments.kt");
   }
 
   @Test
-  @TestMetadata("builderSingularNullability.kt")
-  public void testBuilderSingularNullability() {
-    runTest("plugins/lombok/testData/diagnostics/builderSingularNullability.kt");
+  @TestMetadata("superBuilderComplexHierarchy.kt")
+  public void testSuperBuilderComplexHierarchy() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderComplexHierarchy.kt");
   }
 
   @Test
-  @TestMetadata("clashAccessors.kt")
-  public void testClashAccessors() {
-    runTest("plugins/lombok/testData/diagnostics/clashAccessors.kt");
+  @TestMetadata("superBuilderConfig.kt")
+  public void testSuperBuilderConfig() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderConfig.kt");
   }
 
   @Test
-  @TestMetadata("getters.kt")
-  public void testGetters() {
-    runTest("plugins/lombok/testData/diagnostics/getters.kt");
+  @TestMetadata("superBuilderOnConstructor.kt")
+  public void testSuperBuilderOnConstructor() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderOnConstructor.kt");
   }
 
   @Test
-  @TestMetadata("gettersClassLevel.kt")
-  public void testGettersClassLevel() {
-    runTest("plugins/lombok/testData/diagnostics/gettersClassLevel.kt");
+  @TestMetadata("superBuilderSingular.kt")
+  public void testSuperBuilderSingular() {
+    runTest("plugins/lombok/testData/diagnostics/superBuilderSingular.kt");
   }
 
-  @Test
-  @TestMetadata("setters.kt")
-  public void testSetters() {
-    runTest("plugins/lombok/testData/diagnostics/setters.kt");
-  }
+  @Nested
+  @TestMetadata("plugins/lombok/testData/diagnostics/k1+k2")
+  @TestDataPath("$PROJECT_ROOT")
+  public class K1_k2 {
+    @Test
+    @TestMetadata("accessorsStripPrefixCombined.kt")
+    public void testAccessorsStripPrefixCombined() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/accessorsStripPrefixCombined.kt");
+    }
 
-  @Test
-  @TestMetadata("settersClassLevel.kt")
-  public void testSettersClassLevel() {
-    runTest("plugins/lombok/testData/diagnostics/settersClassLevel.kt");
+    @Test
+    public void testAllFilesPresentInK1_k2() {
+      KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("plugins/lombok/testData/diagnostics/k1+k2"), Pattern.compile("^(.+)\\.kt$"), null, true);
+    }
+
+    @Test
+    @TestMetadata("annotationTypes.kt")
+    public void testAnnotationTypes() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/annotationTypes.kt");
+    }
+
+    @Test
+    @TestMetadata("builderAnnotationArguments.kt")
+    public void testBuilderAnnotationArguments() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/builderAnnotationArguments.kt");
+    }
+
+    @Test
+    @TestMetadata("builderConfig.kt")
+    public void testBuilderConfig() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/builderConfig.kt");
+    }
+
+    @Test
+    @TestMetadata("builderSingularNullability.kt")
+    public void testBuilderSingularNullability() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/builderSingularNullability.kt");
+    }
+
+    @Test
+    @TestMetadata("clashAccessors.kt")
+    public void testClashAccessors() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/clashAccessors.kt");
+    }
+
+    @Test
+    @TestMetadata("clashAccessors.fir.kt")
+    public void testClashAccessors_fir() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/clashAccessors.fir.kt");
+    }
+
+    @Test
+    @TestMetadata("getters.kt")
+    public void testGetters() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/getters.kt");
+    }
+
+    @Test
+    @TestMetadata("gettersClassLevel.kt")
+    public void testGettersClassLevel() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/gettersClassLevel.kt");
+    }
+
+    @Test
+    @TestMetadata("gettersClassLevel.fir.kt")
+    public void testGettersClassLevel_fir() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/gettersClassLevel.fir.kt");
+    }
+
+    @Test
+    @TestMetadata("getters.fir.kt")
+    public void testGetters_fir() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/getters.fir.kt");
+    }
+
+    @Test
+    @TestMetadata("setters.kt")
+    public void testSetters() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/setters.kt");
+    }
+
+    @Test
+    @TestMetadata("settersClassLevel.kt")
+    public void testSettersClassLevel() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/settersClassLevel.kt");
+    }
+
+    @Test
+    @TestMetadata("setters.fir.kt")
+    public void testSetters_fir() {
+      runTest("plugins/lombok/testData/diagnostics/k1+k2/setters.fir.kt");
+    }
   }
 }

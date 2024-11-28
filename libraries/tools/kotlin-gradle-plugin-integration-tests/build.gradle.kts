@@ -1,7 +1,7 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.build.androidsdkprovisioner.ProvisioningType
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
-import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Paths
 
@@ -9,11 +9,13 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
     id("android-sdk-provisioner")
+    id("gradle-plugin-compiler-dependency-configuration")
 }
 
 testsJar()
 
 kotlin {
+    jvmToolchain(17)
     compilerOptions {
         optIn.addAll(
             "org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi",
@@ -93,15 +95,18 @@ dependencies {
     testCompileOnly(project(":kotlin-gradle-plugin-test-utils-embeddable"))
     testRuntimeOnly(project(":kotlin-gradle-plugin-test-utils-embeddable")) { isTransitive = false }
 
+    // AGP classes for buildScriptInjection's
+    testImplementation(libs.android.gradle.plugin.gradle.api) { isTransitive = false }
+
     testImplementation(project(path = ":examples:annotation-processor-example"))
     testImplementation(kotlinStdlib("jdk8"))
     testImplementation(project(":kotlin-parcelize-compiler"))
     testImplementation(commonDependency("org.jetbrains.intellij.deps", "trove4j"))
-    testImplementation(commonDependency("org.jetbrains.kotlinx", "kotlinx-serialization-json"))
+    testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.ktor.client.cio)
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.ktor.server.core)
-    testImplementation(libs.ktor.server.netty)
+    testImplementation(libs.ktor.server.cio)
     testImplementation(libs.ktor.server.test.host)
 
     testImplementation(gradleApi())
@@ -112,8 +117,9 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.oshi.core)
 
-    testRuntimeOnly(project(":compiler:tests-mutes"))
+    testApi(project(":compiler:tests-mutes:mutes-junit5"))
 
     testCompileOnly(libs.intellij.asm)
 }
@@ -128,6 +134,7 @@ tasks.register<Delete>("cleanTestKitCache") {
     description = "Deletes temporary Gradle TestKit cache"
 
     delete(layout.buildDirectory.dir("testKitCache"))
+    delete(layout.buildDirectory.dir("kgpTestInfra"))
 }
 
 val cleanUserHomeKonanDir by tasks.registering(Delete::class) {
@@ -228,7 +235,7 @@ val gradleVersions = listOf(
     "8.7",
     "8.8",
     "8.9",
-    "8.10",
+    "8.10.2",
 )
 
 if (project.kotlinBuildProperties.isTeamcityBuild) {
@@ -373,6 +380,26 @@ tasks.named<Task>("check") {
         swiftExportTestsTask,
     )
 }
+
+/**
+ * The JVM toolchain is configured to version 17.
+ * However, that breaks buildscript injection for tests that are ran on JDK 8.
+ * Such setup allows to use new Java API in the test infrastructure.
+ */
+fun configureJvmTarget8() {
+    tasks.compileTestJava {
+        sourceCompatibility = "8"
+        targetCompatibility = "8"
+    }
+
+    tasks.compileTestKotlin {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_1_8
+        }
+    }
+}
+
+configureJvmTarget8()
 
 tasks.withType<Test>().configureEach {
     // Disable KONAN_DATA_DIR env variable for all integration tests

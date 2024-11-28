@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: BACKEND
 // LANGUAGE: +ExpectedTypeFromCast
 
 class X<S> {
@@ -11,7 +12,7 @@ fun test(x: X<Number>) {
 fun <S, D: S> g() {
     fun <T : S> foo(): T = TODO()
 
-    val y = <!DEBUG_INFO_EXPRESSION_TYPE("S!! & kotlin.Int")!>foo()<!> as Int
+    val y = <!DEBUG_INFO_EXPRESSION_TYPE("S & Any & kotlin.Int")!>foo()<!> as Int
 
     val y2 = foo() as D
 }

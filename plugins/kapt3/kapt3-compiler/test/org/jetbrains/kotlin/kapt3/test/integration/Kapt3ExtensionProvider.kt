@@ -5,9 +5,8 @@
 
 package org.jetbrains.kotlin.kapt3.test.integration
 
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSourceLocation
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.cli.common.messages.MessageCollectorImpl
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.kapt3.AbstractKapt3Extension
 import org.jetbrains.kotlin.kapt3.KaptContextForStubGeneration
@@ -17,7 +16,7 @@ import org.jetbrains.kotlin.kapt3.base.incremental.DeclaredProcType
 import org.jetbrains.kotlin.kapt3.base.incremental.IncrementalProcessor
 import org.jetbrains.kotlin.kapt3.javac.KaptJavaFileObject
 import org.jetbrains.kotlin.kapt3.stubs.KaptStubConverter
-import org.jetbrains.kotlin.kapt3.test.handlers.ClassFileToSourceKaptStubHandler.Companion.FILE_SEPARATOR
+import org.jetbrains.kotlin.kapt3.test.handlers.KaptStubConverterHandler.Companion.FILE_SEPARATOR
 import org.jetbrains.kotlin.kapt3.util.MessageCollectorBackedKaptLogger
 import org.jetbrains.kotlin.kapt3.util.prettyPrint
 import org.jetbrains.kotlin.test.model.TestModule
@@ -73,7 +72,7 @@ class Kapt3ExtensionForTests(
     private val process: (Set<TypeElement>, RoundEnvironment, ProcessingEnvironment, Kapt3ExtensionForTests) -> Unit,
     val supportedAnnotations: List<String>,
     compilerConfiguration: CompilerConfiguration,
-    val messageCollector: LoggingMessageCollector = LoggingMessageCollector()
+    val messageCollector: MessageCollectorImpl = MessageCollectorImpl()
 ) : AbstractKapt3Extension(
     options, MessageCollectorBackedKaptLogger(
         flags = options,
@@ -153,28 +152,4 @@ class Kapt3ExtensionForTests(
 
         super.saveIncrementalData(kaptContext, messageCollector, converter)
     }
-}
-
-class LoggingMessageCollector : MessageCollector {
-    private val _messages = mutableListOf<Message>()
-    val messages: List<Message>
-        get() = _messages
-
-    override fun clear() {
-        _messages.clear()
-    }
-
-    override fun report(severity: CompilerMessageSeverity, message: String, location: CompilerMessageSourceLocation?) {
-        _messages.add(Message(severity, message, location))
-    }
-
-    override fun hasErrors() = _messages.any {
-        it.severity.isError
-    }
-
-    data class Message(
-        val severity: CompilerMessageSeverity,
-        val message: String,
-        val location: CompilerMessageSourceLocation?
-    )
 }

@@ -22,8 +22,8 @@ import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContext
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
+import org.jetbrains.kotlin.ir.util.ReferenceSymbolTable
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import java.util.concurrent.ConcurrentHashMap
 
@@ -36,13 +36,12 @@ internal class Context(
         val irModules: Map<String, IrModuleFragment>,
         val irLinker: KonanIrLinker,
         symbols: KonanSymbols,
+        val symbolTable: ReferenceSymbolTable,
 ) : KonanBackendContext(config) {
 
-    override val ir: KonanIr = KonanIr(this, symbols)
+    override val ir: KonanIr = KonanIr(symbols)
 
     override val configuration get() = config.configuration
-
-    override val internalPackageFqn: FqName = RuntimeNames.kotlinNativeInternalPackageName
 
     override val optimizeLoopsOverUnsignedArrays = true
 

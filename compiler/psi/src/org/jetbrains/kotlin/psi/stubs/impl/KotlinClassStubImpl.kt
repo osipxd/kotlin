@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.stubs.KotlinClassStub
+import org.jetbrains.kotlin.psi.stubs.elements.KotlinValueClassRepresentation
 import org.jetbrains.kotlin.psi.stubs.elements.KtClassElementType
 
 class KotlinClassStubImpl(
@@ -23,8 +24,10 @@ class KotlinClassStubImpl(
     private val superNames: Array<StringRef>,
     private val isInterface: Boolean,
     private val isEnumEntry: Boolean,
+    private val isClsStubCompiledToJvmDefaultImplementation: Boolean,
     private val isLocal: Boolean,
     private val isTopLevel: Boolean,
+    val valueClassRepresentation: KotlinValueClassRepresentation?,
 ) : KotlinStubBaseImpl<KtClass>(parent, type), KotlinClassStub {
 
     override fun getFqName(): FqName? {
@@ -34,6 +37,7 @@ class KotlinClassStubImpl(
 
     override fun isInterface(): Boolean = isInterface
     override fun isEnumEntry(): Boolean = isEnumEntry
+    override fun isClsStubCompiledToJvmDefaultImplementation(): Boolean = isClsStubCompiledToJvmDefaultImplementation
     override fun isLocal(): Boolean = isLocal
     override fun getName(): String? = StringRef.toString(name)
 

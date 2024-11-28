@@ -172,7 +172,7 @@ class JavaClassUseSiteMemberScope(
             val key = SyntheticPropertiesCacheKey(
                 name,
                 overriddenProperty.chosenSymbol.receiverParameter?.typeRef?.coneType,
-                overriddenProperty.chosenSymbol.resolvedContextReceivers.ifNotEmpty { map { it.typeRef.coneType } } ?: emptyList()
+                overriddenProperty.chosenSymbol.resolvedContextReceivers.ifNotEmpty { map { it.returnTypeRef.coneType } } ?: emptyList()
             )
             val overrideInClass = syntheticPropertyCache.getValue(key, this to overriddenProperty)
 
@@ -283,7 +283,7 @@ class JavaClassUseSiteMemberScope(
         val fakeSource = source?.fakeElement(KtFakeSourceElementKind.Enhancement)
 
         for (contextReceiver in this.resolvedContextReceivers) {
-            if (contextReceiver.typeRef.coneType.computeJvmDescriptorRepresentation() !=
+            if (contextReceiver.returnTypeRef.coneType.computeJvmDescriptorRepresentation() !=
                 candidate.valueParameters[parameterIndex++].returnTypeRef
                     .toConeKotlinTypeProbablyFlexible(session, typeParameterStack, fakeSource)
                     .computeJvmDescriptorRepresentation()
@@ -563,6 +563,30 @@ class JavaClassUseSiteMemberScope(
                 it.fir.initialSignatureAttr ?: it
             }
 
+        val symbolToBeCollected = processOverridesForFunctionsWithErasedValueParameterIfDeclaredFunctionParametersAreErased(
+            name, explicitlyDeclaredFunction, relevantFunctionFromSupertypes, relevantFunctionFromSupertypesUnwrapped,
+        ) ?: processOverridesForFunctionsWithErasedValueParameterIfInheritedFunctionParametersAreErased(
+            name, relevantFunctionFromSupertypes, relevantFunctionFromSupertypesUnwrapped,
+        ) ?: return false
+
+        destination += symbolToBeCollected
+        directOverriddenFunctions[symbolToBeCollected] = listOf(resultOfIntersection)
+        for ((member, _) in resultOfIntersection.overriddenMembers) {
+            overrideByBase[member] = symbolToBeCollected
+        }
+        return true
+    }
+
+    /**
+     * This function is used to handle a case, when there is a function with erased parameter declared in the scope of the class
+     *   and the function with specified parameter which came from the supertypes
+     */
+    private fun processOverridesForFunctionsWithErasedValueParameterIfDeclaredFunctionParametersAreErased(
+        name: Name,
+        explicitlyDeclaredFunction: FirNamedFunctionSymbol?,
+        relevantFunctionFromSupertypes: FirNamedFunctionSymbol,
+        relevantFunctionFromSupertypesUnwrapped: FirNamedFunctionSymbol,
+    ): FirNamedFunctionSymbol? {
         // E.g. contains(Object) from Java
         val explicitlyDeclaredFunctionWithErasedValueParameters =
             declaredMemberScope.getFunctions(name).firstOrNull { declaredFunction ->
@@ -572,7 +596,7 @@ class JavaClassUseSiteMemberScope(
                             relevantFunctionFromSupertypesUnwrapped.fir,
                             declaredFunction.fir
                         )
-            } ?: return false // No declared functions with erased parameters => no additional processing needed
+            } ?: return null // No declared functions with erased parameters => no additional processing needed
 
         /**
          * See the comment to [shouldBeVisibleAsOverrideOfBuiltInWithErasedValueParameters] function
@@ -601,7 +625,7 @@ class JavaClassUseSiteMemberScope(
         }.symbol
 
         if (allParametersAreAny) {
-            return false
+            return null
         }
 
         // E.g. contains(String) from Java, if any
@@ -628,12 +652,54 @@ class JavaClassUseSiteMemberScope(
             // Collect synthetic function which is a hidden copy of declared one with unerased parameters
             accidentalOverrideWithDeclaredFunctionHiddenCopy.symbol
         }
-        destination += symbolToBeCollected
-        directOverriddenFunctions[symbolToBeCollected] = listOf(resultOfIntersection)
-        for ((member, _) in resultOfIntersection.overriddenMembers) {
-            overrideByBase[member] = symbolToBeCollected
+        return symbolToBeCollected
+    }
+
+    /**
+     * This function is used to handle a case, when there is a function with specified parameter declared in the scope of the class
+     *   and the function with erased parameter which came from the supertypes
+     */
+    private fun processOverridesForFunctionsWithErasedValueParameterIfInheritedFunctionParametersAreErased(
+        name: Name,
+        relevantFunctionFromSupertypes: FirNamedFunctionSymbol,
+        relevantFunctionFromSupertypesUnwrapped: FirNamedFunctionSymbol,
+    ): FirNamedFunctionSymbol? {
+        if (!relevantFunctionFromSupertypesUnwrapped.hasErasedParameters()) return null
+        val explicitlyDeclaredFunctionWithSpecificValueParameters =
+            declaredMemberScope.getFunctions(name).firstOrNull { declaredFunction ->
+                declaredFunction.hasSameJvmDescriptor(relevantFunctionFromSupertypes) &&
+                        !declaredFunction.hasErasedParameters() &&
+                        javaOverrideChecker.doesReturnTypesHaveSameKind(
+                            relevantFunctionFromSupertypesUnwrapped.fir,
+                            declaredFunction.fir
+                        )
+            } ?: return null // No declared functions with specific parameters => no additional processing needed
+
+        /**
+         * TODO (KT-72771): generally this check is not needed, but there is a case with boxed vs unboxed primitives, for which
+         *   `hasSameJvmDescriptor` returns true (even if parameters are `int` and `@EnhancedNullability kotlin.Int`).
+         *   And in this case we actually don't want to create a new declaration, but just return the one from supertype
+         *
+         * See test `compiler/testData/codegen/box/collections/notErasedMapGetMap_boxedTypes.kt`
+         */
+        val thereIsClashBetweenDeclaredAndInheritedFunction = overrideChecker.isOverriddenFunction(
+            explicitlyDeclaredFunctionWithSpecificValueParameters,
+            relevantFunctionFromSupertypes
+        )
+        return if (thereIsClashBetweenDeclaredAndInheritedFunction) {
+            val newSymbol = FirNamedFunctionSymbol(relevantFunctionFromSupertypes.callableId)
+            val accidentalOverrideWithDeclaredFunctionHiddenCopy = buildSimpleFunctionCopy(relevantFunctionFromSupertypes.fir) {
+                this.name = name
+                symbol = newSymbol
+                dispatchReceiverType = klass.defaultType()
+            }.apply {
+                isHiddenToOvercomeSignatureClash = true
+            }
+            // Collect synthetic function which is a hidden copy of inherited one with unerased parameters
+            accidentalOverrideWithDeclaredFunctionHiddenCopy.symbol
+        } else {
+            relevantFunctionFromSupertypes
         }
-        return true
     }
 
     private fun FirNamedFunctionSymbol.hasSameJvmDescriptor(
@@ -917,7 +983,7 @@ class JavaClassUseSiteMemberScope(
         // See compiler/testData/diagnostics/tests/rawTypes/rawTypeOverrides.kt.
         if (!this.isJavaOrEnhancement) return false
 
-        val valueParameter = fir.valueParameters.first()
+        val valueParameter = fir.valueParameters.firstOrNull() ?: return false
         val parameterType = valueParameter.returnTypeRef.toConeKotlinTypeProbablyFlexible(
             session, typeParameterStack, valueParameter.source?.fakeElement(KtFakeSourceElementKind.Enhancement)
         )
@@ -1007,5 +1073,20 @@ class JavaClassUseSiteMemberScope(
             superTypeScopes.withReplacedSessionOrNull(newSession, newScopeSession) ?: superTypeScopes,
             declaredMemberScope.withReplacedSessionOrNull(newSession, newScopeSession) ?: declaredMemberScope
         )
+    }
+
+    override fun isOverriddenFunction(
+        overrideCandidate: FirNamedFunctionSymbol,
+        baseDeclaration: FirNamedFunctionSymbol,
+        baseScope: FirTypeScope?,
+    ): Boolean {
+        if (!super.isOverriddenFunction(overrideCandidate, baseDeclaration, baseScope)) return false
+        if (baseScope == null) return true
+        val baseHasOriginWithErasedParameters = BuiltinMethodsWithSpecialGenericSignature
+            .getOverriddenBuiltinFunctionWithErasedValueParametersInJava(baseDeclaration, baseScope) != null
+        if (baseHasOriginWithErasedParameters && !overrideCandidate.hasErasedParameters()) {
+            return false
+        }
+        return true
     }
 }

@@ -12,6 +12,8 @@ import org.jetbrains.kotlin.ir.backend.js.JsCommonBackendContext
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 
 /**
+ * Replace suspend function calls with calls with continuation.
+ *
  * Requires [AddContinuationToLocalSuspendFunctionsLowering] and
  * [AddContinuationToNonLocalSuspendFunctionsLowering] to transform function declarations first.
  */
@@ -19,6 +21,6 @@ class AddContinuationToFunctionCallsLowering(
     override val context: JsCommonBackendContext
 ) : AbstractAddContinuationToFunctionCallsLowering() {
     override fun IrSimpleFunction.isContinuationItself(): Boolean = overriddenSymbols.any { overriddenSymbol ->
-        overriddenSymbol.owner.name.asString() == "doResume" && overriddenSymbol.owner.parent == context.coroutineSymbols.coroutineImpl.owner
+        overriddenSymbol.owner.name.asString() == "doResume" && overriddenSymbol.owner.parent == context.symbols.coroutineSymbols.coroutineImpl.owner
     }
 }

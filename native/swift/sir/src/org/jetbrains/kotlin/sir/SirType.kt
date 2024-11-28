@@ -7,7 +7,18 @@ package org.jetbrains.kotlin.sir
 
 import org.jetbrains.kotlin.sir.util.SirSwiftModule
 
-sealed interface SirType
+sealed interface SirType {
+    companion object {
+        val any get() = SirExistentialType()
+        val never get() = SirNominalType(SirSwiftModule.never)
+        val void get() = SirNominalType(SirSwiftModule.void)
+    }
+}
+
+class SirFunctionalType(
+    val parameterTypes: List<SirType>,
+    val returnType: SirType,
+) : SirType
 
 open class SirNominalType(
     val typeDeclaration: SirNamedDeclaration,
@@ -16,11 +27,13 @@ open class SirNominalType(
 ) : SirType {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other != null && (this::class != other::class || other is SirOptionalType)) return false
+        if (other == null || other !is SirNominalType) return false
 
-        other as SirNominalType
+        // Please consider special handling here if a SirNominalType's subtype with incompatible `equals` would appear.
+        // This may be required to preserve equals commutativity.
 
         if (typeDeclaration != other.typeDeclaration) return false
+        if (typeArguments != other.typeArguments) return false
         if (parent != other.parent) return false
 
         return true
@@ -37,9 +50,22 @@ class SirOptionalType(type: SirType): SirNominalType(
     typeDeclaration = SirSwiftModule.optional,
     typeArguments = listOf(type)
 ) {
-    val wrappedType: SirType = super.typeArguments.single()
+    val wrappedType: SirType get() = super.typeArguments.single()
+}
 
-    override fun equals(other: Any?): Boolean = super.equals(other)
+class SirArrayType(type: SirType): SirNominalType(
+    typeDeclaration = SirSwiftModule.array,
+    typeArguments = listOf(type)
+) {
+    val elementType: SirType get() = super.typeArguments.single()
+}
+
+class SirDictionaryType(keyType: SirType, valueType: SirType): SirNominalType(
+    typeDeclaration = SirSwiftModule.dictionary,
+    typeArguments = listOf(keyType, valueType)
+) {
+    val keyType: SirType get() = super.typeArguments[0]
+    val valueType: SirType get() = super.typeArguments[1]
 }
 
 class SirExistentialType(

@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.gradle.testbase.BuildOptions.IsolatedProjectsMode
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.junit.jupiter.api.condition.OS
+import java.io.File
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.absolutePathString
@@ -35,7 +36,6 @@ data class BuildOptions(
     val parallel: Boolean = true,
     val incremental: Boolean? = null,
     val useGradleClasspathSnapshot: Boolean? = null,
-    val useICClasspathSnapshot: Boolean? = null,
     val maxWorkers: Int = (Runtime.getRuntime().availableProcessors() / 4 - 1).coerceAtLeast(2),
     // On Windows OS enabling watch-fs prevents deleting temp directory, which fails the tests
     val fileSystemWatchEnabled: Boolean = !OS.WINDOWS.isCurrentOs,
@@ -62,6 +62,13 @@ data class BuildOptions(
     val kotlinUserHome: Path? = testKitDir.resolve(".kotlin"),
     val compilerArgumentsLogLevel: String? = "info",
     val kmpIsolatedProjectsSupport: KmpIsolatedProjectsSupport? = null,
+    val fileLeaksReportFile: File? = null,
+    /**
+     * Override the directory to store flag files indicating "daemon process is alive" controlled by Kotlin Daemon.
+     *
+     * @see [KGPDaemonsBaseTest]
+     */
+    val customKotlinDaemonRunFilesDirectory: File? = null,
 ) {
     enum class ConfigurationCacheValue {
 
@@ -187,7 +194,6 @@ data class BuildOptions(
         }
 
         useGradleClasspathSnapshot?.let { arguments.add("-Pkotlin.incremental.useClasspathSnapshot=$it") }
-        useICClasspathSnapshot?.let { arguments.add("-Pkotlin.incremental.classpath.snapshot.enabled=$it") }
 
         if (fileSystemWatchEnabled) {
             arguments.add("--watch-fs")

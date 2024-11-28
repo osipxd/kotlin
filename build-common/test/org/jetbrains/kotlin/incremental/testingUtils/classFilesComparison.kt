@@ -26,7 +26,7 @@ import org.jetbrains.kotlin.metadata.DebugProtoBuf
 import org.jetbrains.kotlin.metadata.js.DebugJsProtoBuf
 import org.jetbrains.kotlin.metadata.jvm.DebugJvmProtoBuf
 import org.jetbrains.kotlin.metadata.jvm.deserialization.BitEncoding
-import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmMetadataVersion
+import org.jetbrains.kotlin.metadata.deserialization.MetadataVersion
 import org.jetbrains.kotlin.protobuf.ExtensionRegistry
 import org.jetbrains.kotlin.serialization.js.JsSerializerProtocol
 import org.jetbrains.kotlin.serialization.js.KotlinJavascriptSerializationUtil
@@ -94,8 +94,8 @@ fun assertEqualDirectories(
         val message: String? = null
         throw ComparisonFailure(
             message,
-            expectedString.replaceFirst(DIR_ROOT_PLACEHOLDER, expected.canonicalPath),
-            actualString.replaceFirst(DIR_ROOT_PLACEHOLDER, actual.canonicalPath)
+            expectedString.replaceFirst(DIR_ROOT_PLACEHOLDER, expected.absolutePath),
+            actualString.replaceFirst(DIR_ROOT_PLACEHOLDER, actual.absolutePath)
         )
     }
 
@@ -173,7 +173,7 @@ private fun classFileToString(classFile: File): String {
     val traceVisitor = TraceClassVisitor(PrintWriter(out))
     ClassReader(classFile.readBytes()).accept(traceVisitor, 0)
 
-    val classHeader = LocalFileKotlinClass.create(classFile, JvmMetadataVersion.INSTANCE)?.classHeader ?: return ""
+    val classHeader = LocalFileKotlinClass.create(classFile, MetadataVersion.INSTANCE)?.classHeader ?: return ""
     if (!classHeader.metadataVersion.isCompatibleWithCurrentCompilerVersion()) {
         error("Incompatible class ($classHeader): $classFile")
     }
@@ -276,7 +276,7 @@ private fun fileToStringRepresentation(file: File): String {
             kjsmToString(file)
         }
         file.name.endsWith(".js.map") -> {
-            val generatedJsPath = file.canonicalPath.removeSuffix(".map")
+            val generatedJsPath = file.absolutePath.removeSuffix(".map")
             sourceMapFileToString(file, File(generatedJsPath))
         }
         else -> {

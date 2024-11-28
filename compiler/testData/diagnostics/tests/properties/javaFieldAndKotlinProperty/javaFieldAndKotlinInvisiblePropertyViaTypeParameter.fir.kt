@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // LANGUAGE: -ProperFieldAccessGenerationForFieldAccessShadowedByKotlinProperty
 // ISSUE: KT-56386
 
@@ -12,7 +13,7 @@ public class BaseJava {
 
 // FILE: Derived.kt
 open class Derived : BaseJava() {
-    private val a = "FAIL"
+    private val <!PROPERTY_HIDES_JAVA_FIELD!>a<!> = "FAIL"
 }
 
 fun <T : Derived> test(t: T): String {

@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: BACKEND
 // OPT_IN: kotlin.RequiresOptIn
 // FILE: api.kt
 
@@ -52,7 +53,7 @@ package usage3
 import api.*
 
 fun use1() {
-    C.D.<!OPT_IN_USAGE!>E<!>.<!OPT_IN_USAGE!>F<!>()
+    <!OPT_IN_USAGE!>C<!>.<!OPT_IN_USAGE!>D<!>.<!OPT_IN_USAGE!>E<!>.<!OPT_IN_USAGE!>F<!>()
 }
 
 fun use2(f: <!OPT_IN_USAGE!>C.D.E.F<!>) = <!OPT_IN_USAGE!>f<!>.<!OPT_IN_USAGE!>hashCode<!>()

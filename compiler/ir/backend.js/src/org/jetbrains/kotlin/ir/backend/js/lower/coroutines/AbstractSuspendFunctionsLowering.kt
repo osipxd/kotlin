@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.backend.js.JsCommonBackendContext
 import org.jetbrains.kotlin.ir.backend.js.lower.CallableReferenceLowering
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.buildClass
@@ -34,10 +35,9 @@ import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.atMostOne
 import org.jetbrains.kotlin.utils.memoryOptimizedMap
-import org.jetbrains.kotlin.utils.memoryOptimizedMapIndexed
 import org.jetbrains.kotlin.utils.memoryOptimizedPlus
 
-abstract class AbstractSuspendFunctionsLowering<C : CommonBackendContext>(val context: C) : BodyLoweringPass {
+abstract class AbstractSuspendFunctionsLowering<C : JsCommonBackendContext>(val context: C) : BodyLoweringPass {
     companion object {
         val DECLARATION_ORIGIN_COROUTINE_IMPL = IrDeclarationOriginImpl("COROUTINE_IMPL")
     }
@@ -174,7 +174,7 @@ abstract class AbstractSuspendFunctionsLowering<C : CommonBackendContext>(val co
                 visibility = function.visibility
             }.apply {
                 parent = function.parent
-                createParameterDeclarations()
+                createThisReceiverParameter()
                 typeParameters = function.typeParameters.memoryOptimizedMap { typeParam ->
                     // TODO: remap types
                     typeParam.copyToWithoutSuperTypes(this).apply { superTypes = superTypes memoryOptimizedPlus typeParam.superTypes }
@@ -541,6 +541,10 @@ fun getSuspendFunctionKind(
             else
                 null
         is IrReturn -> {
+            fun IrTypeOperatorCall.isImplicitCast(): Boolean {
+                return this.operator == IrTypeOperator.IMPLICIT_CAST || this.operator == IrTypeOperator.IMPLICIT_COERCION_TO_UNIT
+            }
+
             var value: IrElement = lastStatement
             /*
              * Check if matches this pattern:
@@ -554,6 +558,7 @@ fun getSuspendFunctionKind(
                 value = when {
                     value is IrBlock && value.statements.size == 1 -> value.statements.first()
                     value is IrReturn -> value.value
+                    value is IrTypeOperatorCall && value.isImplicitCast() -> value.argument
                     else -> break@loop
                 }
             }
@@ -572,6 +577,6 @@ fun getSuspendFunctionKind(
 
 // Suppress since it is used in native
 @Suppress("MemberVisibilityCanBePrivate")
-fun IrCall.isReturnIfSuspendedCall(context: CommonBackendContext) =
-    symbol.owner.run { fqNameWhenAvailable == context.internalPackageFqn.child(Name.identifier("returnIfSuspended")) }
+fun IrCall.isReturnIfSuspendedCall(context: JsCommonBackendContext) =
+    symbol == context.ir.symbols.returnIfSuspended
 

@@ -779,7 +779,7 @@ class GeneralNativeIT : KGPBaseTest() {
 
             val fileWithSpacesInPath = projectPath.resolve("src/commonMain/kotlin/$complicatedDirectoryName").toFile()
                 .apply { mkdirs() }
-                .canonicalFile
+                .absoluteFile
                 .resolve("B.kt")
             fileWithSpacesInPath.writeText("fun foo() = 42")
 
@@ -991,4 +991,5 @@ class GeneralNativeIT : KGPBaseTest() {
             }
         }
     }
+
 }

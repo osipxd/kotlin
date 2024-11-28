@@ -12,6 +12,7 @@ plugins {
     kotlin("plugin.serialization")
     id("jps-compatible")
     alias(libs.plugins.gradle.node)
+    id("d8-configuration")
 }
 
 val cacheRedirectorEnabled = findProperty("cacheRedirectorEnabled")?.toString()?.toBoolean() == true
@@ -55,9 +56,6 @@ dependencies {
     testCompileOnly(intellijCore())
     testApi(project(":compiler:backend.js"))
     testApi(project(":js:js.translator"))
-    testApi(project(":js:js.serializer"))
-    testApi(project(":js:js.dce"))
-    testApi(project(":js:js.engines"))
     testApi(project(":compiler:incremental-compilation-impl"))
     testImplementation(libs.junit4)
     testApi(projectTests(":kotlin-build-common"))
@@ -79,11 +77,12 @@ dependencies {
     }
     testRuntimeOnly(project(":kotlin-preloader")) // it's required for ant tests
     testRuntimeOnly(project(":compiler:backend-common"))
+    testRuntimeOnly(project(":kotlin-util-klib-abi"))
     testRuntimeOnly(commonDependency("org.fusesource.jansi", "jansi"))
 
     testRuntimeOnly(libs.junit.vintage.engine)
 
-    testImplementation(commonDependency("org.jetbrains.kotlinx", "kotlinx-serialization-json"))
+    testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.ktor.client.cio)
     testImplementation(libs.ktor.client.core)
     testImplementation(libs.ktor.client.websockets)
@@ -91,7 +90,6 @@ dependencies {
 
 val generationRoot = projectDir.resolve("tests-gen")
 
-useD8Plugin()
 optInToExperimentalCompilerApi()
 
 sourceSets {
@@ -216,12 +214,14 @@ fun Test.setupNodeJs() {
 }
 
 fun Test.setUpJsBoxTests(tags: String?) {
-    setupV8()
+    with(d8KotlinBuild) {
+        setupV8()
+    }
 
     setupNodeJs()
     dependsOn(npmInstall)
 
-    inputs.files(rootDir.resolve("js/js.engines/src/org/jetbrains/kotlin/js/engine/repl.js"))
+    inputs.files(rootDir.resolve("js/js.tests/test/org/jetbrains/kotlin/js/engine/repl.js"))
 
     dependsOn(":dist")
     dependsOn(generateTypeScriptTests)
@@ -245,7 +245,6 @@ fun Test.setUpJsBoxTests(tags: String?) {
         tags?.let { includeTags(it) }
     }
 
-    jvmArgs("-da:jdk.nashorn.internal.runtime.RecompilableScriptFunctionData") // Disable assertion which fails due to a bug in nashorn (KT-23637)
     setUpBoxTests()
 }
 

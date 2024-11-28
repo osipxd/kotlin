@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.FqName
@@ -564,7 +565,7 @@ class JsInteropFunctionsLowering(val context: WasmBackendContext) : DeclarationT
         val closureClass = context.irFactory.buildClass {
             name = Name.identifier("__JsClosureToKotlinClosure_${info.signatureString}")
         }.apply {
-            createImplicitParameterDeclarationWithWrappedDescriptor()
+            createThisReceiverParameter()
             superTypes = listOf(functionType)
             parent = currentParent
         }

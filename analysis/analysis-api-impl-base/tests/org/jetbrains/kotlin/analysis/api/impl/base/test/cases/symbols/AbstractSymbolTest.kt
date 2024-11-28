@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.analysis.api.impl.base.test.cases.symbols
 
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.impl.base.components.KaBaseSymbolProvider
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.symbols.SymbolTestDirectives.DO_NOT_CHECK_NON_PSI_SYMBOL_RESTORE
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.symbols.SymbolTestDirectives.DO_NOT_CHECK_NON_PSI_SYMBOL_RESTORE_K1
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.symbols.SymbolTestDirectives.DO_NOT_CHECK_NON_PSI_SYMBOL_RESTORE_K2
@@ -24,6 +25,8 @@ import org.jetbrains.kotlin.analysis.api.symbols.pointers.KaPsiBasedSymbolPointe
 import org.jetbrains.kotlin.analysis.api.symbols.pointers.KaSymbolPointer
 import org.jetbrains.kotlin.analysis.test.framework.base.AbstractAnalysisApiBasedTest
 import org.jetbrains.kotlin.analysis.test.framework.projectStructure.KtTestModule
+import org.jetbrains.kotlin.analysis.test.framework.projectStructure.ktTestModuleStructure
+import org.jetbrains.kotlin.analysis.test.framework.services.expressionMarkerProvider
 import org.jetbrains.kotlin.analysis.test.framework.utils.executeOnPooledThreadInReadAction
 import org.jetbrains.kotlin.analysis.utils.printer.prettyPrint
 import org.jetbrains.kotlin.psi.*
@@ -33,9 +36,11 @@ import org.jetbrains.kotlin.test.directives.model.RegisteredDirectives
 import org.jetbrains.kotlin.test.directives.model.SimpleDirectivesContainer
 import org.jetbrains.kotlin.test.services.TestServices
 import org.jetbrains.kotlin.test.services.assertions
+import org.jetbrains.kotlin.test.services.moduleStructure
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.mapToSetOrEmpty
 import org.opentest4j.AssertionFailedError
+import java.util.concurrent.ExecutionException
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.javaField
 import kotlin.test.fail
@@ -61,8 +66,13 @@ abstract class AbstractSymbolTest : AbstractAnalysisApiBasedTest() {
     abstract fun KaSession.collectSymbols(ktFile: KtFile, testServices: TestServices): SymbolsData
 
     override fun doTestByMainFile(mainFile: KtFile, mainModule: KtTestModule, testServices: TestServices) {
-        doTestByMainFile(mainFile, mainModule, testServices, disablePsiBasedLogic = false)
-        doTestByMainFile(mainFile, mainModule, testServices, disablePsiBasedLogic = true)
+        testServices.moduleStructure.allDirectives.suppressIf(
+            suppressionDirective = SymbolTestDirectives.ILLEGAL_PSI,
+            filter = Throwable::isIllegalPsiException,
+        ) {
+            doTestByMainFile(mainFile, mainModule, testServices, disablePsiBasedLogic = false)
+            doTestByMainFile(mainFile, mainModule, testServices, disablePsiBasedLogic = true)
+        }
     }
 
     private fun doTestByMainFile(
@@ -71,6 +81,11 @@ abstract class AbstractSymbolTest : AbstractAnalysisApiBasedTest() {
         testServices: TestServices,
         disablePsiBasedLogic: Boolean,
     ) {
+        val markerProvider = testServices.expressionMarkerProvider
+        val analyzeContext = testServices.ktTestModuleStructure.allMainKtFiles.firstNotNullOfOrNull {
+            markerProvider.getElementOfTypeAtCaretOrNull<KtElement>(it, "context")
+        }
+
         val directives = mainModule.testModule.directives
         val directiveToIgnore = directives.doNotCheckNonPsiSymbolRestoreDirective()?.takeIf { disablePsiBasedLogic }
             ?: directives.doNotCheckSymbolRestoreDirective()
@@ -99,7 +114,7 @@ abstract class AbstractSymbolTest : AbstractAnalysisApiBasedTest() {
         }
 
         val pointersWithRendered = executeOnPooledThreadInReadAction {
-            analyseForTest(mainFile) {
+            analyseForTest(analyzeContext ?: mainFile) {
                 val (symbols, symbolForPrettyRendering) = collectSymbols(mainFile, testServices).also {
                     if (disablePsiBasedLogic) {
                         it.dropBackingPsi()
@@ -160,6 +175,7 @@ abstract class AbstractSymbolTest : AbstractAnalysisApiBasedTest() {
             testServices = testServices,
             directives = directives,
             disablePsiBasedLogic = disablePsiBasedLogic,
+            analyzeContext = analyzeContext,
         )
     }
 
@@ -173,7 +189,9 @@ abstract class AbstractSymbolTest : AbstractAnalysisApiBasedTest() {
     }
 
     private fun KaSession.checkContainingFiles(symbols: List<KaSymbol>, mainFile: KtFile, testServices: TestServices) {
-        val allowedContainingFileSymbols = getAllowedContainingFiles(mainFile, testServices).mapToSetOrEmpty { it.symbol }
+        val allowedContainingFileSymbols = getAllowedContainingFiles(mainFile, testServices).mapToSetOrEmpty {
+            it.takeIf { it.canBeAnalysed() }?.symbol
+        }
 
         for (symbol in symbols) {
             if (symbol.origin != KaSymbolOrigin.SOURCE) continue
@@ -255,11 +273,12 @@ abstract class AbstractSymbolTest : AbstractAnalysisApiBasedTest() {
         testServices: TestServices,
         directives: RegisteredDirectives,
         disablePsiBasedLogic: Boolean,
+        analyzeContext: KtElement?,
     ) {
         var failed = false
         val restoredPointers = mutableListOf<KaSymbolPointer<*>>()
         try {
-            val restored = analyseForTest(ktFile) {
+            val restored = analyseForTest(analyzeContext ?: ktFile) {
                 pointersWithRendered.mapNotNull { (pointer, expectedRender, shouldBeRendered) ->
                     val pointer = pointer ?: error("Symbol pointer for $expectedRender was not created")
                     val restored = restoreSymbol(pointer, disablePsiBasedLogic) ?: error("Symbol $expectedRender was not restored")
@@ -286,7 +305,7 @@ abstract class AbstractSymbolTest : AbstractAnalysisApiBasedTest() {
         }
 
         if (!failed) {
-            compareRestoredSymbols(restoredPointers, testServices, ktFile, disablePsiBasedLogic)
+            compareRestoredSymbols(restoredPointers, testServices, ktFile, disablePsiBasedLogic, analyzeContext)
         }
 
         if (failed || directiveToIgnore == null) return
@@ -304,10 +323,11 @@ abstract class AbstractSymbolTest : AbstractAnalysisApiBasedTest() {
         testServices: TestServices,
         ktFile: KtFile,
         disablePsiBasedLogic: Boolean,
+        analyzeContext: KtElement?,
     ) {
         if (restoredPointers.isEmpty()) return
 
-        analyseForTest(ktFile) {
+        analyseForTest(analyzeContext ?: ktFile) {
             val symbolsToPointersMap = restoredPointers.groupByTo(mutableMapOf()) {
                 restoreSymbol(it, disablePsiBasedLogic) ?: error("Unexpectedly non-restored symbol pointer: ${it::class}")
             }
@@ -363,6 +383,8 @@ object SymbolTestDirectives : SimpleDirectivesContainer() {
     val PRETTY_RENDERER_OPTION by enumDirective(description = "Explicit rendering mode") { PrettyRendererOption.valueOf(it) }
 
     val TARGET_FILE_NAME by stringDirective(description = "The name of the main file")
+
+    val ILLEGAL_PSI by stringDirective(description = "Symbol should not be created for this PSI element")
 }
 
 enum class PrettyRendererOption(val transformation: (KaDeclarationRenderer) -> KaDeclarationRenderer) {
@@ -501,3 +523,10 @@ private fun KaSymbol.dropBackingPsi() {
     // Drop backing PSI to trigger non-psi implementation
     field.set(this, null)
 }
+
+private val Throwable.isIllegalPsiException: Boolean
+    get() = when (this) {
+        is KaBaseSymbolProvider.KaBaseIllegalPsiException -> true
+        is ExecutionException -> cause?.isIllegalPsiException == true
+        else -> false
+    }

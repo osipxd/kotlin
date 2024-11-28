@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // ISSUE: KT-63242, KT-66324
 // SCOPE_DUMP: D:foo
 // FIR_DUMP
@@ -23,4 +24,4 @@ private open class C : B() {
 class D extends C {}
 
 // FILE: box.kt
-fun box(): String = <!JAVA_CLASS_INHERITS_KT_PRIVATE_CLASS!>D()<!>.foo("")
+fun box(): String = <!JAVA_CLASS_INHERITS_KT_PRIVATE_CLASS!><!JAVA_CLASS_INHERITS_KT_PRIVATE_CLASS!>D()<!>.foo("")<!>

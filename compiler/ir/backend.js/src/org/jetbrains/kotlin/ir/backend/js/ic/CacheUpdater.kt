@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.DuplicatedUniqueNameStrategy
 import org.jetbrains.kotlin.config.KlibConfigurationKeys
 import org.jetbrains.kotlin.config.messageCollector
+import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.backend.js.*
 import org.jetbrains.kotlin.ir.backend.js.transformers.irToJs.JsGenerationGranularity
 import org.jetbrains.kotlin.ir.declarations.*
@@ -70,7 +71,7 @@ interface PlatformDependentICContext {
     /**
      * It is expected that the method implementation creates a backend context and initializes all builtins and intrinsics.
      */
-    fun createCompiler(mainModule: IrModuleFragment, configuration: CompilerConfiguration): IrCompilerICInterface
+    fun createCompiler(mainModule: IrModuleFragment, irBuiltIns: IrBuiltIns, configuration: CompilerConfiguration): IrCompilerICInterface
 
     fun createSrcFileArtifact(srcFilePath: String, fragments: IrICProgramFragments?, astArtifact: File? = null): SrcFileArtifact
 
@@ -105,7 +106,7 @@ class CacheUpdater(
     private val compilerConfiguration: CompilerConfiguration,
     private val icContext: PlatformDependentICContext,
     checkForClassStructuralChanges: Boolean = false,
-    private val completeLoadForKotlinTest: Boolean = false
+    private val commitIncrementalCache: Boolean = true
 ) {
     private val stopwatch = StopwatchIC()
 
@@ -635,9 +636,11 @@ class CacheUpdater(
         }
 
         fun buildAndCommitCacheArtifacts(loadedIr: LoadedJsIr): Map<KotlinLibraryFile, IncrementalCacheArtifact> {
-            removedIncrementalCaches.forEach {
-                if (!it.cacheDir.deleteRecursively()) {
-                    icError("can not delete cache directory ${it.cacheDir.absolutePath}")
+            if (commitIncrementalCache) {
+                removedIncrementalCaches.forEach {
+                    if (!it.cacheDir.deleteRecursively()) {
+                        icError("can not delete cache directory ${it.cacheDir.absolutePath}")
+                    }
                 }
             }
 
@@ -646,9 +649,13 @@ class CacheUpdater(
                 val libFile = KotlinLibraryFile(library)
                 val incrementalCache = getLibIncrementalCache(libFile)
                 val providers = loadedIr.getSignatureProvidersForLib(libFile)
-                val signatureToIndexMapping = providers.associate { it.srcFile to it.getSignatureToIndexMapping() }
 
-                val cacheArtifact = incrementalCache.buildAndCommitCacheArtifact(signatureToIndexMapping, stubbedSignatures)
+                val cacheArtifact = if (commitIncrementalCache) {
+                    val signatureToIndexMapping = providers.associate { it.srcFile to it.getSignatureToIndexMapping() }
+                    incrementalCache.buildAndCommitCacheArtifact(signatureToIndexMapping, stubbedSignatures)
+                } else {
+                    incrementalCache.buildCacheArtifact()
+                }
 
                 val libFragment = loadedIr.loadedFragments[libFile] ?: notFoundIcError("loaded fragment", libFile)
                 val sourceNames = loadedIr.getIrFileNames(libFragment)
@@ -672,10 +679,17 @@ class CacheUpdater(
         rebuiltFileFragments: KotlinSourceFileMap<IrICProgramFragments>
     ): List<ModuleArtifact> = stopwatch.measure("Incremental cache - committing artifacts") {
         incrementalCacheArtifacts.map { (libFile, incrementalCacheArtifact) ->
-            incrementalCacheArtifact.buildModuleArtifactAndCommitCache(
+            val rebuildFileFragments = rebuiltFileFragments[libFile] ?: emptyMap()
+            if (commitIncrementalCache) {
+                incrementalCacheArtifact.commitCache(
+                    rebuiltFileFragments = rebuildFileFragments,
+                    icContext = icContext
+                )
+            }
+            incrementalCacheArtifact.buildModuleArtifact(
                 moduleName = moduleNames[libFile] ?: notFoundIcError("module name", libFile),
-                rebuiltFileFragments = rebuiltFileFragments[libFile] ?: emptyMap(),
-                icContext = icContext
+                rebuiltFileFragments = rebuildFileFragments,
+                icContext = icContext,
             )
         }
     }
@@ -732,7 +746,7 @@ class CacheUpdater(
             irFactory = icContext.createIrFactory(),
             stubbedSignatures = stubbedSignatures
         )
-        var loadedIr = jsIrLinkerLoader.loadIr(dirtyFileExports, loadKotlinTest = completeLoadForKotlinTest)
+        var loadedIr = jsIrLinkerLoader.loadIr(dirtyFileExports)
 
         var iterations = 0
         var lastDirtyFiles: KotlinSourceFileMap<KotlinSourceFileExports> = dirtyFileExports
@@ -770,7 +784,7 @@ class CacheUpdater(
 
         stopwatch.startNext("Processing IR - initializing backend context")
         val mainModuleFragment = loadedIr.loadedFragments[mainLibraryFile] ?: notFoundIcError("main module fragment", mainLibraryFile)
-        val compilerForIC = icContext.createCompiler(mainModuleFragment, compilerConfiguration)
+        val compilerForIC = icContext.createCompiler(mainModuleFragment, loadedIr.irBuiltIns, compilerConfiguration)
 
         // Load declarations referenced during `context` initialization
         loadedIr.loadUnboundSymbols()
@@ -873,10 +887,11 @@ fun rebuildCacheForDirtyFiles(
 
     val compilerWithIC = JsIrCompilerWithIC(
         currentIrModule,
+        loadedIr.irBuiltIns,
         mainArguments,
         configuration,
         JsGenerationGranularity.PER_MODULE,
-        PhaseConfig(getJsPhases(configuration)),
+        PhaseConfig(),
         exportedDeclarations,
     )
 

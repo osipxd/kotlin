@@ -16,10 +16,12 @@ import org.jetbrains.kotlin.fir.references.FirNamedReference
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeContractDescriptionError
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
 import org.jetbrains.kotlin.fir.resolve.getContainingClass
+import org.jetbrains.kotlin.fir.resolve.referencedMemberSymbol
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.coneType
 import org.jetbrains.kotlin.fir.types.resolvedType
 import org.jetbrains.kotlin.fir.resolve.toTypeParameterSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirReceiverParameterSymbol
 import org.jetbrains.kotlin.fir.visitors.FirDefaultVisitor
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.Name
@@ -44,10 +46,6 @@ class ConeEffectExtractor(
 
     override fun visitElement(element: FirElement, data: Nothing?): ConeContractDescriptionElement {
         return ConeContractDescriptionError.IllegalElement(element).asElement()
-    }
-
-    override fun visitReturnExpression(returnExpression: FirReturnExpression, data: Nothing?): ConeContractDescriptionElement {
-        return returnExpression.result.accept(this, data)
     }
 
     override fun visitFunctionCall(functionCall: FirFunctionCall, data: Nothing?): ConeContractDescriptionElement {
@@ -151,10 +149,10 @@ class ConeEffectExtractor(
             }
         val parameter = symbol.fir as? FirValueParameter
             ?: return KtErroneousValueParameterReference(
-                ConeContractDescriptionError.IllegalParameter(symbol, "$symbol is not a value parameter")
+                ConeContractDescriptionError.IllegalParameter(symbol, "'${symbol.name}' is not a value parameter")
             )
         val index = valueParameters.indexOf(parameter).takeUnless { it < 0 } ?: return KtErroneousValueParameterReference(
-            ConeContractDescriptionError.IllegalParameter(symbol, "Value parameter $symbol is not found in parameters of outer function")
+            ConeContractDescriptionError.IllegalParameter(symbol, "value parameter '${symbol.name}' is not found in parameters of outer function")
         )
         val type = parameter.returnTypeRef.coneType
 
@@ -189,7 +187,7 @@ class ConeEffectExtractor(
         thisReceiverExpression: FirThisReceiverExpression,
         data: Nothing?
     ): ConeContractDescriptionElement {
-        val declaration = thisReceiverExpression.calleeReference.boundSymbol?.fir
+        val declaration = thisReceiverExpression.calleeReference.referencedMemberSymbol?.fir
             ?: return ConeContractDescriptionError.UnresolvedThis(thisReceiverExpression).asElement()
         val callableOwner = owner as? FirCallableDeclaration
         val ownerHasReceiver = callableOwner?.receiverParameter != null

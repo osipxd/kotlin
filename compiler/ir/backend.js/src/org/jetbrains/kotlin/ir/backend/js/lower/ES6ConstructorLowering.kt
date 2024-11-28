@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 import org.jetbrains.kotlin.ir.backend.js.export.isExported
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder
+import org.jetbrains.kotlin.ir.backend.js.constructorFactory
 import org.jetbrains.kotlin.ir.backend.js.utils.*
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.declarations.*
@@ -29,7 +30,6 @@ import org.jetbrains.kotlin.utils.memoryOptimizedMap
 import org.jetbrains.kotlin.utils.memoryOptimizedPlus
 import org.jetbrains.kotlin.utils.newHashMapWithExpectedSize
 
-val ES6_INIT_CALL by IrStatementOriginImpl
 val ES6_CONSTRUCTOR_REPLACEMENT by IrDeclarationOriginImpl
 val ES6_SYNTHETIC_EXPORT_CONSTRUCTOR by IrDeclarationOriginImpl
 val ES6_PRIMARY_CONSTRUCTOR_REPLACEMENT by IrDeclarationOriginImpl
@@ -49,47 +49,58 @@ val IrFunctionAccessExpression.isSyntheticDelegatingReplacement: Boolean
 val IrDeclaration.isInitFunction: Boolean
     get() = origin == ES6_INIT_FUNCTION
 
-val IrFunctionAccessExpression.isInitCall: Boolean
-    get() = origin == ES6_INIT_CALL
-
-val IrDeclaration.isSyntheticConstructorForExport: Boolean
-    get() = origin == ES6_SYNTHETIC_EXPORT_CONSTRUCTOR
-
 val IrDeclaration.isEs6DelegatingConstructorCallReplacement: Boolean
     get() = origin == ES6_DELEGATING_CONSTRUCTOR_CALL_REPLACEMENT
 
-class ES6ConstructorLowering(val context: JsIrBackendContext) : DeclarationTransformer {
-    private var IrConstructor.constructorFactory by context.mapping.secondaryConstructorToFactory
+private val IrClass.constructorPostfix: String
+    get() = fqNameWhenAvailable?.asString()?.replace('.', '_') ?: name.toString()
+
+/**
+ * Lowers synthetic primary constructor declarations to support ES classes.
+ */
+class ES6SyntheticPrimaryConstructorLowering(val context: JsIrBackendContext) : DeclarationTransformer {
 
     override fun transformFlat(declaration: IrDeclaration): List<IrDeclaration>? {
         if (!context.es6mode || declaration !is IrConstructor || declaration.hasStrictSignature(context)) return null
 
-        return if (declaration.isSyntheticPrimaryConstructor) {
-            listOf(declaration.generateInitFunction())
-        } else {
-            val factoryFunction = declaration.generateCreateFunction()
-            listOfNotNull(factoryFunction, declaration.generateExportedConstructorIfNeed(factoryFunction))
-        }
+        if (!declaration.isSyntheticPrimaryConstructor) return null // keep existing element
+        return listOf(declaration.generateInitFunction())
     }
 
-    private fun IrConstructor.generateExportedConstructorIfNeed(factoryFunction: IrSimpleFunction): IrConstructor? {
-        return runIf(isExported(context) && isPrimary) {
-            apply {
-                valueParameters = valueParameters.memoryOptimizedFilterNot { it.isBoxParameter }
-                body = (body as? IrBlockBody)?.let {
-                    context.irFactory.createBlockBody(it.startOffset, it.endOffset) {
-                        val selfReplacedConstructorCall = JsIrBuilder.buildCall(factoryFunction.symbol).apply {
-                            valueParameters.forEachIndexed { i, it -> putValueArgument(i, JsIrBuilder.buildGetValue(it.symbol)) }
-                            dispatchReceiver = JsIrBuilder.buildCall(context.intrinsics.jsNewTarget)
-                        }
-                        statements.add(JsIrBuilder.buildReturn(symbol, selfReplacedConstructorCall, returnType))
-                    }
-                }
-                origin = ES6_SYNTHETIC_EXPORT_CONSTRUCTOR
-            }
-        }
-    }
-
+    /**
+     * Generates a static "init" function for this constructor.
+     * The function doesn't create a new instance but initializes an existing one.
+     *
+     * For example, transforms this:
+     * ```kotlin
+     * package com.example
+     *
+     * class Foo<T> {
+     *   val prop: Int
+     *
+     *   constructor(arg: Int, $box: Foo<T>?) {
+     *       super()
+     *       this.prop = arg
+     *   }
+     * }
+     * ```
+     * to this:
+     * ```kotlin
+     * package com.example
+     *
+     * class Foo<T> {
+     *   val prop: Int
+     *
+     *   private /*static*/ fun <T> Foo<T>.init_com_example_Foo(
+     *     <this>: Foo<T>,
+     *     arg: Int,
+     *     $box: Foo<T>?,
+     *   ): Unit {
+     *     <this>.prop = arg
+     *   }
+     * }
+     * ```
+     */
     private fun IrConstructor.generateInitFunction(): IrSimpleFunction {
         val constructor = this
         val irClass = parentAsClass
@@ -115,7 +126,74 @@ class ES6ConstructorLowering(val context: JsIrBackendContext) : DeclarationTrans
             constructorFactory = factory
         }
     }
+}
 
+/**
+ * Lowers constructor declarations to support ES classes.
+ */
+class ES6ConstructorLowering(val context: JsIrBackendContext) : DeclarationTransformer {
+
+    override fun transformFlat(declaration: IrDeclaration): List<IrDeclaration>? {
+        if (!context.es6mode || declaration !is IrConstructor || declaration.hasStrictSignature(context)) return null
+
+        if (declaration.isSyntheticPrimaryConstructor) return null // keep existing element
+        val factoryFunction = declaration.generateCreateFunction()
+        return listOfNotNull(factoryFunction, declaration.generateExportedConstructorIfNeed(factoryFunction))
+    }
+
+    private fun IrConstructor.generateExportedConstructorIfNeed(factoryFunction: IrSimpleFunction): IrConstructor? {
+        return runIf(isExported(context) && isPrimary) {
+            apply {
+                valueParameters = valueParameters.memoryOptimizedFilterNot { it.isBoxParameter }
+                body = (body as? IrBlockBody)?.let {
+                    context.irFactory.createBlockBody(it.startOffset, it.endOffset) {
+                        val selfReplacedConstructorCall = JsIrBuilder.buildCall(factoryFunction.symbol).apply {
+                            valueParameters.forEachIndexed { i, it -> putValueArgument(i, JsIrBuilder.buildGetValue(it.symbol)) }
+                            dispatchReceiver = JsIrBuilder.buildCall(context.intrinsics.jsNewTarget)
+                        }
+                        statements.add(JsIrBuilder.buildReturn(symbol, selfReplacedConstructorCall, returnType))
+                    }
+                }
+                origin = ES6_SYNTHETIC_EXPORT_CONSTRUCTOR
+            }
+        }
+    }
+
+    /**
+     * Generates a "create" function to act as a constructor for an ES6 class.
+     *
+     * Note: although the generated function is not static in the IR,
+     * it will become static during code generation.
+     *
+     * For example, transforms this:
+     * ```kotlin
+     * package com.example
+     *
+     * class Foo<T> {
+     *   val prop: Int
+     *
+     *   constructor(arg: Int, $box: Foo<T>?) {
+     *       super()
+     *       this.prop = arg
+     *   }
+     * }
+     * ```
+     *
+     * into this:
+     * ```kotlin
+     * package com.example
+     *
+     * class Foo<T> {
+     *   val prop: Int
+     *
+     *   fun <T> new_com_example_Foo(arg: Int, $box: Foo<T>?): Foo<T> {
+     *     val $this = createThis(this, $box)
+     *     $this.prop = arg
+     *     return $this
+     *   }
+     * }
+     * ```
+     */
     private fun IrConstructor.generateCreateFunction(): IrSimpleFunction {
         val constructor = this
         val irClass = parentAsClass
@@ -169,9 +247,6 @@ class ES6ConstructorLowering(val context: JsIrBackendContext) : DeclarationTrans
         )
     }
 
-    private val IrClass.constructorPostfix: String
-        get() = fqNameWhenAvailable?.asString()?.replace('.', '_') ?: name.toString()
-
     private fun irAnyArray(elements: List<IrExpression>): IrExpression {
         return JsIrBuilder.buildArray(
             elements,
@@ -221,12 +296,12 @@ class ES6ConstructorLowering(val context: JsIrBackendContext) : DeclarationTrans
                 val constructor = expression.symbol.owner
 
                 if (constructor.isSyntheticPrimaryConstructor) {
-                    return JsIrBuilder.buildConstructorCall(expression.symbol, origin = ES6_INIT_CALL)
-                        .apply {
-                            copyValueArgumentsFrom(expression, constructor)
-                            extensionReceiver = JsIrBuilder.buildGetValue(selfParameterSymbol)
-                        }
-                        .run { visitConstructorCall(this) }
+                    val factoryFunction = constructor.constructorFactory
+                    assert(factoryFunction != null && factoryFunction.isInitFunction) { "Expect to have init function replacement" }
+                    return JsIrBuilder.buildCall(factoryFunction!!.symbol).apply {
+                        copyValueArgumentsFrom(expression, factoryFunction)
+                        extensionReceiver = JsIrBuilder.buildGetValue(selfParameterSymbol)
+                    }.run { visitCall(this) }
                 }
 
                 val boxParameterGetter = boxParameterSymbol?.let { JsIrBuilder.buildGetValue(it.symbol) } ?: context.getVoid()

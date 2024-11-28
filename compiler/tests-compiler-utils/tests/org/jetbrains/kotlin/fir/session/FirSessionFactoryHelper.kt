@@ -6,12 +6,14 @@
 package org.jetbrains.kotlin.fir.session
 
 import org.jetbrains.kotlin.ObsoleteTestInfrastructure
+import org.jetbrains.kotlin.cli.jvm.compiler.VfsBasedProjectEnvironment
 import org.jetbrains.kotlin.config.*
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.fir.extensions.FirExtensionService
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
-import org.jetbrains.kotlin.fir.session.environment.AbstractProjectEnvironment
+import org.jetbrains.kotlin.fir.resolve.providers.impl.FirBuiltinSyntheticFunctionInterfaceProvider
+import org.jetbrains.kotlin.fir.resolve.providers.impl.syntheticFunctionInterfacesSymbolProvider
 import org.jetbrains.kotlin.fir.session.environment.AbstractProjectFileSearchScope
 import org.jetbrains.kotlin.incremental.components.EnumWhenTracker
 import org.jetbrains.kotlin.incremental.components.ImportTracker
@@ -26,7 +28,7 @@ object FirSessionFactoryHelper {
         moduleName: Name,
         platform: TargetPlatform,
         externalSessionProvider: FirProjectSessionProvider?,
-        projectEnvironment: AbstractProjectEnvironment,
+        projectEnvironment: VfsBasedProjectEnvironment,
         languageVersionSettings: LanguageVersionSettings,
         javaSourcesScope: AbstractProjectFileSearchScope,
         librariesScope: AbstractProjectFileSearchScope,
@@ -43,7 +45,7 @@ object FirSessionFactoryHelper {
         val dependencyList = DependencyListForCliModule.build(binaryModuleData, init = dependenciesConfigurator)
         val sessionProvider = externalSessionProvider ?: FirProjectSessionProvider()
         val packagePartProvider = projectEnvironment.getPackagePartProvider(librariesScope)
-        FirJvmSessionFactory.createLibrarySession(
+        val librarySession = FirJvmSessionFactory.createLibrarySession(
             moduleName,
             sessionProvider,
             dependencyList.moduleDataProvider,
@@ -76,7 +78,10 @@ object FirSessionFactoryHelper {
             importTracker,
             predefinedJavaComponents = null,
             needRegisterJavaElementFinder,
-            init = sessionConfigurator,
+            init = {
+                registerComponent(FirBuiltinSyntheticFunctionInterfaceProvider::class, librarySession.syntheticFunctionInterfacesSymbolProvider)
+                sessionConfigurator()
+            },
         )
     }
 

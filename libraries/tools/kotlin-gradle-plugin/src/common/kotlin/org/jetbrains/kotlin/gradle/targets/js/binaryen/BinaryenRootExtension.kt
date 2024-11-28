@@ -34,7 +34,7 @@ open class BinaryenRootExtension(
         .value("https://github.com/WebAssembly/binaryen/releases/download")
 
     override val versionProperty: org.gradle.api.provider.Property<String> = rootProject.objects.property<String>()
-        .convention("119")
+        .convention("120")
 
     override val downloadProperty: org.gradle.api.provider.Property<Boolean> = rootProject.objects.property<Boolean>()
         .convention(true)
@@ -48,7 +48,7 @@ open class BinaryenRootExtension(
     internal val platform: org.gradle.api.provider.Property<BinaryenPlatform> = rootProject.objects.property<BinaryenPlatform>()
 
     override fun finalizeConfiguration(): BinaryenEnv {
-        return binaryenSpec.produceEnv(rootProject.providers).get()
+        return binaryenSpec.env.get()
     }
 
     companion object {

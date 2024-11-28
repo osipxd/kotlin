@@ -1,7 +1,44 @@
 @_exported import ExportedKotlinPackages
-import KotlinRuntime
 @_implementationOnly import KotlinBridges_main
+import KotlinRuntime
 
+public final class Foo : KotlinRuntime.KotlinBase {
+    public override init() {
+        let __kt = __root___Foo_init_allocate()
+        super.init(__externalRCRef: __kt)
+        __root___Foo_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
+    }
+    package override init(
+        __externalRCRef: Swift.UInt
+    ) {
+        super.init(__externalRCRef: __externalRCRef)
+    }
+    public func ext(
+        receiver: Swift.String
+    ) -> Swift.Void {
+        return Foo_ext__TypesOfArguments__Swift_String__(self.__externalRCRef(), receiver)
+    }
+}
+public func foo(
+    receiver: Swift.Int32
+) -> Swift.Void {
+    return __root___foo__TypesOfArguments__Swift_Int32__(receiver)
+}
+public func foo(
+    receiver: Swift.Int32?
+) -> Swift.Void {
+    return __root___foo__TypesOfArguments__Swift_Int32_opt___(receiver.map { it in NSNumber(value: it) } ?? .none)
+}
+public func foo(
+    receiver: main.Foo
+) -> Swift.Void {
+    return __root___foo__TypesOfArguments__main_Foo__(receiver.__externalRCRef())
+}
+public func foo(
+    receiver: main.Foo?
+) -> Swift.Void {
+    return __root___foo__TypesOfArguments__main_Foo_opt___(receiver.map { it in it.__externalRCRef() } ?? 0)
+}
 public func foo() -> Swift.Int32 {
     return __root___foo()
 }
@@ -55,7 +92,7 @@ public extension ExportedKotlinPackages.overload {
             super.init(__externalRCRef: __kt)
             overload_Foo_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -79,6 +116,6 @@ public extension ExportedKotlinPackages.overload {
     public static func foo(
         arg1: ExportedKotlinPackages.overload.Foo?
     ) -> Swift.Void {
-        return overload_foo__TypesOfArguments__ExportedKotlinPackages_overload_Foo_opt___(arg1?.__externalRCRef() ?? 0)
+        return overload_foo__TypesOfArguments__ExportedKotlinPackages_overload_Foo_opt___(arg1.map { it in it.__externalRCRef() } ?? 0)
     }
 }

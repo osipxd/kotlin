@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.ir.inline
 
+import org.jetbrains.kotlin.backend.common.LoweringContext
 import org.jetbrains.kotlin.backend.common.BodyLoweringPass
 import org.jetbrains.kotlin.backend.common.CommonBackendContext
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -16,6 +17,7 @@ import org.jetbrains.kotlin.backend.common.lower.LoweredStatementOrigins
 import org.jetbrains.kotlin.backend.common.lower.LoweredStatementOrigins.INLINED_FUNCTION_REFERENCE
 import org.jetbrains.kotlin.backend.common.lower.at
 import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
+import org.jetbrains.kotlin.backend.common.serialization.NonLinkingIrInlineFunctionDeserializer
 import org.jetbrains.kotlin.contracts.parsing.ContractsDslNames
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities.isPrivate
 import org.jetbrains.kotlin.ir.IrElement
@@ -85,7 +87,7 @@ abstract class InlineFunctionResolver(val inlineMode: InlineMode) {
     }
 }
 
-abstract class InlineFunctionResolverReplacingCoroutineIntrinsics<Ctx : CommonBackendContext>(
+abstract class InlineFunctionResolverReplacingCoroutineIntrinsics<Ctx : LoweringContext>(
     protected val context: Ctx,
     inlineMode: InlineMode,
 ) : InlineFunctionResolver(inlineMode) {
@@ -109,13 +111,32 @@ abstract class InlineFunctionResolverReplacingCoroutineIntrinsics<Ctx : CommonBa
     }
 }
 
+/**
+ * This resolver is supposed to be run at the first compilation stage for all non-JVM targets.
+ */
+internal class PreSerializationInlineFunctionResolver(
+    context: LoweringContext,
+    private val deserializer: NonLinkingIrInlineFunctionDeserializer,
+    inlineMode: InlineMode,
+    override val allowExternalInlining: Boolean,
+) : InlineFunctionResolverReplacingCoroutineIntrinsics<LoweringContext>(context, inlineMode) {
+    override fun getFunctionDeclaration(symbol: IrFunctionSymbol): IrFunction? =
+        super.getFunctionDeclaration(symbol)?.also(deserializer::deserializeInlineFunction)
+}
+
 open class FunctionInlining(
-    val context: CommonBackendContext,
+    val context: LoweringContext,
     private val inlineFunctionResolver: InlineFunctionResolver,
     private val insertAdditionalImplicitCasts: Boolean = true,
     private val regenerateInlinedAnonymousObjects: Boolean = false,
     private val produceOuterThisFields: Boolean = true,
 ) : IrElementTransformerVoidWithContext(), BodyLoweringPass {
+    init {
+        require(!produceOuterThisFields || context is CommonBackendContext) {
+            "The inliner can generate outer fields only with param `context` of type `CommonBackendContext`"
+        }
+    }
+
     override fun lower(irBody: IrBody, container: IrDeclaration) {
         // TODO container: IrSymbolDeclaration
         withinScope(container) {
@@ -202,7 +223,7 @@ open class FunctionInlining(
         val callee: IrFunction,
         val currentScope: ScopeWithIr,
         val parent: IrDeclarationParent?,
-        val context: CommonBackendContext,
+        val context: LoweringContext,
         private val inlineFunctionResolver: InlineFunctionResolver,
         private val insertAdditionalImplicitCasts: Boolean,
         private val produceOuterThisFields: Boolean
@@ -246,8 +267,7 @@ open class FunctionInlining(
              */
             val irBuilder = context.createIrBuilder(irReturnableBlockSymbol, endOffset, endOffset)
 
-            // Investigate the difference (KT-71425).
-            val returnType = if (inlineFunctionResolver.inlineMode == InlineMode.ALL_FUNCTIONS) callee.returnType else callSite.type
+            val returnType = callSite.type
 
             val transformer = ParameterSubstitutor()
             val newStatements = statements.map { it.transform(transformer, data = null) as IrStatement }
@@ -283,7 +303,7 @@ open class FunctionInlining(
 
                         if (expression.returnTargetSymbol == copiedCallee.symbol) {
                             val expr = if (returnType.isUnit()) {
-                                expression.value.coerceToUnit(context.irBuiltIns, context.typeSystem)
+                                expression.value.coerceToUnit(context.irBuiltIns)
                             } else {
                                 expression.value.doImplicitCastIfNeededTo(returnType)
                             }
@@ -468,7 +488,7 @@ open class FunctionInlining(
                         val parameterToSet = when (parameter) {
                             function.dispatchReceiverParameter -> inlinedFunction.dispatchReceiverParameter!!
                             function.extensionReceiverParameter -> inlinedFunction.extensionReceiverParameter!!
-                            else -> inlinedFunction.valueParameters[parameter.index]
+                            else -> inlinedFunction.valueParameters[parameter.indexInOldValueParameters]
                         }
                         putArgument(parameterToSet, argument.doImplicitCastIfNeededTo(parameterToSet.type))
                     }
@@ -564,7 +584,7 @@ open class FunctionInlining(
                     originalArgumentExpression = IrGetFieldImpl(
                         UNDEFINED_OFFSET,
                         UNDEFINED_OFFSET,
-                        context.innerClassesSupport.getOuterThisField(parameterClassDeclaration).symbol,
+                        (context as CommonBackendContext).innerClassesSupport.getOuterThisField(parameterClassDeclaration).symbol,
                         outerClassThis.type,
                         IrGetValueImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, currentThisSymbol)
                     )
@@ -592,7 +612,7 @@ open class FunctionInlining(
                 ).andAllOuterClasses()
 
             val valueArguments =
-                callSite.symbol.owner.valueParameters.map { callSite.getValueArgument(it.index) }.toMutableList()
+                callSite.symbol.owner.valueParameters.map { callSite.getValueArgument(it.indexInOldValueParameters) }.toMutableList()
 
             if (callee.extensionReceiverParameter != null) {
                 parameterToArgument += ParameterToArgument(
@@ -611,7 +631,7 @@ open class FunctionInlining(
 
             val parametersWithDefaultToArgument = mutableListOf<ParameterToArgument>()
             for (parameter in callee.valueParameters) {
-                val argument = valueArguments[parameter.index]
+                val argument = valueArguments[parameter.indexInOldValueParameters]
                 when {
                     argument != null -> {
                         parameterToArgument += ParameterToArgument(
@@ -645,7 +665,7 @@ open class FunctionInlining(
 
                     else -> {
                         val message = "Incomplete expression: call to ${callee.render()} " +
-                                "has no argument at index ${parameter.index}"
+                                "has no argument at index ${parameter.indexInOldValueParameters}"
                         throw Error(message)
                     }
                 }
@@ -692,7 +712,7 @@ open class FunctionInlining(
                 when (it.parameter) {
                     referenced.dispatchReceiverParameter -> reference.dispatchReceiver = newArgument
                     referenced.extensionReceiverParameter -> reference.extensionReceiver = newArgument
-                    else -> reference.putValueArgument(it.parameter.index, newArgument)
+                    else -> reference.putValueArgument(it.parameter.indexInOldValueParameters, newArgument)
                 }
             }
             return evaluationStatements
@@ -764,7 +784,7 @@ open class FunctionInlining(
         }
 
         private fun ParameterToArgument.doesNotNeedTemporaryVariable(): Boolean =
-            argumentExpression.isPure(false, context = context)
+            argumentExpression.isPure(false, symbols = context.ir.symbols)
                     && (inlineFunctionResolver.inlineMode == InlineMode.ALL_FUNCTIONS || parameter.isInlineParameter())
 
         private fun createTemporaryVariable(

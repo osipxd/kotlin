@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrTypeOperatorCallImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
+import org.jetbrains.kotlin.ir.util.isBoxedArray
 import org.jetbrains.kotlin.utils.exceptions.rethrowExceptionWithDetails
 import kotlin.collections.set
 
@@ -42,7 +43,7 @@ fun FirRegularClass.getIrSymbolsForSealedSubclasses(c: Fir2IrComponents): List<I
     }.filterIsInstance<IrClassSymbol>()
 }
 
-fun FirCallableDeclaration.contextReceiversForFunctionOrContainingProperty(): List<FirContextReceiver> =
+fun FirCallableDeclaration.contextReceiversForFunctionOrContainingProperty(): List<FirValueParameter> =
     if (this is FirPropertyAccessor)
         this.propertySymbol.fir.contextReceivers
     else

@@ -133,8 +133,9 @@ private class ExpressionValuesExtractor(val context: Context,
             }
 
             is IrVararg, /* Sometimes, we keep vararg till codegen phase (for constant arrays). */
-            is IrMemberAccessExpression<*>, is IrGetValue, is IrGetField, is IrConst,
-            is IrGetObjectValue, is IrSetField, is IrConstantValue -> block(expression)
+            is IrClassReference, // Albeit these are lowered, they might occur after devirtualization.
+            is IrMemberAccessExpression<*>, is IrGetValue, is IrGetObjectValue,
+            is IrGetField, is IrSetField, is IrConst, is IrConstantValue, is IrRawFunctionReference -> block(expression)
 
             else -> require(expression.type.isUnit() || expression.type.isNothing()) { "Unexpected expression: ${expression.render()}" }
         }
@@ -143,6 +144,7 @@ private class ExpressionValuesExtractor(val context: Context,
 
 internal class FunctionDFGBuilder(private val generationState: NativeGenerationState, private val symbolTable: DataFlowIR.SymbolTable) {
     private val context = generationState.context
+    private val unitType = context.irBuiltIns.unitType
 
     // Possible values of a returnable block.
     private val returnableBlockValues = mutableMapOf<IrReturnableBlock, MutableList<IrExpression>>()
@@ -152,10 +154,19 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
 
     private val expressionValuesExtractor = ExpressionValuesExtractor(context, returnableBlockValues, suspendableExpressionValues)
 
-    fun build(declaration: IrDeclaration, body: IrElement?): DataFlowIR.Function {
+    fun build(declaration: IrDeclaration): DataFlowIR.Function {
+        val body = when (declaration) {
+            is IrFunction -> declaration.body
+            is IrField -> with(declaration) {
+                initializer?.expression?.let { IrSetFieldImpl(startOffset, endOffset, symbol, null, it, unitType) }
+            }
+            else -> error("Unknown declaration: ${declaration.render()}")
+        }
+        require(body != null) { "No body for ${declaration.render()}" }
+
         // Find all interesting expressions, variables and functions.
         val visitor = ElementFinderVisitor()
-        body?.acceptVoid(visitor)
+        body.acceptVoid(visitor)
 
         context.logMultiple {
             +"FIRST PHASE"
@@ -181,7 +192,7 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
 
         val function = FunctionDFGBuilder(expressionValuesExtractor, visitor.variableValues,
                 declaration, visitor.expressions, visitor.parentLoops, visitor.returnValues,
-                visitor.thrownValues, visitor.catchParameters).build()
+                visitor.thrownValues, visitor.catchParameters, visitor.liveVariables).build()
 
         context.logMultiple {
             +function.debugString()
@@ -198,9 +209,11 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
         val returnValues = mutableListOf<IrExpression>()
         val thrownValues = mutableListOf<IrExpression>()
         val catchParameters = mutableSetOf<IrVariable>()
+        val liveVariables = mutableMapOf<IrCall, List<IrVariable>>()
 
         private val suspendableExpressionStack = mutableListOf<IrSuspendableExpression>()
         private val loopStack = mutableListOf<IrLoop>()
+        private val liveVariablesStack = mutableListOf<List<IrVariable>>()
         private val currentLoop get() = loopStack.peek()
 
         override fun visitElement(element: IrElement) {
@@ -216,12 +229,14 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
         override fun visitExpression(expression: IrExpression) {
             when (expression) {
                 is IrMemberAccessExpression<*>,
+                is IrRawFunctionReference,
                 is IrGetField,
                 is IrGetObjectValue,
                 is IrVararg,
                 is IrConst,
                 is IrTypeOperatorCall,
-                is IrConstantPrimitive ->
+                is IrConstantPrimitive,
+                is IrClassReference ->
                     expressions += expression to currentLoop
             }
 
@@ -239,7 +254,7 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
 
                     expressions += producerInvocation to currentLoop
 
-                    val jobFunctionReference = expression.getValueArgument(3) as? IrFunctionReference
+                    val jobFunctionReference = expression.getValueArgument(3) as? IrRawFunctionReference
                             ?: error("A function reference expected")
                     val jobInvocation = IrCallImpl.fromSymbolOwner(expression.startOffset, expression.endOffset,
                             jobFunctionReference.symbol.owner.returnType,
@@ -249,6 +264,9 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
 
                     expressions += jobInvocation to currentLoop
                 }
+                if (expression.symbol == saveCoroutineState)
+                    liveVariables[expression] = liveVariablesStack.peek()!!
+
                 val intrinsicType = tryGetIntrinsicType(expression)
                 if (intrinsicType == IntrinsicType.COMPARE_AND_SET || intrinsicType == IntrinsicType.COMPARE_AND_EXCHANGE) {
                     expressions += IrSetFieldImpl(
@@ -290,8 +308,10 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
                 suspendableExpressionStack.push(expression)
                 suspendableExpressionValues.put(expression, mutableListOf())
             }
-            if (expression is IrSuspensionPoint)
+            if (expression is IrSuspensionPoint) {
                 suspendableExpressionValues[suspendableExpressionStack.peek()!!]!!.add(expression)
+                liveVariablesStack.push(generationState.liveVariablesAtSuspensionPoints[expression]!!)
+            }
             if (expression is IrLoop) {
                 parentLoops[expression] = currentLoop
                 loopStack.push(expression)
@@ -303,6 +323,8 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
                 loopStack.pop()
             if (expression is IrSuspendableExpression)
                 suspendableExpressionStack.pop()
+            if (expression is IrSuspensionPoint)
+                liveVariablesStack.pop()
         }
 
         override fun visitSetField(expression: IrSetField) {
@@ -383,6 +405,8 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
     private val executeImplProducerInvoke = executeImplProducerClass.simpleFunctions()
             .single { it.name == OperatorNameConventions.INVOKE }
     private val reinterpret = symbols.reinterpret
+    private val saveCoroutineState = symbols.saveCoroutineState
+    private val restoreCoroutineState = symbols.restoreCoroutineState
     private val objCObjectRawValueGetter = symbols.interopObjCObjectRawValueGetter
 
     private class Scoped<out T : Any>(val value: T, val scope: DataFlowIR.Node.Scope)
@@ -396,6 +420,7 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
             val returnValues: List<IrExpression>,
             val thrownValues: List<IrExpression>,
             val catchParameters: Set<IrVariable>,
+            val liveVariables: Map<IrCall, List<IrVariable>>,
     ) {
 
         private val rootScope = DataFlowIR.Node.Scope(0, emptyList())
@@ -562,9 +587,9 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
                         when (value) {
                             is IrGetValue -> getNode(value).value
 
-                            is IrVararg -> DataFlowIR.Node.Const(symbolTable.mapType(value.type))
+                            is IrVararg, is IrClassReference -> DataFlowIR.Node.Const(symbolTable.mapType(value.type))
 
-                            is IrFunctionReference -> {
+                            is IrRawFunctionReference -> {
                                 val callee = value.symbol.owner
                                 require(callee is IrSimpleFunction) { "All constructors should've been lowered: ${value.render()}" }
                                 DataFlowIR.Node.FunctionReference(
@@ -621,6 +646,16 @@ internal class FunctionDFGBuilder(private val generationState: NativeGenerationS
                                 reinterpret -> getNode(value.extensionReceiver!!).value
 
                                 initInstanceSymbol -> error("Should've been lowered: ${value.render()}")
+
+                                saveCoroutineState -> DataFlowIR.Node.SaveCoroutineState(liveVariables[value]!!.map { variables[it]!!.value })
+
+                                restoreCoroutineState -> // This is a no-op for all analyses so far.
+                                    DataFlowIR.Node.StaticCall(
+                                            symbolTable.mapFunction(symbols.theUnitInstance.owner),
+                                            emptyList(),
+                                            symbolTable.mapType(unitType),
+                                            null
+                                    )
 
                                 else -> {
                                     /*
@@ -761,7 +796,7 @@ internal class ModuleDFGBuilder(val generationState: NativeGenerationState, val 
                         +"Analysing function ${declaration.render()}"
                         +"IR: ${ir2stringWhole(declaration)}"
                     }
-                    analyze(declaration, body)
+                    analyze(declaration)
                 }
             }
 
@@ -772,13 +807,12 @@ internal class ModuleDFGBuilder(val generationState: NativeGenerationState, val 
                             +"Analysing global field ${declaration.render()}"
                             +"IR: ${ir2stringWhole(declaration)}"
                         }
-                        analyze(declaration, IrSetFieldImpl(it.startOffset, it.endOffset, declaration.symbol, null,
-                                it.expression, context.irBuiltIns.unitType))
+                        analyze(declaration)
                     }
             }
 
-            private fun analyze(declaration: IrDeclaration, body: IrElement?) {
-                val function = FunctionDFGBuilder(generationState, symbolTable).build(declaration, body)
+            private fun analyze(declaration: IrDeclaration) {
+                val function = FunctionDFGBuilder(generationState, symbolTable).build(declaration)
                 functions[function.symbol] = function
             }
         }, data = null)

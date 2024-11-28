@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.fir.declarations.FirAnonymousFunction
 import org.jetbrains.kotlin.fir.declarations.FirErrorFunction
 import org.jetbrains.kotlin.fir.declarations.FirErrorPrimaryConstructor
 import org.jetbrains.kotlin.fir.declarations.FirErrorProperty
+import org.jetbrains.kotlin.fir.declarations.impl.FirPrimaryConstructor
 import org.jetbrains.kotlin.fir.diagnostics.*
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.references.FirErrorNamedReference
@@ -139,6 +140,9 @@ class ErrorNodeDiagnosticCollectorComponent(
             if (diagnostic is ConeSyntaxDiagnostic) return
             if (diagnostic is ConeSimpleDiagnostic && diagnostic.kind == DiagnosticKind.ExpressionExpected) return
         }
+        if (diagnostic == ConeContextParameterWithDefaultValue &&
+            data.containingDeclarations.let { it.elementAtOrNull(it.lastIndex - 1) } is FirPrimaryConstructor
+        ) return
         reportFirDiagnostic(diagnostic, source, data)
     }
 
@@ -153,8 +157,16 @@ class ErrorNodeDiagnosticCollectorComponent(
     }
 
     override fun visitErrorResolvedQualifier(errorResolvedQualifier: FirErrorResolvedQualifier, data: CheckerContext) {
+        // Only report an error on the outermost parent.
+        if (errorResolvedQualifier.explicitParent?.hasErrorOrParentWithError() == true) return
+
         val source = errorResolvedQualifier.source
         reportFirDiagnostic(errorResolvedQualifier.diagnostic, source, data)
+    }
+
+    private fun FirResolvedQualifier.hasErrorOrParentWithError(): Boolean {
+        if (this is FirErrorResolvedQualifier) return true
+        return explicitParent?.hasErrorOrParentWithError() == true
     }
 
     override fun visitErrorPrimaryConstructor(errorPrimaryConstructor: FirErrorPrimaryConstructor, data: CheckerContext) {
@@ -168,43 +180,49 @@ class ErrorNodeDiagnosticCollectorComponent(
         reportFirDiagnostic(diagnostic, source, data)
     }
 
-    override fun visitVarargArgumentsExpression(varargArgumentsExpression: FirVarargArgumentsExpression, data: CheckerContext) {
-        val elementType = varargArgumentsExpression.coneElementTypeOrNull ?: return
-        if (elementType is ConeErrorType) {
-            reportFirDiagnostic(elementType.diagnostic, varargArgumentsExpression.source, data)
-        }
-    }
-
     private fun reportFirDiagnostic(
         diagnostic: ConeDiagnostic,
         source: KtSourceElement?,
         context: CheckerContext,
         callOrAssignmentSource: KtSourceElement? = null,
     ) {
-        // Will be handled by [FirDestructuringDeclarationChecker]
-        if (source?.elementType == KtNodeTypes.DESTRUCTURING_DECLARATION_ENTRY) {
-            return
-        }
+        reportFirDiagnostic(diagnostic, source, context, session, reporter, callOrAssignmentSource)
+    }
 
-        // Will be handled by [FirDelegatedPropertyChecker]
-        if (source?.kind == KtFakeSourceElementKind.DelegatedPropertyAccessor &&
-            (diagnostic is ConeUnresolvedNameError || diagnostic is ConeAmbiguityError || diagnostic is ConeInapplicableWrongReceiver || diagnostic is ConeInapplicableCandidateError)
+    companion object {
+        internal fun reportFirDiagnostic(
+            diagnostic: ConeDiagnostic,
+            source: KtSourceElement?,
+            context: CheckerContext,
+            session: FirSession = context.session,
+            reporter: DiagnosticReporter,
+            callOrAssignmentSource: KtSourceElement? = null,
         ) {
-            return
-        }
+            // Will be handled by [FirDestructuringDeclarationChecker]
+            if (source?.elementType == KtNodeTypes.DESTRUCTURING_DECLARATION_ENTRY) {
+                return
+            }
 
-        if (source?.kind == KtFakeSourceElementKind.ImplicitConstructor || source?.kind == KtFakeSourceElementKind.DesugaredForLoop) {
-            // See FirForLoopChecker
-            return
-        }
+            // Will be handled by [FirDelegatedPropertyChecker]
+            if (source?.kind == KtFakeSourceElementKind.DelegatedPropertyAccessor &&
+                (diagnostic is ConeUnresolvedNameError || diagnostic is ConeAmbiguityError || diagnostic is ConeInapplicableWrongReceiver || diagnostic is ConeInapplicableCandidateError)
+            ) {
+                return
+            }
 
-        // Prefix inc/dec on array access will have two calls to .get(...), don't report for the second one.
-        if (source?.kind is KtFakeSourceElementKind.DesugaredPrefixSecondGetReference) {
-            return
-        }
+            if (source?.kind == KtFakeSourceElementKind.ImplicitConstructor || source?.kind == KtFakeSourceElementKind.DesugaredForLoop) {
+                // See FirForLoopChecker
+                return
+            }
 
-        for (coneDiagnostic in diagnostic.toFirDiagnostics(session, source, callOrAssignmentSource)) {
-            reporter.report(coneDiagnostic, context)
+            // Prefix inc/dec on array access will have two calls to .get(...), don't report for the second one.
+            if (source?.kind is KtFakeSourceElementKind.DesugaredPrefixSecondGetReference) {
+                return
+            }
+
+            for (coneDiagnostic in diagnostic.toFirDiagnostics(session, source, callOrAssignmentSource)) {
+                reporter.report(coneDiagnostic, context)
+            }
         }
     }
 }

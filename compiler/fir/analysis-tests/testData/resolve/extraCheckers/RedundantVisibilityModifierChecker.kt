@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 fun f() {
     <!REDUNDANT_VISIBILITY_MODIFIER, WRONG_MODIFIER_TARGET!>public<!> <!CAN_BE_VAL!>var<!> <!UNUSED_VARIABLE!>baz<!> = 0
     class LocalClass {
@@ -87,4 +88,8 @@ open class J {
 
 private class Foo {
     <!REDUNDANT_VISIBILITY_MODIFIER!>internal<!> fun barBarian() {}
+}
+
+private open class ProtectedInOpenPrivateClass {
+    protected fun foo() {}
 }

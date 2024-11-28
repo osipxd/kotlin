@@ -31,24 +31,26 @@ class ConeMultipleLabelsAreForbidden(source: KtSourceElement) : ConeDiagnosticWi
     override val reason: String get() = "Multiple labels per statement are forbidden"
 }
 
+abstract class ConeCannotInferType : ConeDiagnostic
+
 class ConeCannotInferTypeParameterType(
     val typeParameter: FirTypeParameterSymbol,
     override val reason: String = "Cannot infer type for parameter ${typeParameter.name}"
-) : ConeDiagnostic
+) : ConeCannotInferType()
 
 class ConeCannotInferValueParameterType(
     val valueParameter: FirValueParameterSymbol,
     override val reason: String = "Cannot infer type for parameter ${valueParameter.name}"
-) : ConeDiagnostic
+) : ConeCannotInferType()
 
 class ConeCannotInferReceiverParameterType(
     override val reason: String = "Cannot infer type for receiver parameter"
-) : ConeDiagnostic
+) : ConeCannotInferType()
 
 class ConeTypeVariableTypeIsNotInferred(
     val typeVariableType: ConeTypeVariableType,
     override val reason: String = "Type for ${typeVariableType.typeConstructor.debugName} is not inferred"
-) : ConeDiagnostic
+) : ConeCannotInferType()
 
 class ConeUnderscoreUsageWithoutBackticks(source: KtSourceElement) : ConeDiagnosticWithSource(source) {
     override val reason: String get() = "Names _, __, ___, ... can be used only in back-ticks (`_`, `__`, `___`, ...)"
@@ -91,6 +93,14 @@ object ConeContractShouldBeFirstStatement : ConeDiagnostic {
     override val reason: String get() = "Contract should be the first statement."
 }
 
+object ConeContractMayNotHaveLabel : ConeDiagnostic {
+    override val reason: String get() = "Contract call may not have a label."
+}
+
+object ConeContextParameterWithDefaultValue : ConeDiagnostic {
+    override val reason: String get() = "Context parameters cannot have default values"
+}
+
 enum class DiagnosticKind {
     ExpressionExpected,
     NotLoopLabel,
@@ -119,7 +129,6 @@ enum class DiagnosticKind {
     NotASupertype,
     SuperNotAvailable,
     AnnotationInWhereClause,
-    AnnotationInContract,
 
     LoopInSupertype,
     RecursiveTypealiasExpansion,

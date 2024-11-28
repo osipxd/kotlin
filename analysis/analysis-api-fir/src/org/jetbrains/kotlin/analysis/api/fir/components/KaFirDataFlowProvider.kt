@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.analysis.api.fir.components
 
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.SmartList
-import org.jetbrains.kotlin.KtFakeSourceElement
 import org.jetbrains.kotlin.KtFakeSourceElementKind
 import org.jetbrains.kotlin.KtFakeSourceElementKind.DesugaredAugmentedAssign
 import org.jetbrains.kotlin.KtFakeSourceElementKind.DesugaredIncrementOrDecrement
@@ -25,6 +24,7 @@ import org.jetbrains.kotlin.analysis.api.utils.errors.withKaModuleEntry
 import org.jetbrains.kotlin.analysis.low.level.api.fir.api.getOrBuildFir
 import org.jetbrains.kotlin.analysis.low.level.api.fir.api.getOrBuildFirOfType
 import org.jetbrains.kotlin.analysis.low.level.api.fir.api.getOrBuildFirSafe
+import org.jetbrains.kotlin.analysis.low.level.api.fir.api.resolveToFirSymbol
 import org.jetbrains.kotlin.analysis.low.level.api.fir.util.collectUseSiteContainers
 import org.jetbrains.kotlin.analysis.utils.printer.parentsOfType
 import org.jetbrains.kotlin.fir.FirElement
@@ -363,7 +363,7 @@ internal class KaFirDataFlowProvider(
 
         val parentDeclarations = anchor.parentsOfType<KtDeclaration>(withSelf = true)
         for (parentDeclaration in parentDeclarations) {
-            val parentFirDeclaration = parentDeclaration.getOrBuildFir(firResolveSession)
+            val parentFirDeclaration = parentDeclaration.resolveToFirSymbol(firResolveSession, FirResolvePhase.BODY_RESOLVE).fir
             if (parentFirDeclaration is FirControlFlowGraphOwner) {
                 val graph = parentFirDeclaration.controlFlowGraphReference?.controlFlowGraph
                 if (graph != null && graph.contains(firCandidates)) {
@@ -484,11 +484,7 @@ internal class KaFirDataFlowProvider(
             }
 
             val source = element.source
-            if (source is KtFakeSourceElement && source.kind in FORBIDDEN_FAKE_SOURCE_KINDS) {
-                return false
-            }
-
-            return true
+            return source?.kind !in FORBIDDEN_FAKE_SOURCE_KINDS
         }
 
         private inline fun withElement(element: FirElement, block: () -> Unit) {

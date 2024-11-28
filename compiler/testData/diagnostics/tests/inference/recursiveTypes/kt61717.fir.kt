@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // ISSUE: KT-61717
 interface Foo<B : Foo<B>> {
     fun <T : B> bar(t: T)
@@ -12,5 +13,5 @@ class FooB : Foo<FooB> {
 }
 
 fun testStar(foo1: Foo<*>, foo2: Foo<*>) {
-    val x = foo1.bar(<!ARGUMENT_TYPE_MISMATCH!>foo2<!>)
+    val x = foo1.bar(<!MEMBER_PROJECTED_OUT!>foo2<!>)
 }

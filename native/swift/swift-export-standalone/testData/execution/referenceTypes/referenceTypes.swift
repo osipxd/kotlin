@@ -44,8 +44,11 @@ func objectIdentityWithGlobal() throws {
 func objectIdentityWithPassThrough() throws {
     let one = Foo(x: 1)
     let two = idFoo(foo: one)
+    let three = extId(receiver: one)
     try assertSame(actual: one, expected: two)
+    try assertSame(actual: one, expected: three)
     try assertEquals(actual: getX(foo: one), expected: 1)
+    try assertEquals(actual: extGetX(receiver: one), expected: 1)
 }
 
 func objectIdentityWithObject() throws {
@@ -93,6 +96,12 @@ func primitiveMethod() throws {
     let lastX = one.getAndSetX(newX: 2)
     try assertEquals(actual: lastX, expected: 1)
     try assertEquals(actual: one.x, expected: 2)
+}
+
+func memberExtension() throws {
+    let foo = Foo(x: 1)
+    let sum = foo.memberExt(receiver: 10)
+    try assertEquals(actual: sum, expected: 11)
 }
 
 func objectGetter() throws {
@@ -277,6 +286,24 @@ func openClassesAdhereToLSP() throws {
     try assertSame(actual: polymorphicObject, expected: base)
     polymorphicObject = derived
     try assertSame(actual: polymorphicObject, expected: derived)
+
+    let privateImpl = getPrivateImpl()
+    let impl = getImpl()
+
+    try assertTrue(type(of: privateImpl) == Abstract.self)
+    try assertTrue(type(of: impl) == Impl.self)
+
+    try assertTrue(type(of: abstractPolymorphicObject) == Impl.self)
+    try assertTrue(abstractPolymorphicObject !== impl)
+    try assertTrue(abstractPolymorphicObject !== privateImpl)
+
+    abstractPolymorphicObject = impl
+    try assertSame(actual: abstractPolymorphicObject, expected: impl)
+    try assertTrue(abstractPolymorphicObject !== privateImpl)
+
+    abstractPolymorphicObject = privateImpl
+    try assertTrue(abstractPolymorphicObject !== impl)
+    try assertSame(actual: abstractPolymorphicObject, expected: privateImpl)
 }
 
 func companionObject() throws {
@@ -286,9 +313,13 @@ func companionObject() throws {
 }
 
 func overridesShouldWork() throws {
-    let parent: Parent = Parent()
-    let child: Parent = Child()
-    let grandchild: Parent = GrandChild()
+    let parent: Parent = Parent(value: "10")
+    let child: Parent = Child(value: 20)
+    let grandchild: Parent = GrandChild(value: Int16(30))
+
+    try assertEquals(actual: parent.value, expected: "10")
+    try assertEquals(actual: child.value, expected: "20")
+    try assertEquals(actual: grandchild.value, expected: "30")
 
     try assertEquals(actual: parent.foo(), expected: "Parent")
     try assertEquals(actual: child.foo(), expected: "Child")
@@ -319,11 +350,24 @@ func overridesShouldWork() throws {
     try assertEquals(actual: parent.nullable(), expected: parent)
     try assertEquals(actual: child.nullable(), expected: child)
     try assertEquals(actual: grandchild.nullable(), expected: grandchild)
+
+    let abstractParentImpl1 = AbstractParentImpl()
+    let abstractParentImpl2: AbstractParent = AbstractParentImpl()
+    let abstractParentImpl3 = getAbstractParentImpl()
+    let abstractParentPrivateImpl = getAbstractParentPrivateImpl()
+
+    try assertEquals(actual: abstractParentImpl1.foo(), expected: "AbstractParentImpl")
+    try assertEquals(actual: abstractParentImpl2.foo(), expected: "AbstractParentImpl")
+    try assertEquals(actual: abstractParentImpl3.foo(), expected: "AbstractParentImpl")
+    try assertEquals(actual: abstractParentPrivateImpl.foo(), expected: "AbstractParentPrivateImpl")
 }
 
 func overridesShouldWorkAcrossModules() throws {
-    let parent: Parent = Parent()
-    let cousin: Parent = Cousin()
+    let parent: Parent = Parent(value: "parent")
+    let cousin: Parent = Cousin(value: "cousin")
+
+    try assertEquals(actual: parent.value, expected: "parent")
+    try assertEquals(actual: cousin.value, expected: "cousin")
 
     try assertEquals(actual: parent.foo(), expected: "Parent")
     try assertEquals(actual: cousin.foo(), expected: "Cousin")
@@ -347,6 +391,37 @@ func overridesShouldWorkAcrossModules() throws {
     try assertEquals(actual: cousin.nullable(), expected: cousin)
 }
 
+func dataClassesShouldWork() throws {
+    let one = DataClass(i: 1, s: "a")
+    let two = DataClass(i: 2, s: "b")
+    let oneCopy = one.copy(i: 2, s: "b")
+
+    try assertEquals(actual: one == two, expected: false)
+    try assertEquals(actual: two == oneCopy, expected: true)
+
+    try assertEquals(actual: "\(one)", expected: "DataClass(i=1, s=a)")
+    try assertEquals(actual: one.hashValue, expected: 128)
+}
+
+
+func testEnums() throws {
+    let en = Enum.a
+    try assertEquals(actual: en.print(), expected: "1 - str")
+    en.i = 3
+    try assertEquals(actual: en.print(), expected: "3 - str")
+    try assertEquals(actual: Enum.a.print(), expected: "3 - str")
+
+    try assertEquals(actual: Enum.b.print(), expected: "rts - 5")
+    try assertEquals(actual: Enum.valueOf(value: "b").print(), expected: "rts - 5")
+
+    switch en {
+    case .a: break;
+    default: try fail("switch over kotlin enum class should work")
+    }
+
+    try assertEquals(actual: Enum.allCases, expected: [Enum.a, Enum.b])
+}
+
 class ReferenceTypesTests : TestProvider {
     var tests: [TestCase] = []
 
@@ -366,6 +441,7 @@ class ReferenceTypesTests : TestProvider {
             TestCase(name: "primitiveGetter", method: withAutorelease(primitiveGetter)),
             TestCase(name: "primitiveSetter", method: withAutorelease(primitiveSetter)),
             TestCase(name: "primitiveMethod", method: withAutorelease(primitiveMethod)),
+            TestCase(name: "memberExtension", method: withAutorelease(memberExtension)),
             TestCase(name: "objectGetter", method: withAutorelease(objectGetter)),
             TestCase(name: "objectSetter", method: withAutorelease(objectSetter)),
             TestCase(name: "objectMethod", method: withAutorelease(objectMethod)),
@@ -386,7 +462,9 @@ class ReferenceTypesTests : TestProvider {
             TestCase(name: "openClassesAdhereToLSP", method: withAutorelease(openClassesAdhereToLSP)),
             TestCase(name: "companionObject", method: withAutorelease(companionObject)),
             TestCase(name: "overridesShouldWork", method: withAutorelease(overridesShouldWork)),
-            TestCase(name: "overridesShouldWork", method: withAutorelease(overridesShouldWorkAcrossModules)),
+            TestCase(name: "overridesShouldWorkAcrossModules", method: withAutorelease(overridesShouldWorkAcrossModules)),
+            TestCase(name: "dataClassesShouldWork", method: withAutorelease(dataClassesShouldWork)),
+            TestCase(name: "testEnums", method: withAutorelease(testEnums)),
         ]
     }
 }

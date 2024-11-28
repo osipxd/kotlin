@@ -16,6 +16,7 @@ sealed interface SirCallable : SirDeclaration {
     override val visibility: SirVisibility
     override val documentation: String?
     override var parent: SirDeclarationParent
-    override val attributes: MutableList<SirAttribute>
+    override val attributes: List<SirAttribute>
     var body: SirFunctionBody?
+    val errorType: SirType
 }

@@ -39,7 +39,7 @@ import org.jetbrains.kotlin.resolve.calls.inference.model.ConstraintKind
 import org.jetbrains.kotlin.resolve.calls.inference.model.NewConstraintSystemImpl
 import org.jetbrains.kotlin.resolve.calls.inference.model.SimpleConstraintSystemConstraintPosition
 import org.jetbrains.kotlin.resolve.calls.inference.runTransaction
-import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind.*
+import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind.DISPATCH_RECEIVER
 import org.jetbrains.kotlin.resolve.calls.tower.CandidateApplicability
 import org.jetbrains.kotlin.resolve.deprecation.DeprecationLevelValue
 import org.jetbrains.kotlin.resolve.descriptorUtil.DYNAMIC_EXTENSION_FQ_NAME
@@ -205,10 +205,12 @@ object CheckDispatchReceiver : ResolutionStage() {
 object CheckContextReceivers : ResolutionStage() {
     override suspend fun check(candidate: Candidate, callInfo: CallInfo, sink: CheckerSink, context: ResolutionContext) {
         val contextReceiverExpectedTypes = (candidate.symbol as? FirCallableSymbol<*>)?.fir?.contextReceivers?.map {
-            candidate.substitutor.substituteOrSelf(it.typeRef.coneType)
+            candidate.substitutor.substituteOrSelf(it.returnTypeRef.coneType)
         }?.takeUnless { it.isEmpty() } ?: return
 
-        if (!context.session.languageVersionSettings.supportsFeature(LanguageFeature.ContextReceivers)) {
+        if (!context.session.languageVersionSettings.supportsFeature(LanguageFeature.ContextParameters) &&
+            !context.session.languageVersionSettings.supportsFeature(LanguageFeature.ContextReceivers)
+        ) {
             sink.reportDiagnostic(UnsupportedContextualDeclarationCall)
             return
         }
@@ -216,7 +218,7 @@ object CheckContextReceivers : ResolutionStage() {
         val receiverGroups: List<List<FirExpression>> =
             context.bodyResolveContext.towerDataContext.towerDataElements.asReversed().mapNotNull { towerDataElement ->
                 towerDataElement.implicitReceiver?.receiverExpression?.let(::listOf)
-                    ?: towerDataElement.contextReceiverGroup?.map { it.receiverExpression }
+                    ?: towerDataElement.implicitContextGroup?.map { it.computeExpression() }
             }
 
         val resultingContextReceiverArguments = mutableListOf<ConeResolutionAtom>()
@@ -373,9 +375,10 @@ object CheckDslScopeViolation : ResolutionStage() {
         dslMarkersProvider: () -> Set<ClassId>,
         isImplicitReceiverMatching: (ImplicitReceiverValue<*>) -> Boolean,
     ) {
-        val resolvedReceiverIndex = context.bodyResolveContext.implicitReceiverStack.indexOfFirst { isImplicitReceiverMatching(it) }
+        val implicitReceivers = context.bodyResolveContext.implicitValueStorage.implicitReceivers
+        val resolvedReceiverIndex = implicitReceivers.indexOfFirst { isImplicitReceiverMatching(it) }
         if (resolvedReceiverIndex == -1) return
-        val closerReceivers = context.bodyResolveContext.implicitReceiverStack.drop(resolvedReceiverIndex + 1)
+        val closerReceivers = implicitReceivers.drop(resolvedReceiverIndex + 1)
         if (closerReceivers.isEmpty()) return
         val dslMarkers = dslMarkersProvider()
         if (dslMarkers.isEmpty()) return
@@ -389,12 +392,13 @@ object CheckDslScopeViolation : ResolutionStage() {
     }
 
     private fun getDslMarkersOfImplicitReceiver(
-        boundSymbol: FirBasedSymbol<*>?,
+        boundSymbol: FirThisOwnerSymbol<*>?,
         type: ConeKotlinType,
         context: ResolutionContext,
     ): Set<ClassId> {
+        val callableSymbol = (boundSymbol as? FirReceiverParameterSymbol)?.containingDeclarationSymbol
         return buildSet {
-            (boundSymbol as? FirAnonymousFunctionSymbol)?.fir?.matchingParameterFunctionType?.let {
+            (callableSymbol as? FirAnonymousFunctionSymbol)?.fir?.matchingParameterFunctionType?.let {
                 // collect annotations in the function type at declaration site. For example, the `@A` and `@B` in the following code.
                 // ```
                 // fun <T> body(block: @A ((@B T).() -> Unit)) { ... }
@@ -478,6 +482,23 @@ internal object MapArguments : ResolutionStage() {
     override suspend fun check(candidate: Candidate, callInfo: CallInfo, sink: CheckerSink, context: ResolutionContext) {
         val symbol = candidate.symbol as? FirFunctionSymbol<*> ?: return sink.reportDiagnostic(HiddenCandidate)
         val function = symbol.fir
+        // We could write simply
+        // val arguments = callInfo.argumentAtoms
+        // but, we have to re-create atoms here for each candidate, otherwise in a large number of tests
+        // we can encounter a problem "subAtom already initialized". For example:
+        //
+        //   class A<K>
+        //   fun <K> A<K>.foo(k: K) = k // (1)
+        //   fun <K> A<K>.foo(a: () -> Unit) = 2 // (2)
+        //   fun test(){
+        //     A<Int>().foo {} // (1)
+        //   }
+        //
+        // We have two different candidates for the 'foo' call here, so we initialize subAtom first time
+        // inside 'preprocessLambdaArgument' -> 'createLambdaWithTypeVariableAsExpectedTypeAtomIfNeeded' for a non-functional candidate,
+        // and then try to re-initialize it second time inside 'preprocessLambdaArgument' -> 'createResolvedLambdaAtom' for a functional one
+        //
+        // So the pattern is "lambda at use-site with two different candidates"
         val arguments = callInfo.arguments.map { ConeResolutionAtom.createRawAtom(it) }
         val mapping = context.bodyResolveComponents.mapArguments(
             arguments,
@@ -794,8 +815,16 @@ internal object ConstraintSystemForks : ResolutionStage() {
     override suspend fun check(candidate: Candidate, callInfo: CallInfo, sink: CheckerSink, context: ResolutionContext) {
         if (candidate.system.hasContradiction) return
 
-        candidate.system.checkIfForksMightBeSuccessfullyResolved()?.let { csError ->
-            sink.yieldDiagnostic(InferenceError(csError))
+        if (candidate.system.areThereContradictionsInForks()) {
+            check(!context.session.languageVersionSettings.supportsFeature(LanguageFeature.ConsiderForkPointsWhenCheckingContradictions)) {
+                "This part should only work for obsolete language-version settings"
+            }
+            // resolving constraints would lead to regular errors reported
+            candidate.system.resolveForkPointsConstraints()
+
+            for (error in candidate.system.errors) {
+                sink.reportDiagnostic(InferenceError(error))
+            }
         }
     }
 }

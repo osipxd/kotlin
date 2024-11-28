@@ -7,13 +7,18 @@ package org.jetbrains.kotlin.analysis.api.fir.utils
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.platform.KaCachedService
 import org.jetbrains.kotlin.analysis.api.platform.lifetime.KotlinReadActionConfinementLifetimeToken
 import org.jetbrains.kotlin.analysis.low.level.api.fir.LLFirInternals
 import org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.LLFirSessionInvalidationService
+import org.jetbrains.kotlin.analysis.low.level.api.fir.statistics.LLStatisticsService
+import org.jetbrains.kotlin.analysis.low.level.api.fir.statistics.domains.LLAnalysisSessionStatistics
+import org.jetbrains.kotlin.utils.exceptions.rethrowIntellijPlatformExceptionIfNeeded
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
@@ -67,6 +72,11 @@ internal class KaFirStopWorldCacheCleaner(private val project: Project) : KaFirC
         private val LOG = Logger.getInstance(KaFirStopWorldCacheCleaner::class.java)
 
         private const val CACHE_CLEANER_LOCK_TIMEOUT_MS = 50L
+    }
+
+    @KaCachedService
+    private val analysisSessionStatistics: LLAnalysisSessionStatistics? by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLStatisticsService.getInstance(project)?.analysisSessions
     }
 
     /**
@@ -160,7 +170,7 @@ internal class KaFirStopWorldCacheCleaner(private val project: Project) : KaFirC
             require(analyzerCount >= 0) { "Inconsistency in analyzer block counter" }
 
             if (cleanupLatch != null) {
-                LOG.info("Analysis complete in ${Thread.currentThread()}, $analyzerCount left before the K2 cache cleanup")
+                LOG.debug { "Analysis complete in ${Thread.currentThread()}, $analyzerCount left before the K2 cache cleanup" }
             }
 
             // Clean up the caches if there's a postponed cleanup, and we have no more analyses
@@ -208,7 +218,7 @@ internal class KaFirStopWorldCacheCleaner(private val project: Project) : KaFirC
                     LOG.error("K2 cache cleanup was expected to happen right after the last analysis block completion")
                 }
             } else if (existingLatch == null) {
-                LOG.info("K2 cache cleanup scheduled from ${Thread.currentThread()}, $analyzerCount analyses left")
+                LOG.debug { "K2 cache cleanup scheduled from ${Thread.currentThread()}, $analyzerCount analyses left" }
                 cleanupScheduleMs = System.currentTimeMillis()
                 cleanupLatch = CountDownLatch(1)
             }
@@ -223,13 +233,17 @@ internal class KaFirStopWorldCacheCleaner(private val project: Project) : KaFirC
     @OptIn(LLFirInternals::class)
     private fun performCleanup() {
         try {
+            analysisSessionStatistics?.lowMemoryCacheCleanupInvocationCounter?.add(1)
+
             val cleanupMs = measureTimeMillis {
                 val invalidationService = LLFirSessionInvalidationService.getInstance(project)
                 invalidationService.invalidateAll(includeLibraryModules = true)
             }
             val totalMs = System.currentTimeMillis() - cleanupScheduleMs
-            LOG.info("K2 cache cleanup complete from ${Thread.currentThread()} in $cleanupMs ms ($totalMs ms after the request)")
+            LOG.debug { "K2 cache cleanup complete from ${Thread.currentThread()} in $cleanupMs ms ($totalMs ms after the request)" }
         } catch (e: Throwable) {
+            rethrowIntellijPlatformExceptionIfNeeded(e)
+
             LOG.error("Could not clean up K2 caches", e)
         }
     }

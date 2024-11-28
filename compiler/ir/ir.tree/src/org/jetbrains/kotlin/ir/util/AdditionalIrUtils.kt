@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.ir.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.symbols.*
+import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.name.*
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.utils.filterIsInstanceAnd
@@ -21,8 +22,8 @@ fun IrClassifierSymbol?.isArrayOrPrimitiveArray(builtins: IrBuiltIns): Boolean =
     this == builtins.arrayClass || this in builtins.primitiveArraysToPrimitiveTypes
 
 // Constructors can't be marked as inline in metadata, hence this check.
-fun IrFunction.isInlineArrayConstructor(builtIns: IrBuiltIns): Boolean =
-    this is IrConstructor && valueParameters.size == 2 && constructedClass.symbol.isArrayOrPrimitiveArray(builtIns)
+fun IrFunction.isInlineArrayConstructor(): Boolean =
+    this is IrConstructor && hasShape(regularParameters = 2) && constructedClass.defaultType.let { it.isArray() || it.isPrimitiveArray() }
 
 val IrDeclarationParent.fqNameForIrSerialization: FqName
     get() = when (this) {
@@ -197,9 +198,6 @@ val IrDeclaration.isPropertyField get() =
 
 val IrDeclaration.isJvmInlineClassConstructor get() =
     this is IrSimpleFunction && name.asString() == "constructor-impl"
-
-val IrDeclaration.isTopLevelDeclaration get() =
-    parent !is IrDeclaration && !this.isPropertyAccessor && !this.isPropertyField
 
 val IrDeclaration.isAnonymousObject get() = this is IrClass && name == SpecialNames.NO_NAME_PROVIDED
 

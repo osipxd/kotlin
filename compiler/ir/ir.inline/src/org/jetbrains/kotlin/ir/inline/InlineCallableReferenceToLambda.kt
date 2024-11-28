@@ -5,8 +5,8 @@
 
 package org.jetbrains.kotlin.ir.inline
 
-import org.jetbrains.kotlin.backend.common.CommonBackendContext
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
+import org.jetbrains.kotlin.backend.common.LoweringContext
 import org.jetbrains.kotlin.backend.common.ir.addExtensionReceiver
 import org.jetbrains.kotlin.backend.common.lower.LoweredDeclarationOrigins
 import org.jetbrains.kotlin.backend.common.lower.LoweredStatementOrigins
@@ -34,16 +34,18 @@ private val STUB_FOR_INLINING = Name.identifier("stub_for_inlining")
 
 fun IrFunction.isStubForInline() = name == STUB_FOR_INLINING && origin == LoweredDeclarationOrigins.INLINE_LAMBDA
 
-// This lowering transforms CR passed to inline function to lambda which would be inlined
-//
-//      inline fun foo(inlineParameter: (A) -> B): B {
-//          return inlineParameter()
-//      }
-//
-//      foo(::smth) -> foo { a -> smth(a) }
-//
+/**
+ * This lowering transforms inlined callable references to lambdas. Callable reference is inlined if it's passed to a non-noinline
+ * parameter of an inline function.
+ *
+ *     inline fun foo(inlineParameter: (A) -> B): B {
+ *         return inlineParameter()
+ *     }
+ *
+ * `foo(::smth)` is transformed to `foo { a -> smth(a) }`.
+ */
 abstract class InlineCallableReferenceToLambdaPhase(
-    val context: CommonBackendContext,
+    val context: LoweringContext,
     protected val inlineFunctionResolver: InlineFunctionResolver,
 ) : FileLoweringPass, IrTransformer<IrDeclarationParent?>() {
     override fun lower(irFile: IrFile) {
@@ -59,7 +61,7 @@ abstract class InlineCallableReferenceToLambdaPhase(
             val function = expression.symbol.owner
             for (parameter in function.valueParameters) {
                 if (parameter.isInlineParameter()) {
-                    expression.putValueArgument(parameter.index, expression.getValueArgument(parameter.index)?.transformToLambda(data))
+                    expression.putValueArgument(parameter.indexInOldValueParameters, expression.getValueArgument(parameter.indexInOldValueParameters)?.transformToLambda(data))
                 }
             }
         }

@@ -41,6 +41,8 @@ class ComposedDeclarationCheckers(val predicate: (FirCheckerWithMppKind) -> Bool
         get() = _fileCheckers
     override val scriptCheckers: Set<FirScriptChecker>
         get() = _scriptCheckers
+    override val replSnippetCheckers: Set<FirReplSnippetChecker>
+        get() = _replSnippetCheckers
     override val typeParameterCheckers: Set<FirTypeParameterChecker>
         get() = _typeParameterCheckers
     override val typeAliasCheckers: Set<FirTypeAliasChecker>
@@ -59,6 +61,8 @@ class ComposedDeclarationCheckers(val predicate: (FirCheckerWithMppKind) -> Bool
         get() = _anonymousObjectCheckers
     override val anonymousInitializerCheckers: Set<FirAnonymousInitializerChecker>
         get() = _anonymousInitializerCheckers
+    override val receiverParameterCheckers: Set<FirReceiverParameterChecker>
+        get() = _receiverParameterCheckers
     override val controlFlowAnalyserCheckers: Set<FirControlFlowChecker>
         get() = _controlFlowAnalyserCheckers
     override val variableAssignmentCfaBasedCheckers: Set<AbstractFirPropertyInitializationChecker>
@@ -75,6 +79,7 @@ class ComposedDeclarationCheckers(val predicate: (FirCheckerWithMppKind) -> Bool
     private val _constructorCheckers: MutableSet<FirConstructorChecker> = mutableSetOf()
     private val _fileCheckers: MutableSet<FirFileChecker> = mutableSetOf()
     private val _scriptCheckers: MutableSet<FirScriptChecker> = mutableSetOf()
+    private val _replSnippetCheckers: MutableSet<FirReplSnippetChecker> = mutableSetOf()
     private val _typeParameterCheckers: MutableSet<FirTypeParameterChecker> = mutableSetOf()
     private val _typeAliasCheckers: MutableSet<FirTypeAliasChecker> = mutableSetOf()
     private val _anonymousFunctionCheckers: MutableSet<FirAnonymousFunctionChecker> = mutableSetOf()
@@ -84,6 +89,7 @@ class ComposedDeclarationCheckers(val predicate: (FirCheckerWithMppKind) -> Bool
     private val _enumEntryCheckers: MutableSet<FirEnumEntryChecker> = mutableSetOf()
     private val _anonymousObjectCheckers: MutableSet<FirAnonymousObjectChecker> = mutableSetOf()
     private val _anonymousInitializerCheckers: MutableSet<FirAnonymousInitializerChecker> = mutableSetOf()
+    private val _receiverParameterCheckers: MutableSet<FirReceiverParameterChecker> = mutableSetOf()
     private val _controlFlowAnalyserCheckers: MutableSet<FirControlFlowChecker> = mutableSetOf()
     private val _variableAssignmentCfaBasedCheckers: MutableSet<AbstractFirPropertyInitializationChecker> = mutableSetOf()
 
@@ -100,6 +106,7 @@ class ComposedDeclarationCheckers(val predicate: (FirCheckerWithMppKind) -> Bool
         checkers.constructorCheckers.filterTo(_constructorCheckers, predicate)
         checkers.fileCheckers.filterTo(_fileCheckers, predicate)
         checkers.scriptCheckers.filterTo(_scriptCheckers, predicate)
+        checkers.replSnippetCheckers.filterTo(_replSnippetCheckers, predicate)
         checkers.typeParameterCheckers.filterTo(_typeParameterCheckers, predicate)
         checkers.typeAliasCheckers.filterTo(_typeAliasCheckers, predicate)
         checkers.anonymousFunctionCheckers.filterTo(_anonymousFunctionCheckers, predicate)
@@ -109,6 +116,7 @@ class ComposedDeclarationCheckers(val predicate: (FirCheckerWithMppKind) -> Bool
         checkers.enumEntryCheckers.filterTo(_enumEntryCheckers, predicate)
         checkers.anonymousObjectCheckers.filterTo(_anonymousObjectCheckers, predicate)
         checkers.anonymousInitializerCheckers.filterTo(_anonymousInitializerCheckers, predicate)
+        checkers.receiverParameterCheckers.filterTo(_receiverParameterCheckers, predicate)
         checkers.controlFlowAnalyserCheckers.filterTo(_controlFlowAnalyserCheckers, predicate)
         checkers.variableAssignmentCfaBasedCheckers.filterTo(_variableAssignmentCfaBasedCheckers, predicate)
     }

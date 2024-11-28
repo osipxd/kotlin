@@ -16,6 +16,7 @@
 
 package org.jetbrains.kotlin.daemon.common
 
+import org.jetbrains.kotlin.buildtools.api.SourcesChanges
 import org.jetbrains.kotlin.incremental.ClasspathChanges
 import org.jetbrains.kotlin.incremental.IncrementalCompilationFeatures
 import org.jetbrains.kotlin.incremental.IncrementalModuleInfo
@@ -24,15 +25,15 @@ import java.io.Serializable
 import java.util.*
 
 open class CompilationOptions(
-        val compilerMode: CompilerMode,
-        val targetPlatform: CompileService.TargetPlatform,
-        /** @See [ReportCategory] */
-        val reportCategories: Array<Int>,
-        /** @See [ReportSeverity] */
-        val reportSeverity: Int,
-        /** @See [CompilationResultCategory]] */
-        val requestedCompilationResults: Array<Int>,
-        val kotlinScriptExtensions: Array<String>? = null
+    val compilerMode: CompilerMode,
+    val targetPlatform: CompileService.TargetPlatform,
+    /** @See [ReportCategory] */
+    val reportCategories: Array<Int>,
+    /** @See [ReportSeverity] */
+    val reportSeverity: Int,
+    /** @See [CompilationResultCategory]] */
+    val requestedCompilationResults: Array<Int>,
+    val kotlinScriptExtensions: Array<String>? = null,
 ) : Serializable {
     companion object {
         const val serialVersionUID: Long = 0
@@ -40,30 +41,28 @@ open class CompilationOptions(
 
     override fun toString(): String {
         return "CompilationOptions(" +
-               "compilerMode=$compilerMode, " +
-               "targetPlatform=$targetPlatform, " +
-               "reportCategories=${Arrays.toString(reportCategories)}, " +
-               "reportSeverity=$reportSeverity, " +
-               "requestedCompilationResults=${Arrays.toString(requestedCompilationResults)}, " +
-               "kotlinScriptExtensions=${Arrays.toString(kotlinScriptExtensions)}" +
-               ")"
+                "compilerMode=$compilerMode, " +
+                "targetPlatform=$targetPlatform, " +
+                "reportCategories=${Arrays.toString(reportCategories)}, " +
+                "reportSeverity=$reportSeverity, " +
+                "requestedCompilationResults=${Arrays.toString(requestedCompilationResults)}, " +
+                "kotlinScriptExtensions=${Arrays.toString(kotlinScriptExtensions)}" +
+                ")"
     }
 }
 
 class IncrementalCompilationOptions(
-    val areFileChangesKnown: Boolean,
-    val modifiedFiles: List<File>?,
-    val deletedFiles: List<File>?,
+    val sourceChanges: SourcesChanges,
     val classpathChanges: ClasspathChanges,
     val workingDir: File,
     compilerMode: CompilerMode,
     targetPlatform: CompileService.TargetPlatform,
     /** @See [ReportCategory] */
-        reportCategories: Array<Int>,
+    reportCategories: Array<Int>,
     /** @See [ReportSeverity] */
-        reportSeverity: Int,
+    reportSeverity: Int,
     /** @See [CompilationResultCategory]] */
-        requestedCompilationResults: Array<Int>,
+    requestedCompilationResults: Array<Int>,
     val usePreciseJavaTracking: Boolean,
     /**
      * Directories that should be cleared when IC decides to rebuild
@@ -87,15 +86,13 @@ class IncrementalCompilationOptions(
     kotlinScriptExtensions
 ) {
     companion object {
-        const val serialVersionUID: Long = 4
+        const val serialVersionUID: Long = 5
     }
 
     override fun toString(): String {
         return "IncrementalCompilationOptions(" +
                 "super=${super.toString()}, " +
-                "areFileChangesKnown=$areFileChangesKnown, " +
-                "modifiedFiles=$modifiedFiles, " +
-                "deletedFiles=$deletedFiles, " +
+                "sourceChanges=$sourceChanges, " +
                 "classpathChanges=${classpathChanges::class.simpleName}, " +
                 "workingDir=$workingDir, " +
                 "multiModuleICSettings=$multiModuleICSettings, " +
@@ -108,7 +105,7 @@ class IncrementalCompilationOptions(
 
 data class MultiModuleICSettings(
     val buildHistoryFile: File,
-    val useModuleDetection: Boolean
+    val useModuleDetection: Boolean,
 ) : Serializable {
     companion object {
         const val serialVersionUID: Long = 0

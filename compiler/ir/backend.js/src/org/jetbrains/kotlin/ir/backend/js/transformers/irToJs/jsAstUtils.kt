@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.js.backend.ast.metadata.SideEffectKind
 import org.jetbrains.kotlin.js.backend.ast.metadata.isGeneratorFunction
 import org.jetbrains.kotlin.js.backend.ast.metadata.sideEffects
 import org.jetbrains.kotlin.js.common.isValidES5Identifier
+import org.jetbrains.kotlin.js.config.JSConfigurationKeys
 import org.jetbrains.kotlin.js.config.SourceMapNamesPolicy
 import org.jetbrains.kotlin.js.config.SourceMapSourceEmbedding
 import org.jetbrains.kotlin.util.OperatorNameConventions
@@ -487,55 +488,12 @@ object JsAstUtils {
         return JsBinaryOperation(JsBinaryOperator.REF_EQ, arg1, arg2)
     }
 
-    fun inequality(arg1: JsExpression, arg2: JsExpression): JsBinaryOperation {
-        return JsBinaryOperation(JsBinaryOperator.REF_NEQ, arg1, arg2)
-    }
-
-    fun lessThanEq(arg1: JsExpression, arg2: JsExpression): JsBinaryOperation {
-        return JsBinaryOperation(JsBinaryOperator.LTE, arg1, arg2)
-    }
-
-    fun lessThan(arg1: JsExpression, arg2: JsExpression): JsBinaryOperation {
-        return JsBinaryOperation(JsBinaryOperator.LT, arg1, arg2)
-    }
-
-    fun greaterThan(arg1: JsExpression, arg2: JsExpression): JsBinaryOperation {
-        return JsBinaryOperation(JsBinaryOperator.GT, arg1, arg2)
-    }
-
-    fun greaterThanEq(arg1: JsExpression, arg2: JsExpression): JsBinaryOperation {
-        return JsBinaryOperation(JsBinaryOperator.GTE, arg1, arg2)
-    }
-
     fun assignment(left: JsExpression, right: JsExpression): JsBinaryOperation {
         return JsBinaryOperation(JsBinaryOperator.ASG, left, right)
     }
 
-    fun assignmentToThisField(fieldName: String, right: JsExpression): JsStatement {
-        return assignment(JsNameRef(fieldName, JsThisRef()), right).source(right.source).makeStmt()
-    }
-
-    fun decomposeAssignment(expr: JsExpression): Pair<JsExpression, JsExpression>? {
-        if (expr !is JsBinaryOperation) return null
-
-        return if (expr.operator != JsBinaryOperator.ASG) null else Pair(expr.arg1, expr.arg2)
-
-    }
-
     fun sum(left: JsExpression, right: JsExpression): JsBinaryOperation {
         return JsBinaryOperation(JsBinaryOperator.ADD, left, right)
-    }
-
-    fun addAssign(left: JsExpression, right: JsExpression): JsBinaryOperation {
-        return JsBinaryOperation(JsBinaryOperator.ASG_ADD, left, right)
-    }
-
-    fun subtract(left: JsExpression, right: JsExpression): JsBinaryOperation {
-        return JsBinaryOperation(JsBinaryOperator.SUB, left, right)
-    }
-
-    fun mul(left: JsExpression, right: JsExpression): JsBinaryOperation {
-        return JsBinaryOperation(JsBinaryOperator.MUL, left, right)
     }
 
     fun div(left: JsExpression, right: JsExpression): JsBinaryOperation {
@@ -621,7 +579,7 @@ private fun JsLocation.withEmbeddedSource(
     return JsLocationWithEmbeddedSource(this, fileIdentity = null /*context.currentFile.fileEntry*/) {
         try {
             InputStreamReader(FileInputStream(file), StandardCharsets.UTF_8)
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             // TODO: If the source file is not available at path (e. g. it's an stdlib file), use heuristics to find it.
             // If all heuristics fail, use dumpKotlinLike() on freshly deserialized IrFile.
             null
@@ -680,16 +638,20 @@ private val nameMappingOriginAllowList = setOf(
 private fun IrClass?.canUseSuperRef(context: JsGenerationContext, superClass: IrClass): Boolean {
     val currentFunction = context.currentFunction ?: return false
 
+    if (this == null || !context.staticContext.backendContext.es6mode || superClass.isInterface || isInner || isLocal) return false
+
     // Account for lambda expressions as well.
-    val currentFunctionsIncludingParents = currentFunction.parentDeclarationsWithSelf.filterIsInstance<IrFunction>()
+    val currentFunctionsIncludingParents = currentFunction.parentDeclarationsWithSelf.filterIsInstance<IrFunction>().toList()
+
+    if (currentFunctionsIncludingParents.size > 1 &&
+        !context.staticContext.backendContext.configuration.getBoolean(JSConfigurationKeys.COMPILE_LAMBDAS_AS_ES6_ARROW_FUNCTIONS)
+    ) {
+        // super is not allowed inside anonymous functions that are not arrows.
+        return false
+    }
 
     fun IrFunction.isCoroutine(): Boolean =
-        parentClassOrNull?.superClass?.symbol == context.staticContext.backendContext.coroutineSymbols.coroutineImpl
+        parentClassOrNull?.superClass?.symbol == context.staticContext.backendContext.symbols.coroutineSymbols.coroutineImpl
 
-    return this != null &&
-            context.staticContext.backendContext.es6mode &&
-            !superClass.isInterface &&
-            !isInner &&
-            !isLocal &&
-            currentFunctionsIncludingParents.none { it.isEs6ConstructorReplacement || it.isCoroutine() }
+    return currentFunctionsIncludingParents.none { it.isEs6ConstructorReplacement || it.isCoroutine() }
 }

@@ -2257,16 +2257,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     public void testKt53100_casts() {
       runTest("compiler/testData/codegen/box/boxing/kt53100_casts.kt");
     }
-
-    @TestMetadata("kt71550.kt")
-    public void testKt71550() {
-      runTest("compiler/testData/codegen/box/boxing/kt71550.kt");
-    }
-
-    @TestMetadata("kt71550_2.kt")
-    public void testKt71550_2() {
-      runTest("compiler/testData/codegen/box/boxing/kt71550_2.kt");
-    }
   }
 
   @TestMetadata("compiler/testData/codegen/box/boxingOptimization")
@@ -2792,6 +2782,16 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/bridges/kt46389_jvmDefault.kt");
     }
 
+    @TestMetadata("kt52929.kt")
+    public void testKt52929() {
+      runTest("compiler/testData/codegen/box/bridges/kt52929.kt");
+    }
+
+    @TestMetadata("kt52929_platformDependent.kt")
+    public void testKt52929_platformDependent() {
+      runTest("compiler/testData/codegen/box/bridges/kt52929_platformDependent.kt");
+    }
+
     @TestMetadata("longChainOneBridge.kt")
     public void testLongChainOneBridge() {
       runTest("compiler/testData/codegen/box/bridges/longChainOneBridge.kt");
@@ -2920,6 +2920,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("special.kt")
     public void testSpecial() {
       runTest("compiler/testData/codegen/box/bridges/special.kt");
+    }
+
+    @TestMetadata("specialBridgeTypesJava.kt")
+    public void testSpecialBridgeTypesJava() {
+      runTest("compiler/testData/codegen/box/bridges/specialBridgeTypesJava.kt");
     }
 
     @TestMetadata("specialGeneric.kt")
@@ -3815,6 +3820,51 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/emptyVarargAndDefault.kt");
       }
 
+      @TestMetadata("extensionFunctionAdaptedReferences.kt")
+      public void testExtensionFunctionAdaptedReferences() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionFunctionAdaptedReferences.kt");
+      }
+
+      @TestMetadata("extensionFunctionAnonymous.kt")
+      public void testExtensionFunctionAnonymous() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionFunctionAnonymous.kt");
+      }
+
+      @TestMetadata("extensionFunctionWithNestedReceiver.kt")
+      public void testExtensionFunctionWithNestedReceiver() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionFunctionWithNestedReceiver.kt");
+      }
+
+      @TestMetadata("extensionFunctionWithPassedSupertype.kt")
+      public void testExtensionFunctionWithPassedSupertype() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionFunctionWithPassedSupertype.kt");
+      }
+
+      @TestMetadata("extensionInSamWithPassedSupertype.kt")
+      public void testExtensionInSamWithPassedSupertype() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionInSamWithPassedSupertype.kt");
+      }
+
+      @TestMetadata("extensionParameterToValueParameter.kt")
+      public void testExtensionParameterToValueParameter() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionParameterToValueParameter.kt");
+      }
+
+      @TestMetadata("extensionPropertyToFun.kt")
+      public void testExtensionPropertyToFun() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionPropertyToFun.kt");
+      }
+
+      @TestMetadata("extensionPropertyToJavaFun.kt")
+      public void testExtensionPropertyToJavaFun() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionPropertyToJavaFun.kt");
+      }
+
+      @TestMetadata("extensionPropertyWithAnonymousExtensionFun.kt")
+      public void testExtensionPropertyWithAnonymousExtensionFun() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/extensionPropertyWithAnonymousExtensionFun.kt");
+      }
+
       @TestMetadata("inlineBound.kt")
       public void testInlineBound() {
         runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/inlineBound.kt");
@@ -3838,6 +3888,16 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       @TestMetadata("inlineVarargInts.kt")
       public void testInlineVarargInts() {
         runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/inlineVarargInts.kt");
+      }
+
+      @TestMetadata("innerConstructorToExtensionFun.kt")
+      public void testInnerConstructorToExtensionFun() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorToExtensionFun.kt");
+      }
+
+      @TestMetadata("innerConstructorToExtensionWithTypeParam.kt")
+      public void testInnerConstructorToExtensionWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/innerConstructorToExtensionWithTypeParam.kt");
       }
 
       @TestMetadata("innerConstructorWithVararg.kt")
@@ -4002,6 +4062,26 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/crossInline.kt");
         }
 
+        @TestMetadata("extensionFunction.kt")
+        public void testExtensionFunction() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/extensionFunction.kt");
+        }
+
+        @TestMetadata("extensionFunctionAndJavaStatic.kt")
+        public void testExtensionFunctionAndJavaStatic() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/extensionFunctionAndJavaStatic.kt");
+        }
+
+        @TestMetadata("extensionFunctionAsASuperType.kt")
+        public void testExtensionFunctionAsASuperType() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/extensionFunctionAsASuperType.kt");
+        }
+
+        @TestMetadata("extensionTypeProperty.kt")
+        public void testExtensionTypeProperty() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/extensionTypeProperty.kt");
+        }
+
         @TestMetadata("inlineAdaptedWithCoercionToUnit.kt")
         public void testInlineAdaptedWithCoercionToUnit() {
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineAdaptedWithCoercionToUnit.kt");
@@ -4027,6 +4107,21 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineSimple.kt");
         }
 
+        @TestMetadata("inlineWithExtensionAsASuperType.kt")
+        public void testInlineWithExtensionAsASuperType() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithExtensionAsASuperType.kt");
+        }
+
+        @TestMetadata("inlineWithExtensionFunction.kt")
+        public void testInlineWithExtensionFunction() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithExtensionFunction.kt");
+        }
+
+        @TestMetadata("inlineWithExtensionProperty.kt")
+        public void testInlineWithExtensionProperty() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithExtensionProperty.kt");
+        }
+
         @TestMetadata("inlineWithParameters.kt")
         public void testInlineWithParameters() {
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/inlineWithParameters.kt");
@@ -4040,6 +4135,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         @TestMetadata("nullableParameter.kt")
         public void testNullableParameter() {
           runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/nullableParameter.kt");
+        }
+
+        @TestMetadata("propertyReferenceToSuspendFunction.kt")
+        public void testPropertyReferenceToSuspendFunction() {
+          runTest("compiler/testData/codegen/box/callableReference/adaptedReferences/suspendConversion/propertyReferenceToSuspendFunction.kt");
         }
 
         @TestMetadata("simple.kt")
@@ -4468,6 +4568,16 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/function/coercionToUnit.kt");
       }
 
+      @TestMetadata("constructorFromInnerClass.kt")
+      public void testConstructorFromInnerClass() {
+        runTest("compiler/testData/codegen/box/callableReference/function/constructorFromInnerClass.kt");
+      }
+
+      @TestMetadata("constructorFromInnerClassWithTypeParam.kt")
+      public void testConstructorFromInnerClassWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/constructorFromInnerClassWithTypeParam.kt");
+      }
+
       @TestMetadata("constructorFromTopLevelNoArgs.kt")
       public void testConstructorFromTopLevelNoArgs() {
         runTest("compiler/testData/codegen/box/callableReference/function/constructorFromTopLevelNoArgs.kt");
@@ -4498,6 +4608,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/function/extensionFromClass.kt");
       }
 
+      @TestMetadata("extensionFromCompanion.kt")
+      public void testExtensionFromCompanion() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionFromCompanion.kt");
+      }
+
       @TestMetadata("extensionFromExtension.kt")
       public void testExtensionFromExtension() {
         runTest("compiler/testData/codegen/box/callableReference/function/extensionFromExtension.kt");
@@ -4523,9 +4638,69 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/function/extensionFromTopLevelUnitOneStringArg.kt");
       }
 
+      @TestMetadata("extensionFunctionAsASuperTypePassToSAMInterface.kt")
+      public void testExtensionFunctionAsASuperTypePassToSAMInterface() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionAsASuperTypePassToSAMInterface.kt");
+      }
+
+      @TestMetadata("extensionFunctionInJavaSAM.kt")
+      public void testExtensionFunctionInJavaSAM() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionInJavaSAM.kt");
+      }
+
+      @TestMetadata("extensionFunctionInSAMInterface.kt")
+      public void testExtensionFunctionInSAMInterface() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionInSAMInterface.kt");
+      }
+
+      @TestMetadata("extensionFunctionLocal.kt")
+      public void testExtensionFunctionLocal() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionLocal.kt");
+      }
+
+      @TestMetadata("extensionFunctionPassToSAMInterface.kt")
+      public void testExtensionFunctionPassToSAMInterface() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionPassToSAMInterface.kt");
+      }
+
+      @TestMetadata("extensionFunctionToJavaFun.kt")
+      public void testExtensionFunctionToJavaFun() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionToJavaFun.kt");
+      }
+
+      @TestMetadata("extensionFunctionWithExtensionInSAMInterface.kt")
+      public void testExtensionFunctionWithExtensionInSAMInterface() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionFunctionWithExtensionInSAMInterface.kt");
+      }
+
+      @TestMetadata("extensionInDelegatedJavaSam.kt")
+      public void testExtensionInDelegatedJavaSam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionInDelegatedJavaSam.kt");
+      }
+
+      @TestMetadata("extensionInDelegatedSam.kt")
+      public void testExtensionInDelegatedSam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionInDelegatedSam.kt");
+      }
+
+      @TestMetadata("extensionPassedToDelegatedSam.kt")
+      public void testExtensionPassedToDelegatedSam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionPassedToDelegatedSam.kt");
+      }
+
       @TestMetadata("extensionProperty.kt")
       public void testExtensionProperty() {
         runTest("compiler/testData/codegen/box/callableReference/function/extensionProperty.kt");
+      }
+
+      @TestMetadata("extensionWithNestedFunction.kt")
+      public void testExtensionWithNestedFunction() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionWithNestedFunction.kt");
+      }
+
+      @TestMetadata("extensionWithTypeParam.kt")
+      public void testExtensionWithTypeParam() {
+        runTest("compiler/testData/codegen/box/callableReference/function/extensionWithTypeParam.kt");
       }
 
       @TestMetadata("genericCallableReferenceArguments.kt")
@@ -4593,6 +4768,16 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/function/javaCollectionsStaticMethod.kt");
       }
 
+      @TestMetadata("javaStaticFunctionToExtensionFunction.kt")
+      public void testJavaStaticFunctionToExtensionFunction() {
+        runTest("compiler/testData/codegen/box/callableReference/function/javaStaticFunctionToExtensionFunction.kt");
+      }
+
+      @TestMetadata("javaStaticFunctionToExtensionFunctionWithTypeParameter.kt")
+      public void testJavaStaticFunctionToExtensionFunctionWithTypeParameter() {
+        runTest("compiler/testData/codegen/box/callableReference/function/javaStaticFunctionToExtensionFunctionWithTypeParameter.kt");
+      }
+
       @TestMetadata("kt21787.kt")
       public void testKt21787() {
         runTest("compiler/testData/codegen/box/callableReference/function/kt21787.kt");
@@ -4628,9 +4813,24 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/function/nestedConstructorFromTopLevelOneStringArg.kt");
       }
 
+      @TestMetadata("nestedExtensionInSAMInterface.kt")
+      public void testNestedExtensionInSAMInterface() {
+        runTest("compiler/testData/codegen/box/callableReference/function/nestedExtensionInSAMInterface.kt");
+      }
+
+      @TestMetadata("nestedExtensionToJavaFun.kt")
+      public void testNestedExtensionToJavaFun() {
+        runTest("compiler/testData/codegen/box/callableReference/function/nestedExtensionToJavaFun.kt");
+      }
+
       @TestMetadata("newArray.kt")
       public void testNewArray() {
         runTest("compiler/testData/codegen/box/callableReference/function/newArray.kt");
+      }
+
+      @TestMetadata("nullableExtension.kt")
+      public void testNullableExtension() {
+        runTest("compiler/testData/codegen/box/callableReference/function/nullableExtension.kt");
       }
 
       @TestMetadata("overloadedFun.kt")
@@ -4869,6 +5069,56 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/callableReference/property/enumNameOrdinal.kt");
       }
 
+      @TestMetadata("extensionProperty.kt")
+      public void testExtensionProperty() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionProperty.kt");
+      }
+
+      @TestMetadata("extensionPropertyInDelegatedJavaSam.kt")
+      public void testExtensionPropertyInDelegatedJavaSam() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyInDelegatedJavaSam.kt");
+      }
+
+      @TestMetadata("extensionPropertyInDelegatedSam.kt")
+      public void testExtensionPropertyInDelegatedSam() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyInDelegatedSam.kt");
+      }
+
+      @TestMetadata("extensionPropertyInSamInterface.kt")
+      public void testExtensionPropertyInSamInterface() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyInSamInterface.kt");
+      }
+
+      @TestMetadata("extensionPropertyPassedToDelegatedSam.kt")
+      public void testExtensionPropertyPassedToDelegatedSam() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyPassedToDelegatedSam.kt");
+      }
+
+      @TestMetadata("extensionPropertyReferenceWithExplicitType.kt")
+      public void testExtensionPropertyReferenceWithExplicitType() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyReferenceWithExplicitType.kt");
+      }
+
+      @TestMetadata("extensionPropertyReferenceWithTypeParameter.kt")
+      public void testExtensionPropertyReferenceWithTypeParameter() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyReferenceWithTypeParameter.kt");
+      }
+
+      @TestMetadata("extensionPropertyToJavaSAM.kt")
+      public void testExtensionPropertyToJavaSAM() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyToJavaSAM.kt");
+      }
+
+      @TestMetadata("extensionPropertyWithExtensionReceiver.kt")
+      public void testExtensionPropertyWithExtensionReceiver() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyWithExtensionReceiver.kt");
+      }
+
+      @TestMetadata("extensionPropertyWithExtensionType.kt")
+      public void testExtensionPropertyWithExtensionType() {
+        runTest("compiler/testData/codegen/box/callableReference/property/extensionPropertyWithExtensionType.kt");
+      }
+
       @TestMetadata("extensionToArray.kt")
       public void testExtensionToArray() {
         runTest("compiler/testData/codegen/box/callableReference/property/extensionToArray.kt");
@@ -4942,6 +5192,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       @TestMetadata("localClassVar.kt")
       public void testLocalClassVar() {
         runTest("compiler/testData/codegen/box/callableReference/property/localClassVar.kt");
+      }
+
+      @TestMetadata("nullableExtensionProperty.kt")
+      public void testNullableExtensionProperty() {
+        runTest("compiler/testData/codegen/box/callableReference/property/nullableExtensionProperty.kt");
       }
 
       @TestMetadata("overriddenInSubclass.kt")
@@ -5665,6 +5920,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("delegationToOutTypeParameter.kt")
     public void testDelegationToOutTypeParameter() {
       runTest("compiler/testData/codegen/box/classDelegation/delegationToOutTypeParameter.kt");
+    }
+
+    @TestMetadata("delegationToStarProjectedType.kt")
+    public void testDelegationToStarProjectedType() {
+      runTest("compiler/testData/codegen/box/classDelegation/delegationToStarProjectedType.kt");
     }
 
     @TestMetadata("delegationToTypeParameter.kt")
@@ -7313,6 +7573,21 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/collections/noStubsInJavaSuperClass.kt");
     }
 
+    @TestMetadata("notErasedMapGetMap_boxedTypes.kt")
+    public void testNotErasedMapGetMap_boxedTypes() {
+      runTest("compiler/testData/codegen/box/collections/notErasedMapGetMap_boxedTypes.kt");
+    }
+
+    @TestMetadata("notErasedMapGetMap_declared.kt")
+    public void testNotErasedMapGetMap_declared() {
+      runTest("compiler/testData/codegen/box/collections/notErasedMapGetMap_declared.kt");
+    }
+
+    @TestMetadata("notErasedMapGetMap_inherited.kt")
+    public void testNotErasedMapGetMap_inherited() {
+      runTest("compiler/testData/codegen/box/collections/notErasedMapGetMap_inherited.kt");
+    }
+
     @TestMetadata("platformValueContains.kt")
     public void testPlatformValueContains() {
       runTest("compiler/testData/codegen/box/collections/platformValueContains.kt");
@@ -7664,6 +7939,24 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     }
   }
 
+  @TestMetadata("compiler/testData/codegen/box/contextParameters")
+  @TestDataPath("$PROJECT_ROOT")
+  @RunWith(JUnit3RunnerWithInners.class)
+  public static class ContextParameters extends AbstractLightAnalysisModeTest {
+    private void runTest(String testDataFilePath) {
+      KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+    }
+
+    public void testAllFilesPresentInContextParameters() {
+      KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/contextParameters"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+    }
+
+    @TestMetadata("simple.kt")
+    public void testSimple() {
+      runTest("compiler/testData/codegen/box/contextParameters/simple.kt");
+    }
+  }
+
   @TestMetadata("compiler/testData/codegen/box/contracts")
   @TestDataPath("$PROJECT_ROOT")
   @RunWith(JUnit3RunnerWithInners.class)
@@ -7802,6 +8095,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("bottles.kt")
     public void testBottles() {
       runTest("compiler/testData/codegen/box/controlStructures/bottles.kt");
+    }
+
+    @TestMetadata("breakInDoWhile.kt")
+    public void testBreakInDoWhile() {
+      runTest("compiler/testData/codegen/box/controlStructures/breakInDoWhile.kt");
     }
 
     @TestMetadata("breakInFinally.kt")
@@ -10248,6 +10546,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         runTest("compiler/testData/codegen/box/coroutines/controlFlow/kt22694_1_3.kt");
       }
 
+      @TestMetadata("kt72464.kt")
+      public void testKt72464() {
+        runTest("compiler/testData/codegen/box/coroutines/controlFlow/kt72464.kt");
+      }
+
       @TestMetadata("labeledWhile.kt")
       public void testLabeledWhile() {
         runTest("compiler/testData/codegen/box/coroutines/controlFlow/labeledWhile.kt");
@@ -12464,6 +12767,64 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         }
       }
 
+      @TestMetadata("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction")
+      @TestDataPath("$PROJECT_ROOT")
+      @RunWith(JUnit3RunnerWithInners.class)
+      public static class CleanupWithoutStdlibFunction extends AbstractLightAnalysisModeTest {
+        private void runTest(String testDataFilePath) {
+          KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInCleanupWithoutStdlibFunction() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+        }
+
+        @TestMetadata("backEdge.kt")
+        public void testBackEdge() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/backEdge.kt");
+        }
+
+        @TestMetadata("deadArgument.kt")
+        public void testDeadArgument() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/deadArgument.kt");
+        }
+
+        @TestMetadata("if.kt")
+        public void testIf() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/if.kt");
+        }
+
+        @TestMetadata("nullCleanup.kt")
+        public void testNullCleanup() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/nullCleanup.kt");
+        }
+
+        @TestMetadata("nullNotSpill.kt")
+        public void testNullNotSpill() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/nullNotSpill.kt");
+        }
+
+        @TestMetadata("simple.kt")
+        public void testSimple() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/simple.kt");
+        }
+
+        @TestMetadata("twoRefs.kt")
+        public void testTwoRefs() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/twoRefs.kt");
+        }
+
+        @TestMetadata("unusedParamNotSpill.kt")
+        public void testUnusedParamNotSpill() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/unusedParamNotSpill.kt");
+        }
+
+        @TestMetadata("when.kt")
+        public void testWhen() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/cleanupWithoutStdlibFunction/when.kt");
+        }
+      }
+
       @TestMetadata("compiler/testData/codegen/box/coroutines/varSpilling/debugMode")
       @TestDataPath("$PROJECT_ROOT")
       @RunWith(JUnit3RunnerWithInners.class)
@@ -12489,6 +12850,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         @TestMetadata("inlineOnly.kt")
         public void testInlineOnly() {
           runTest("compiler/testData/codegen/box/coroutines/varSpilling/debugMode/inlineOnly.kt");
+        }
+
+        @TestMetadata("kt63954.kt")
+        public void testKt63954() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/debugMode/kt63954.kt");
         }
 
         @TestMetadata("nullCleanup.kt")
@@ -12519,6 +12885,69 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         @TestMetadata("when.kt")
         public void testWhen() {
           runTest("compiler/testData/codegen/box/coroutines/varSpilling/debugMode/when.kt");
+        }
+      }
+
+      @TestMetadata("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup")
+      @TestDataPath("$PROJECT_ROOT")
+      @RunWith(JUnit3RunnerWithInners.class)
+      public static class NoCleanup extends AbstractLightAnalysisModeTest {
+        private void runTest(String testDataFilePath) {
+          KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInNoCleanup() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+        }
+
+        @TestMetadata("backEdge.kt")
+        public void testBackEdge() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/backEdge.kt");
+        }
+
+        @TestMetadata("if.kt")
+        public void testIf() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/if.kt");
+        }
+
+        @TestMetadata("inlineOnly.kt")
+        public void testInlineOnly() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/inlineOnly.kt");
+        }
+
+        @TestMetadata("kt63954.kt")
+        public void testKt63954() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/kt63954.kt");
+        }
+
+        @TestMetadata("nullCleanup.kt")
+        public void testNullCleanup() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/nullCleanup.kt");
+        }
+
+        @TestMetadata("nullNotSpill.kt")
+        public void testNullNotSpill() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/nullNotSpill.kt");
+        }
+
+        @TestMetadata("simple.kt")
+        public void testSimple() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/simple.kt");
+        }
+
+        @TestMetadata("twoRefs.kt")
+        public void testTwoRefs() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/twoRefs.kt");
+        }
+
+        @TestMetadata("unusedParamNotSpill.kt")
+        public void testUnusedParamNotSpill() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/unusedParamNotSpill.kt");
+        }
+
+        @TestMetadata("when.kt")
+        public void testWhen() {
+          runTest("compiler/testData/codegen/box/coroutines/varSpilling/noCleanup/when.kt");
         }
       }
     }
@@ -15514,9 +15943,9 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/enum/enumEntriesCompatibilityCheck.kt");
     }
 
-    @TestMetadata("enumEntriesCompatibilityCheckNoPrioritizedEnumEntries.kt")
-    public void testEnumEntriesCompatibilityCheckNoPrioritizedEnumEntries() {
-      runTest("compiler/testData/codegen/box/enum/enumEntriesCompatibilityCheckNoPrioritizedEnumEntries.kt");
+    @TestMetadata("enumEntriesCompatibilityCheckPrioritized.kt")
+    public void testEnumEntriesCompatibilityCheckPrioritized() {
+      runTest("compiler/testData/codegen/box/enum/enumEntriesCompatibilityCheckPrioritized.kt");
     }
 
     @TestMetadata("enumEntriesFromJava.kt")
@@ -16464,6 +16893,10 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
     }
 
+    private void runTest(String testDataFilePath, java.util.function.Function<String, String> transformer) {
+      KotlinTestUtils.runTest(path -> doTestWithTransformer(path, transformer), TargetBackend.JVM_IR, testDataFilePath);
+    }
+
     public void testAllFilesPresentInExtensionFunctions() {
       KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
     }
@@ -16478,14 +16911,179 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/extensionFunctions/defaultMethodInterfaceCallExtensionSuper.kt");
     }
 
+    @TestMetadata("delegatedPropertyWithExtensionType.kt")
+    public void testDelegatedPropertyWithExtensionType() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/delegatedPropertyWithExtensionType.kt");
+    }
+
     @TestMetadata("executionOrder.kt")
     public void testExecutionOrder() {
       runTest("compiler/testData/codegen/box/extensionFunctions/executionOrder.kt");
     }
 
+    @TestMetadata("extensionFunctionAndSpreadOperator.kt")
+    public void testExtensionFunctionAndSpreadOperator() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAndSpreadOperator.kt");
+    }
+
+    @TestMetadata("extensionFunctionAsADefaultInKotlinInterface.kt")
+    public void testExtensionFunctionAsADefaultInKotlinInterface() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsADefaultInKotlinInterface.kt");
+    }
+
+    @TestMetadata("extensionFunctionAsASupertypeOfValueClass.kt")
+    public void testExtensionFunctionAsASupertypeOfValueClass() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsASupertypeOfValueClass.kt", TransformersFunctions.getReplaceOptionalJvmInlineAnnotationWithReal());
+    }
+
+    @TestMetadata("extensionFunctionAsATypeLocal.kt")
+    public void testExtensionFunctionAsATypeLocal() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsATypeLocal.kt");
+    }
+
+    @TestMetadata("extensionFunctionAsAnExpression.kt")
+    public void testExtensionFunctionAsAnExpression() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsAnExpression.kt");
+    }
+
+    @TestMetadata("extensionFunctionAsAnExpressionWithNestedType.kt")
+    public void testExtensionFunctionAsAnExpressionWithNestedType() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsAnExpressionWithNestedType.kt");
+    }
+
+    @TestMetadata("extensionFunctionAsAnonymous.kt")
+    public void testExtensionFunctionAsAnonymous() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsAnonymous.kt");
+    }
+
     @TestMetadata("extensionFunctionAsSupertype.kt")
     public void testExtensionFunctionAsSupertype() {
       runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsSupertype.kt");
+    }
+
+    @TestMetadata("extensionFunctionAsType.kt")
+    public void testExtensionFunctionAsType() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionAsType.kt");
+    }
+
+    @TestMetadata("extensionFunctionClassLevelLocal.kt")
+    public void testExtensionFunctionClassLevelLocal() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionClassLevelLocal.kt");
+    }
+
+    @TestMetadata("extensionFunctionDifferentReceivers.kt")
+    public void testExtensionFunctionDifferentReceivers() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionDifferentReceivers.kt");
+    }
+
+    @TestMetadata("extensionFunctionFakeOverride.kt")
+    public void testExtensionFunctionFakeOverride() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionFakeOverride.kt");
+    }
+
+    @TestMetadata("extensionFunctionInDelegatedSam.kt")
+    public void testExtensionFunctionInDelegatedSam() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInDelegatedSam.kt");
+    }
+
+    @TestMetadata("extensionFunctionInInnerClass.kt")
+    public void testExtensionFunctionInInnerClass() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInInnerClass.kt");
+    }
+
+    @TestMetadata("extensionFunctionInNestedClass.kt")
+    public void testExtensionFunctionInNestedClass() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInNestedClass.kt");
+    }
+
+    @TestMetadata("extensionFunctionInSAMInterface.kt")
+    public void testExtensionFunctionInSAMInterface() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInSAMInterface.kt");
+    }
+
+    @TestMetadata("extensionFunctionInValueClass.kt")
+    public void testExtensionFunctionInValueClass() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionInValueClass.kt", TransformersFunctions.getReplaceOptionalJvmInlineAnnotationWithReal());
+    }
+
+    @TestMetadata("extensionFunctionJavaReceiver.kt")
+    public void testExtensionFunctionJavaReceiver() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionJavaReceiver.kt");
+    }
+
+    @TestMetadata("extensionFunctionLocal.kt")
+    public void testExtensionFunctionLocal() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionLocal.kt");
+    }
+
+    @TestMetadata("extensionFunctionNestedInExtensionFunction.kt")
+    public void testExtensionFunctionNestedInExtensionFunction() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionNestedInExtensionFunction.kt");
+    }
+
+    @TestMetadata("extensionFunctionOverride.kt")
+    public void testExtensionFunctionOverride() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionOverride.kt");
+    }
+
+    @TestMetadata("extensionFunctionOverrideAsADefaultInJavaInterface.kt")
+    public void testExtensionFunctionOverrideAsADefaultInJavaInterface() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionOverrideAsADefaultInJavaInterface.kt");
+    }
+
+    @TestMetadata("extensionFunctionWithExtensionAsAReceiver.kt")
+    public void testExtensionFunctionWithExtensionAsAReceiver() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithExtensionAsAReceiver.kt");
+    }
+
+    @TestMetadata("extensionFunctionWithExtensionInSAMInterface.kt")
+    public void testExtensionFunctionWithExtensionInSAMInterface() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithExtensionInSAMInterface.kt");
+    }
+
+    @TestMetadata("extensionFunctionWithInlineModifier.kt")
+    public void testExtensionFunctionWithInlineModifier() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithInlineModifier.kt");
+    }
+
+    @TestMetadata("extensionFunctionWithNestedReceiver.kt")
+    public void testExtensionFunctionWithNestedReceiver() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithNestedReceiver.kt");
+    }
+
+    @TestMetadata("extensionFunctionWithReceiverConflict.kt")
+    public void testExtensionFunctionWithReceiverConflict() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionFunctionWithReceiverConflict.kt");
+    }
+
+    @TestMetadata("extensionMemberWithTypeParameter.kt")
+    public void testExtensionMemberWithTypeParameter() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionMemberWithTypeParameter.kt");
+    }
+
+    @TestMetadata("extensionReceiverIsNotInlined.kt")
+    public void testExtensionReceiverIsNotInlined() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionReceiverIsNotInlined.kt");
+    }
+
+    @TestMetadata("extensionsAndJavaFunctionsInHierarchy.kt")
+    public void testExtensionsAndJavaFunctionsInHierarchy() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionsAndJavaFunctionsInHierarchy.kt");
+    }
+
+    @TestMetadata("extensionsFakeOverrideInJava.kt")
+    public void testExtensionsFakeOverrideInJava() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionsFakeOverrideInJava.kt");
+    }
+
+    @TestMetadata("extensionsOverrideInJava.kt")
+    public void testExtensionsOverrideInJava() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/extensionsOverrideInJava.kt");
+    }
+
+    @TestMetadata("functionWithTheSameDispatchAndExtensionReceiver.kt")
+    public void testFunctionWithTheSameDispatchAndExtensionReceiver() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/functionWithTheSameDispatchAndExtensionReceiver.kt");
     }
 
     @TestMetadata("kt1061.kt")
@@ -16583,6 +17181,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/extensionFunctions/nested2.kt");
     }
 
+    @TestMetadata("nestedExtensionFunctionAsASupertype.kt")
+    public void testNestedExtensionFunctionAsASupertype() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/nestedExtensionFunctionAsASupertype.kt");
+    }
+
     @TestMetadata("shared.kt")
     public void testShared() {
       runTest("compiler/testData/codegen/box/extensionFunctions/shared.kt");
@@ -16591,6 +17194,21 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("simple.kt")
     public void testSimple() {
       runTest("compiler/testData/codegen/box/extensionFunctions/simple.kt");
+    }
+
+    @TestMetadata("suspendConversionForExtensionFunAsAFunType.kt")
+    public void testSuspendConversionForExtensionFunAsAFunType() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/suspendConversionForExtensionFunAsAFunType.kt");
+    }
+
+    @TestMetadata("suspendConversionForExtensionFunAsAPropertyType.kt")
+    public void testSuspendConversionForExtensionFunAsAPropertyType() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/suspendConversionForExtensionFunAsAPropertyType.kt");
+    }
+
+    @TestMetadata("suspendConversionForExtensionFunAsASuperType.kt")
+    public void testSuspendConversionForExtensionFunAsASuperType() {
+      runTest("compiler/testData/codegen/box/extensionFunctions/suspendConversionForExtensionFunAsASuperType.kt");
     }
 
     @TestMetadata("thisMethodInObjectLiteral.kt")
@@ -16633,6 +17251,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       @TestMetadata("arrayAccessOperators.kt")
       public void testArrayAccessOperators() {
         runTest("compiler/testData/codegen/box/extensionFunctions/contextReceivers/arrayAccessOperators.kt");
+      }
+
+      @TestMetadata("cceAfterReceiverSmartCast.kt")
+      public void testCceAfterReceiverSmartCast() {
+        runTest("compiler/testData/codegen/box/extensionFunctions/contextReceivers/cceAfterReceiverSmartCast.kt");
       }
 
       @TestMetadata("compoundAssignmentOperators.kt")
@@ -16932,6 +17555,76 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionProperties"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
     }
 
+    @TestMetadata("extensionMemberWithTypeParameter.kt")
+    public void testExtensionMemberWithTypeParameter() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionMemberWithTypeParameter.kt");
+    }
+
+    @TestMetadata("extensionPropertyDelegated.kt")
+    public void testExtensionPropertyDelegated() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyDelegated.kt");
+    }
+
+    @TestMetadata("extensionPropertyDifferentReceiver.kt")
+    public void testExtensionPropertyDifferentReceiver() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyDifferentReceiver.kt");
+    }
+
+    @TestMetadata("extensionPropertyInInnerClass.kt")
+    public void testExtensionPropertyInInnerClass() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyInInnerClass.kt");
+    }
+
+    @TestMetadata("extensionPropertyInNestedClass.kt")
+    public void testExtensionPropertyInNestedClass() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyInNestedClass.kt");
+    }
+
+    @TestMetadata("extensionPropertyInSAMInterface.kt")
+    public void testExtensionPropertyInSAMInterface() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyInSAMInterface.kt");
+    }
+
+    @TestMetadata("extensionPropertyJavaReceiver.kt")
+    public void testExtensionPropertyJavaReceiver() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyJavaReceiver.kt");
+    }
+
+    @TestMetadata("extensionPropertyWithAnonymoesExtensionWithALabel.kt")
+    public void testExtensionPropertyWithAnonymoesExtensionWithALabel() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithAnonymoesExtensionWithALabel.kt");
+    }
+
+    @TestMetadata("extensionPropertyWithAnonymousExtensionFun.kt")
+    public void testExtensionPropertyWithAnonymousExtensionFun() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithAnonymousExtensionFun.kt");
+    }
+
+    @TestMetadata("extensionPropertyWithAnonymousExtensionFunWithTypeParam.kt")
+    public void testExtensionPropertyWithAnonymousExtensionFunWithTypeParam() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithAnonymousExtensionFunWithTypeParam.kt");
+    }
+
+    @TestMetadata("extensionPropertyWithExtensionAsReceiver.kt")
+    public void testExtensionPropertyWithExtensionAsReceiver() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithExtensionAsReceiver.kt");
+    }
+
+    @TestMetadata("extensionPropertyWithExtensionNestedType.kt")
+    public void testExtensionPropertyWithExtensionNestedType() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithExtensionNestedType.kt");
+    }
+
+    @TestMetadata("extensionPropertyWithInline.kt")
+    public void testExtensionPropertyWithInline() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionPropertyWithInline.kt");
+    }
+
+    @TestMetadata("extensionProperyWithExtensionType.kt")
+    public void testExtensionProperyWithExtensionType() {
+      runTest("compiler/testData/codegen/box/extensionProperties/extensionProperyWithExtensionType.kt");
+    }
+
     @TestMetadata("genericContextOverride.kt")
     public void testGenericContextOverride() {
       runTest("compiler/testData/codegen/box/extensionProperties/genericContextOverride.kt");
@@ -17000,6 +17693,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("nonAbstractInInterface.kt")
     public void testNonAbstractInInterface() {
       runTest("compiler/testData/codegen/box/extensionProperties/nonAbstractInInterface.kt");
+    }
+
+    @TestMetadata("propertyWithExtensionNestedType.kt")
+    public void testPropertyWithExtensionNestedType() {
+      runTest("compiler/testData/codegen/box/extensionProperties/propertyWithExtensionNestedType.kt");
     }
 
     @TestMetadata("topLevel.kt")
@@ -18205,6 +18903,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("suspendFunInterfaceConversionCodegen.kt")
     public void testSuspendFunInterfaceConversionCodegen() {
       runTest("compiler/testData/codegen/box/funInterface/suspendFunInterfaceConversionCodegen.kt");
+    }
+
+    @TestMetadata("typealiasedFunInterface.kt")
+    public void testTypealiasedFunInterface() {
+      runTest("compiler/testData/codegen/box/funInterface/typealiasedFunInterface.kt");
     }
 
     @TestMetadata("compiler/testData/codegen/box/funInterface/equality")
@@ -19422,6 +20125,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("genericClassWithGetSet.kt")
     public void testGenericClassWithGetSet() {
       runTest("compiler/testData/codegen/box/increment/genericClassWithGetSet.kt");
+    }
+
+    @TestMetadata("incDecWith2Receivers.kt")
+    public void testIncDecWith2Receivers() {
+      runTest("compiler/testData/codegen/box/increment/incDecWith2Receivers.kt");
     }
 
     @TestMetadata("kt36956.kt")
@@ -20857,6 +21565,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/initializers/correctOrder2.kt");
     }
 
+    @TestMetadata("correctOrder3.kt")
+    public void testCorrectOrder3() {
+      runTest("compiler/testData/codegen/box/initializers/correctOrder3.kt");
+    }
+
     @TestMetadata("initializers0.kt")
     public void testInitializers0() {
       runTest("compiler/testData/codegen/box/initializers/initializers0.kt");
@@ -21011,6 +21724,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("defaultArgs.kt")
     public void testDefaultArgs() {
       runTest("compiler/testData/codegen/box/inline/defaultArgs.kt");
+    }
+
+    @TestMetadata("defaultArgsLowering.kt")
+    public void testDefaultArgsLowering() {
+      runTest("compiler/testData/codegen/box/inline/defaultArgsLowering.kt");
     }
 
     @TestMetadata("defaultArgsMultipleModules.kt")
@@ -22959,6 +23677,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("kt70461.kt")
     public void testKt70461() {
       runTest("compiler/testData/codegen/box/inlineClasses/kt70461.kt", TransformersFunctions.getReplaceOptionalJvmInlineAnnotationWithReal());
+    }
+
+    @TestMetadata("kt71649.kt")
+    public void testKt71649() {
+      runTest("compiler/testData/codegen/box/inlineClasses/kt71649.kt", TransformersFunctions.getReplaceOptionalJvmInlineAnnotationWithReal());
     }
 
     @TestMetadata("lateinitInlineClasses.kt")
@@ -28073,6 +28796,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/involvesIrInterpreter/enumRecursiveName.kt");
     }
 
+    @TestMetadata("enumWithDifferentFileOrder.kt")
+    public void testEnumWithDifferentFileOrder() {
+      runTest("compiler/testData/codegen/box/involvesIrInterpreter/enumWithDifferentFileOrder.kt");
+    }
+
     @TestMetadata("floatOperations.kt")
     public void testFloatOperations() {
       runTest("compiler/testData/codegen/box/involvesIrInterpreter/floatOperations.kt");
@@ -28314,6 +29042,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       @TestMetadata("annotationInArguments.kt")
       public void testAnnotationInArguments() {
         runTest("compiler/testData/codegen/box/involvesIrInterpreter/serialization/annotationInArguments.kt");
+      }
+
+      @TestMetadata("annotationOnFakeOverride.kt")
+      public void testAnnotationOnFakeOverride() {
+        runTest("compiler/testData/codegen/box/involvesIrInterpreter/serialization/annotationOnFakeOverride.kt");
       }
 
       @TestMetadata("annotationSerialization.kt")
@@ -28783,6 +29516,16 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("kjkPropertyAndExtensionProperty.kt")
     public void ignoreKjkPropertyAndExtensionProperty() {
       runTest("compiler/testData/codegen/box/javaInterop/kjkPropertyAndExtensionProperty.kt");
+    }
+
+    @TestMetadata("varargCall1.kt")
+    public void ignoreVarargCall1() {
+      runTest("compiler/testData/codegen/box/javaInterop/varargCall1.kt");
+    }
+
+    @TestMetadata("varargCall2.kt")
+    public void ignoreVarargCall2() {
+      runTest("compiler/testData/codegen/box/javaInterop/varargCall2.kt");
     }
 
     private void runTest(String testDataFilePath) {
@@ -30202,6 +30945,59 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
           public void testSimpleProperty() {
             runTest("compiler/testData/codegen/box/jvm8/defaults/allCompatibility/delegationBy/simpleProperty.kt");
           }
+        }
+      }
+
+      @TestMetadata("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges")
+      @TestDataPath("$PROJECT_ROOT")
+      @RunWith(JUnit3RunnerWithInners.class)
+      public static class DefaultCompatibilityBridges extends AbstractLightAnalysisModeTest {
+        private void runTest(String testDataFilePath) {
+          KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+        }
+
+        @TestMetadata("all.kt")
+        public void testAll() {
+          runTest("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges/all.kt");
+        }
+
+        @TestMetadata("allCompatibility.kt")
+        public void testAllCompatibility() {
+          runTest("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges/allCompatibility.kt");
+        }
+
+        public void testAllFilesPresentInDefaultCompatibilityBridges() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+        }
+
+        @TestMetadata("annotatedWithJvmDefaultWithNoCompatibility.kt")
+        public void testAnnotatedWithJvmDefaultWithNoCompatibility() {
+          runTest("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges/annotatedWithJvmDefaultWithNoCompatibility.kt");
+        }
+
+        @TestMetadata("defaultArguments.kt")
+        public void testDefaultArguments() {
+          runTest("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges/defaultArguments.kt");
+        }
+
+        @TestMetadata("extensions.kt")
+        public void testExtensions() {
+          runTest("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges/extensions.kt");
+        }
+
+        @TestMetadata("genericSubstitution.kt")
+        public void testGenericSubstitution() {
+          runTest("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges/genericSubstitution.kt");
+        }
+
+        @TestMetadata("intermediateInterfaces.kt")
+        public void testIntermediateInterfaces() {
+          runTest("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges/intermediateInterfaces.kt");
+        }
+
+        @TestMetadata("javaInterface.kt")
+        public void testJavaInterface() {
+          runTest("compiler/testData/codegen/box/jvm8/defaults/defaultCompatibilityBridges/javaInterface.kt");
         }
       }
 
@@ -32984,16 +33780,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
   @TestDataPath("$PROJECT_ROOT")
   @RunWith(JUnit3RunnerWithInners.class)
   public static class Multiplatform extends AbstractLightAnalysisModeTest {
-    @TestMetadata("callToJavaSuper.kt")
-    public void ignoreCallToJavaSuper() {
-      runTest("compiler/testData/codegen/box/multiplatform/callToJavaSuper.kt");
-    }
-
-    @TestMetadata("kt59613.kt")
-    public void ignoreKt59613() {
-      runTest("compiler/testData/codegen/box/multiplatform/kt59613.kt");
-    }
-
     private void runTest(String testDataFilePath) {
       KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
     }
@@ -33002,346 +33788,240 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true, "k2");
     }
 
-    @TestMetadata("annotationsViaActualTypeAliasFromBinary.kt")
-    public void testAnnotationsViaActualTypeAliasFromBinary() {
-      runTest("compiler/testData/codegen/box/multiplatform/annotationsViaActualTypeAliasFromBinary.kt");
-    }
-
-    @TestMetadata("annotationsViaActualTypeAliasFromBinary2.kt")
-    public void testAnnotationsViaActualTypeAliasFromBinary2() {
-      runTest("compiler/testData/codegen/box/multiplatform/annotationsViaActualTypeAliasFromBinary2.kt");
-    }
-
-    @TestMetadata("commonInternal.kt")
-    public void testCommonInternal() {
-      runTest("compiler/testData/codegen/box/multiplatform/commonInternal.kt");
-    }
-
-    @TestMetadata("expectClassInJvmMultifileFacade.kt")
-    public void testExpectClassInJvmMultifileFacade() {
-      runTest("compiler/testData/codegen/box/multiplatform/expectClassInJvmMultifileFacade.kt");
-    }
-
-    @TestMetadata("expectProperty.kt")
-    public void testExpectProperty() {
-      runTest("compiler/testData/codegen/box/multiplatform/expectProperty.kt");
-    }
-
-    @TestMetadata("kt57391.kt")
-    public void testKt57391() {
-      runTest("compiler/testData/codegen/box/multiplatform/kt57391.kt");
-    }
-
-    @TestMetadata("kt60854.kt")
-    public void testKt60854() {
-      runTest("compiler/testData/codegen/box/multiplatform/kt60854.kt");
-    }
-
-    @TestMetadata("kt61166.kt")
-    public void testKt61166() {
-      runTest("compiler/testData/codegen/box/multiplatform/kt61166.kt");
-    }
-
-    @TestMetadata("noArgActualConstructor.kt")
-    public void testNoArgActualConstructor() {
-      runTest("compiler/testData/codegen/box/multiplatform/noArgActualConstructor.kt");
-    }
-
-    @TestMetadata("optionalExpectation.kt")
-    public void testOptionalExpectation() {
-      runTest("compiler/testData/codegen/box/multiplatform/optionalExpectation.kt");
-    }
-
-    @TestMetadata("optionalExpectationJvm.kt")
-    public void testOptionalExpectationJvm() {
-      runTest("compiler/testData/codegen/box/multiplatform/optionalExpectationJvm.kt");
-    }
-
-    @TestMetadata("starImportOfExpectEnumWithActualTypeAlias.kt")
-    public void testStarImportOfExpectEnumWithActualTypeAlias() {
-      runTest("compiler/testData/codegen/box/multiplatform/starImportOfExpectEnumWithActualTypeAlias.kt");
-    }
-
-    @TestMetadata("unsignedArrayForLoop.kt")
-    public void testUnsignedArrayForLoop() {
-      runTest("compiler/testData/codegen/box/multiplatform/unsignedArrayForLoop.kt");
-    }
-
-    @TestMetadata("compiler/testData/codegen/box/multiplatform/complexMatchings")
+    @TestMetadata("compiler/testData/codegen/box/multiplatform/k1")
     @TestDataPath("$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners.class)
-    public static class ComplexMatchings extends AbstractLightAnalysisModeTest {
+    public static class K1 extends AbstractLightAnalysisModeTest {
       private void runTest(String testDataFilePath) {
         KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
       }
 
-      public void testAllFilesPresentInComplexMatchings() {
-        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/complexMatchings"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+      public void testAllFilesPresentInK1() {
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/k1"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
       }
 
-      @TestMetadata("expectCtorlessFinalToActualObject.kt")
-      public void testExpectCtorlessFinalToActualObject() {
-        runTest("compiler/testData/codegen/box/multiplatform/complexMatchings/expectCtorlessFinalToActualObject.kt");
+      @TestMetadata("annotationsViaActualTypeAliasFromBinary.kt")
+      public void testAnnotationsViaActualTypeAliasFromBinary() {
+        runTest("compiler/testData/codegen/box/multiplatform/k1/annotationsViaActualTypeAliasFromBinary.kt");
       }
 
-      @TestMetadata("expectCtorlessFinalToActualUnit.kt")
-      public void testExpectCtorlessFinalToActualUnit() {
-        runTest("compiler/testData/codegen/box/multiplatform/complexMatchings/expectCtorlessFinalToActualUnit.kt");
-      }
-    }
-
-    @TestMetadata("compiler/testData/codegen/box/multiplatform/defaultArguments")
-    @TestDataPath("$PROJECT_ROOT")
-    @RunWith(JUnit3RunnerWithInners.class)
-    public static class DefaultArguments extends AbstractLightAnalysisModeTest {
-      @TestMetadata("superCall.kt")
-      public void ignoreSuperCall() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/superCall.kt");
+      @TestMetadata("expectClassInJvmMultifileFacade.kt")
+      public void testExpectClassInJvmMultifileFacade() {
+        runTest("compiler/testData/codegen/box/multiplatform/k1/expectClassInJvmMultifileFacade.kt");
       }
 
-      @TestMetadata("typeAlias2.kt")
-      public void ignoreTypeAlias2() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/typeAlias2.kt");
+      @TestMetadata("expectProperty.kt")
+      public void testExpectProperty() {
+        runTest("compiler/testData/codegen/box/multiplatform/k1/expectProperty.kt");
       }
 
-      private void runTest(String testDataFilePath) {
-        KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+      @TestMetadata("noArgActualConstructor.kt")
+      public void testNoArgActualConstructor() {
+        runTest("compiler/testData/codegen/box/multiplatform/k1/noArgActualConstructor.kt");
       }
 
-      public void testAllFilesPresentInDefaultArguments() {
-        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/defaultArguments"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+      @TestMetadata("optionalExpectation.kt")
+      public void testOptionalExpectation() {
+        runTest("compiler/testData/codegen/box/multiplatform/k1/optionalExpectation.kt");
       }
 
-      @TestMetadata("annotations.kt")
-      public void testAnnotations() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/annotations.kt");
+      @TestMetadata("compiler/testData/codegen/box/multiplatform/k1/complexMatchings")
+      @TestDataPath("$PROJECT_ROOT")
+      @RunWith(JUnit3RunnerWithInners.class)
+      public static class ComplexMatchings extends AbstractLightAnalysisModeTest {
+        private void runTest(String testDataFilePath) {
+          KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInComplexMatchings() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/k1/complexMatchings"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+        }
+
+        @TestMetadata("expectCtorlessFinalToActualObject.kt")
+        public void testExpectCtorlessFinalToActualObject() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/complexMatchings/expectCtorlessFinalToActualObject.kt");
+        }
+
+        @TestMetadata("expectCtorlessFinalToActualUnit.kt")
+        public void testExpectCtorlessFinalToActualUnit() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/complexMatchings/expectCtorlessFinalToActualUnit.kt");
+        }
       }
 
-      @TestMetadata("bothInExpectAndActual.kt")
-      public void testBothInExpectAndActual() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/bothInExpectAndActual.kt");
+      @TestMetadata("compiler/testData/codegen/box/multiplatform/k1/defaultArguments")
+      @TestDataPath("$PROJECT_ROOT")
+      @RunWith(JUnit3RunnerWithInners.class)
+      public static class DefaultArguments extends AbstractLightAnalysisModeTest {
+        @TestMetadata("superCall.kt")
+        public void ignoreSuperCall() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/superCall.kt");
+        }
+
+        private void runTest(String testDataFilePath) {
+          KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInDefaultArguments() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/k1/defaultArguments"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+        }
+
+        @TestMetadata("annotations.kt")
+        public void testAnnotations() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/annotations.kt");
+        }
+
+        @TestMetadata("bothInExpectAndActual.kt")
+        public void testBothInExpectAndActual() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/bothInExpectAndActual.kt");
+        }
+
+        @TestMetadata("bothInExpectAndActual2.kt")
+        public void testBothInExpectAndActual2() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/bothInExpectAndActual2.kt");
+        }
+
+        @TestMetadata("constructor.kt")
+        public void testConstructor() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/constructor.kt");
+        }
+
+        @TestMetadata("delegatedExpectedInterface.kt")
+        public void testDelegatedExpectedInterface() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/delegatedExpectedInterface.kt");
+        }
+
+        @TestMetadata("dispatchReceiverValue.kt")
+        public void testDispatchReceiverValue() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/dispatchReceiverValue.kt");
+        }
+
+        @TestMetadata("extensionReceiverValue.kt")
+        public void testExtensionReceiverValue() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/extensionReceiverValue.kt");
+        }
+
+        @TestMetadata("function.kt")
+        public void testFunction() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/function.kt");
+        }
+
+        @TestMetadata("functionFromOtherModule.kt")
+        public void testFunctionFromOtherModule() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/functionFromOtherModule.kt");
+        }
+
+        @TestMetadata("inheritedFromCommonClass.kt")
+        public void testInheritedFromCommonClass() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/inheritedFromCommonClass.kt");
+        }
+
+        @TestMetadata("inheritedFromExpectedClass.kt")
+        public void testInheritedFromExpectedClass() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/inheritedFromExpectedClass.kt");
+        }
+
+        @TestMetadata("inheritedFromExpectedInterface.kt")
+        public void testInheritedFromExpectedInterface() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/inheritedFromExpectedInterface.kt");
+        }
+
+        @TestMetadata("inheritedFromExpectedMethod.kt")
+        public void testInheritedFromExpectedMethod() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/inheritedFromExpectedMethod.kt");
+        }
+
+        @TestMetadata("inheritedInExpectedDeclarations.kt")
+        public void testInheritedInExpectedDeclarations() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/inheritedInExpectedDeclarations.kt");
+        }
+
+        @TestMetadata("inheritedViaAnotherInterfaceIndirectly.kt")
+        public void testInheritedViaAnotherInterfaceIndirectly() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/inheritedViaAnotherInterfaceIndirectly.kt");
+        }
+
+        @TestMetadata("inlineFunctionWithDefaultLambda.kt")
+        public void testInlineFunctionWithDefaultLambda() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/inlineFunctionWithDefaultLambda.kt");
+        }
+
+        @TestMetadata("jvmOverloads.kt")
+        public void testJvmOverloads() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/jvmOverloads.kt");
+        }
+
+        @TestMetadata("kt23239.kt")
+        public void testKt23239() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/kt23239.kt");
+        }
+
+        @TestMetadata("kt23739.kt")
+        public void testKt23739() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/kt23739.kt");
+        }
+
+        @TestMetadata("kt67488.kt")
+        public void testKt67488() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/kt67488.kt");
+        }
+
+        @TestMetadata("nestedEnumEntryValue.kt")
+        public void testNestedEnumEntryValue() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/nestedEnumEntryValue.kt");
+        }
+
+        @TestMetadata("parametersInArgumentValues.kt")
+        public void testParametersInArgumentValues() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/parametersInArgumentValues.kt");
+        }
+
+        @TestMetadata("suspend.kt")
+        public void testSuspend() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/suspend.kt");
+        }
+
+        @TestMetadata("typeAlias.kt")
+        public void testTypeAlias() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/typeAlias.kt");
+        }
+
+        @TestMetadata("withTypeParameter.kt")
+        public void testWithTypeParameter() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/defaultArguments/withTypeParameter.kt");
+        }
       }
 
-      @TestMetadata("bothInExpectAndActual2.kt")
-      public void testBothInExpectAndActual2() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/bothInExpectAndActual2.kt");
-      }
+      @TestMetadata("compiler/testData/codegen/box/multiplatform/k1/migratedOldTests")
+      @TestDataPath("$PROJECT_ROOT")
+      @RunWith(JUnit3RunnerWithInners.class)
+      public static class MigratedOldTests extends AbstractLightAnalysisModeTest {
+        private void runTest(String testDataFilePath) {
+          KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+        }
 
-      @TestMetadata("constructor.kt")
-      public void testConstructor() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/constructor.kt");
-      }
+        public void testAllFilesPresentInMigratedOldTests() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/k1/migratedOldTests"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+        }
 
-      @TestMetadata("delegatedExpectedInterface.kt")
-      public void testDelegatedExpectedInterface() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/delegatedExpectedInterface.kt");
-      }
+        @TestMetadata("mpp1.kt")
+        public void testMpp1() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/migratedOldTests/mpp1.kt");
+        }
 
-      @TestMetadata("dispatchReceiverValue.kt")
-      public void testDispatchReceiverValue() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/dispatchReceiverValue.kt");
-      }
+        @TestMetadata("mpp2.kt")
+        public void testMpp2() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/migratedOldTests/mpp2.kt");
+        }
 
-      @TestMetadata("extensionReceiverValue.kt")
-      public void testExtensionReceiverValue() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/extensionReceiverValue.kt");
-      }
+        @TestMetadata("mpp_default_args.kt")
+        public void testMpp_default_args() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/migratedOldTests/mpp_default_args.kt");
+        }
 
-      @TestMetadata("function.kt")
-      public void testFunction() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/function.kt");
-      }
-
-      @TestMetadata("functionFromOtherModule.kt")
-      public void testFunctionFromOtherModule() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/functionFromOtherModule.kt");
-      }
-
-      @TestMetadata("inheritedFromCommonClass.kt")
-      public void testInheritedFromCommonClass() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedFromCommonClass.kt");
-      }
-
-      @TestMetadata("inheritedFromExpectedClass.kt")
-      public void testInheritedFromExpectedClass() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedFromExpectedClass.kt");
-      }
-
-      @TestMetadata("inheritedFromExpectedInterface.kt")
-      public void testInheritedFromExpectedInterface() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedFromExpectedInterface.kt");
-      }
-
-      @TestMetadata("inheritedFromExpectedMethod.kt")
-      public void testInheritedFromExpectedMethod() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedFromExpectedMethod.kt");
-      }
-
-      @TestMetadata("inheritedInExpectedDeclarations.kt")
-      public void testInheritedInExpectedDeclarations() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedInExpectedDeclarations.kt");
-      }
-
-      @TestMetadata("inheritedViaAnotherInterfaceIndirectly.kt")
-      public void testInheritedViaAnotherInterfaceIndirectly() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inheritedViaAnotherInterfaceIndirectly.kt");
-      }
-
-      @TestMetadata("inlineFunctionWithDefaultLambda.kt")
-      public void testInlineFunctionWithDefaultLambda() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/inlineFunctionWithDefaultLambda.kt");
-      }
-
-      @TestMetadata("jvmOverloads.kt")
-      public void testJvmOverloads() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/jvmOverloads.kt");
-      }
-
-      @TestMetadata("kt23239.kt")
-      public void testKt23239() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/kt23239.kt");
-      }
-
-      @TestMetadata("kt23739.kt")
-      public void testKt23739() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/kt23739.kt");
-      }
-
-      @TestMetadata("kt67488.kt")
-      public void testKt67488() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/kt67488.kt");
-      }
-
-      @TestMetadata("nestedEnumEntryValue.kt")
-      public void testNestedEnumEntryValue() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/nestedEnumEntryValue.kt");
-      }
-
-      @TestMetadata("parametersInArgumentValues.kt")
-      public void testParametersInArgumentValues() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/parametersInArgumentValues.kt");
-      }
-
-      @TestMetadata("suspend.kt")
-      public void testSuspend() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/suspend.kt");
-      }
-
-      @TestMetadata("typeAlias.kt")
-      public void testTypeAlias() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/typeAlias.kt");
-      }
-
-      @TestMetadata("withTypeParameter.kt")
-      public void testWithTypeParameter() {
-        runTest("compiler/testData/codegen/box/multiplatform/defaultArguments/withTypeParameter.kt");
-      }
-    }
-
-    @TestMetadata("compiler/testData/codegen/box/multiplatform/exhaustiveness")
-    @TestDataPath("$PROJECT_ROOT")
-    @RunWith(JUnit3RunnerWithInners.class)
-    public static class Exhaustiveness extends AbstractLightAnalysisModeTest {
-      private void runTest(String testDataFilePath) {
-        KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
-      }
-
-      public void testAllFilesPresentInExhaustiveness() {
-        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/exhaustiveness"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
-      }
-
-      @TestMetadata("commonEnum.kt")
-      public void testCommonEnum() {
-        runTest("compiler/testData/codegen/box/multiplatform/exhaustiveness/commonEnum.kt");
-      }
-
-      @TestMetadata("commonSealedClass.kt")
-      public void testCommonSealedClass() {
-        runTest("compiler/testData/codegen/box/multiplatform/exhaustiveness/commonSealedClass.kt");
-      }
-
-      @TestMetadata("commonSealedInterface.kt")
-      public void testCommonSealedInterface() {
-        runTest("compiler/testData/codegen/box/multiplatform/exhaustiveness/commonSealedInterface.kt");
-      }
-    }
-
-    @TestMetadata("compiler/testData/codegen/box/multiplatform/hmpp")
-    @TestDataPath("$PROJECT_ROOT")
-    @RunWith(JUnit3RunnerWithInners.class)
-    public static class Hmpp extends AbstractLightAnalysisModeTest {
-      private void runTest(String testDataFilePath) {
-        KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
-      }
-
-      public void testAllFilesPresentInHmpp() {
-        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/hmpp"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
-      }
-
-      @TestMetadata("simple.kt")
-      public void testSimple() {
-        runTest("compiler/testData/codegen/box/multiplatform/hmpp/simple.kt");
-      }
-    }
-
-    @TestMetadata("compiler/testData/codegen/box/multiplatform/migratedOldTests")
-    @TestDataPath("$PROJECT_ROOT")
-    @RunWith(JUnit3RunnerWithInners.class)
-    public static class MigratedOldTests extends AbstractLightAnalysisModeTest {
-      private void runTest(String testDataFilePath) {
-        KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
-      }
-
-      public void testAllFilesPresentInMigratedOldTests() {
-        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/migratedOldTests"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
-      }
-
-      @TestMetadata("mpp1.kt")
-      public void testMpp1() {
-        runTest("compiler/testData/codegen/box/multiplatform/migratedOldTests/mpp1.kt");
-      }
-
-      @TestMetadata("mpp2.kt")
-      public void testMpp2() {
-        runTest("compiler/testData/codegen/box/multiplatform/migratedOldTests/mpp2.kt");
-      }
-
-      @TestMetadata("mpp_default_args.kt")
-      public void testMpp_default_args() {
-        runTest("compiler/testData/codegen/box/multiplatform/migratedOldTests/mpp_default_args.kt");
-      }
-
-      @TestMetadata("remap_expect_property_ref.kt")
-      public void testRemap_expect_property_ref() {
-        runTest("compiler/testData/codegen/box/multiplatform/migratedOldTests/remap_expect_property_ref.kt");
-      }
-    }
-
-    @TestMetadata("compiler/testData/codegen/box/multiplatform/multiModule")
-    @TestDataPath("$PROJECT_ROOT")
-    @RunWith(JUnit3RunnerWithInners.class)
-    public static class MultiModule extends AbstractLightAnalysisModeTest {
-      private void runTest(String testDataFilePath) {
-        KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
-      }
-
-      public void testAllFilesPresentInMultiModule() {
-        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/multiplatform/multiModule"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
-      }
-
-      @TestMetadata("expectInterfaceInheritance.kt")
-      public void testExpectInterfaceInheritance() {
-        runTest("compiler/testData/codegen/box/multiplatform/multiModule/expectInterfaceInheritance.kt");
-      }
-
-      @TestMetadata("hmppSimple.kt")
-      public void testHmppSimple() {
-        runTest("compiler/testData/codegen/box/multiplatform/multiModule/hmppSimple.kt");
-      }
-
-      @TestMetadata("stdlibClassRedefine.kt")
-      public void testStdlibClassRedefine() {
-        runTest("compiler/testData/codegen/box/multiplatform/multiModule/stdlibClassRedefine.kt");
+        @TestMetadata("remap_expect_property_ref.kt")
+        public void testRemap_expect_property_ref() {
+          runTest("compiler/testData/codegen/box/multiplatform/k1/migratedOldTests/remap_expect_property_ref.kt");
+        }
       }
     }
   }
@@ -33376,6 +34056,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("returnInsideTwoLambdas.kt")
     public void testReturnInsideTwoLambdas() {
       runTest("compiler/testData/codegen/box/nonLocalReturns/returnInsideTwoLambdas.kt");
+    }
+
+    @TestMetadata("suspendConversion.kt")
+    public void testSuspendConversion() {
+      runTest("compiler/testData/codegen/box/nonLocalReturns/suspendConversion.kt");
     }
 
     @TestMetadata("use.kt")
@@ -33441,6 +34126,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/notNullAssertions/noCallAssertions.kt");
     }
 
+    @TestMetadata("nonNullReassignmentWithFlexible.kt")
+    public void testNonNullReassignmentWithFlexible() {
+      runTest("compiler/testData/codegen/box/notNullAssertions/nonNullReassignmentWithFlexible.kt");
+    }
+
     @TestMetadata("rightElvisOperand.kt")
     public void testRightElvisOperand() {
       runTest("compiler/testData/codegen/box/notNullAssertions/rightElvisOperand.kt");
@@ -33467,6 +34157,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("nothingValueException.kt")
     public void testNothingValueException() {
       runTest("compiler/testData/codegen/box/nothingValue/nothingValueException.kt");
+    }
+
+    @TestMetadata("toStringOnNothing.kt")
+    public void testToStringOnNothing() {
+      runTest("compiler/testData/codegen/box/nothingValue/toStringOnNothing.kt");
     }
   }
 
@@ -34429,16 +35124,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("reassignmentLhsCaching.kt")
     public void testReassignmentLhsCaching() {
       runTest("compiler/testData/codegen/box/operatorConventions/reassignmentLhsCaching.kt");
-    }
-
-    @TestMetadata("remAssignmentOperation.kt")
-    public void testRemAssignmentOperation() {
-      runTest("compiler/testData/codegen/box/operatorConventions/remAssignmentOperation.kt");
-    }
-
-    @TestMetadata("remOverModOperation.kt")
-    public void testRemOverModOperation() {
-      runTest("compiler/testData/codegen/box/operatorConventions/remOverModOperation.kt");
     }
 
     @TestMetadata("suspendOperators.kt")
@@ -35468,6 +36153,39 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         public void testPrimitiveEqObjectShort() {
           runTest("compiler/testData/codegen/box/primitiveTypes/equalityWithObject/generated/primitiveEqObjectShort.kt");
         }
+      }
+    }
+
+    @TestMetadata("compiler/testData/codegen/box/primitiveTypes/identityEqualsWithNullable")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class IdentityEqualsWithNullable extends AbstractLightAnalysisModeTest {
+      private void runTest(String testDataFilePath) {
+        KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+      }
+
+      public void testAllFilesPresentInIdentityEqualsWithNullable() {
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/primitiveTypes/identityEqualsWithNullable"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+      }
+
+      @TestMetadata("doubleZero.kt")
+      public void testDoubleZero() {
+        runTest("compiler/testData/codegen/box/primitiveTypes/identityEqualsWithNullable/doubleZero.kt");
+      }
+
+      @TestMetadata("floatZero.kt")
+      public void testFloatZero() {
+        runTest("compiler/testData/codegen/box/primitiveTypes/identityEqualsWithNullable/floatZero.kt");
+      }
+
+      @TestMetadata("primitivesWithAny.kt")
+      public void testPrimitivesWithAny() {
+        runTest("compiler/testData/codegen/box/primitiveTypes/identityEqualsWithNullable/primitivesWithAny.kt");
+      }
+
+      @TestMetadata("primitivesWithNull.kt")
+      public void testPrimitivesWithNull() {
+        runTest("compiler/testData/codegen/box/primitiveTypes/identityEqualsWithNullable/primitivesWithNull.kt");
       }
     }
 
@@ -41933,6 +42651,21 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
           runTest("compiler/testData/codegen/box/reflection/properties/getDelegate/boundMemberProperty.kt");
         }
 
+        @TestMetadata("delegatedByExtensionMemberProperty.kt")
+        public void testDelegatedByExtensionMemberProperty() {
+          runTest("compiler/testData/codegen/box/reflection/properties/getDelegate/delegatedByExtensionMemberProperty.kt");
+        }
+
+        @TestMetadata("delegatedByExtensionProperty.kt")
+        public void testDelegatedByExtensionProperty() {
+          runTest("compiler/testData/codegen/box/reflection/properties/getDelegate/delegatedByExtensionProperty.kt");
+        }
+
+        @TestMetadata("delegatedByJavaProperty.kt")
+        public void testDelegatedByJavaProperty() {
+          runTest("compiler/testData/codegen/box/reflection/properties/getDelegate/delegatedByJavaProperty.kt");
+        }
+
         @TestMetadata("extensionProperty.kt")
         public void testExtensionProperty() {
           runTest("compiler/testData/codegen/box/reflection/properties/getDelegate/extensionProperty.kt");
@@ -42260,6 +42993,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       @TestMetadata("mfvc.kt")
       public void testMfvc() {
         runTest("compiler/testData/codegen/box/reflection/typeOf/mfvc.kt");
+      }
+
+      @TestMetadata("multiModuleNullCheck.kt")
+      public void testMultiModuleNullCheck() {
+        runTest("compiler/testData/codegen/box/reflection/typeOf/multiModuleNullCheck.kt");
       }
 
       @TestMetadata("multipleLayers.kt")
@@ -43173,6 +43911,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("kt68727.kt")
     public void testKt68727() {
       runTest("compiler/testData/codegen/box/regressions/kt68727.kt");
+    }
+
+    @TestMetadata("kt71119.kt")
+    public void testKt71119() {
+      runTest("compiler/testData/codegen/box/regressions/kt71119.kt");
     }
 
     @TestMetadata("kt715.kt")
@@ -44201,11 +44944,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
           runTest("compiler/testData/codegen/box/sam/adapters/operators/invoke.kt");
         }
 
-        @TestMetadata("legacyModOperator.kt")
-        public void testLegacyModOperator() {
-          runTest("compiler/testData/codegen/box/sam/adapters/operators/legacyModOperator.kt");
-        }
-
         @TestMetadata("multiGetSet.kt")
         public void testMultiGetSet() {
           runTest("compiler/testData/codegen/box/sam/adapters/operators/multiGetSet.kt");
@@ -45019,6 +45757,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/smartCasts/kt52432.kt");
     }
 
+    @TestMetadata("kt72391.kt")
+    public void testKt72391() {
+      runTest("compiler/testData/codegen/box/smartCasts/kt72391.kt");
+    }
+
     @TestMetadata("lambdaArgumentWithoutType.kt")
     public void testLambdaArgumentWithoutType() {
       runTest("compiler/testData/codegen/box/smartCasts/lambdaArgumentWithoutType.kt");
@@ -45082,6 +45825,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("smartcastOnImplicitDispatchReceiver.kt")
     public void testSmartcastOnImplicitDispatchReceiver() {
       runTest("compiler/testData/codegen/box/smartCasts/smartcastOnImplicitDispatchReceiver.kt");
+    }
+
+    @TestMetadata("smartcastToProjectedType.kt")
+    public void testSmartcastToProjectedType() {
+      runTest("compiler/testData/codegen/box/smartCasts/smartcastToProjectedType.kt");
     }
 
     @TestMetadata("smartcastToStarType.kt")
@@ -47081,6 +47829,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/typealias/genericTypeAliasConstructor2.kt");
     }
 
+    @TestMetadata("genericTypeAliasConstructor_implicitTypeArguments.kt")
+    public void testGenericTypeAliasConstructor_implicitTypeArguments() {
+      runTest("compiler/testData/codegen/box/typealias/genericTypeAliasConstructor_implicitTypeArguments.kt");
+    }
+
     @TestMetadata("incorrectTypeOfTypealiasForSuspendFTMM.kt")
     public void testIncorrectTypeOfTypealiasForSuspendFTMM() {
       runTest("compiler/testData/codegen/box/typealias/incorrectTypeOfTypealiasForSuspendFTMM.kt");
@@ -47194,6 +47947,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("typeAliasSecondaryConstructor.kt")
     public void testTypeAliasSecondaryConstructor() {
       runTest("compiler/testData/codegen/box/typealias/typeAliasSecondaryConstructor.kt");
+    }
+
+    @TestMetadata("typealiasOnExternalAnnotation.kt")
+    public void testTypealiasOnExternalAnnotation() {
+      runTest("compiler/testData/codegen/box/typealias/typealiasOnExternalAnnotation.kt");
     }
   }
 
@@ -47353,6 +48111,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("unitClassObject.kt")
     public void testUnitClassObject() {
       runTest("compiler/testData/codegen/box/unit/unitClassObject.kt");
+    }
+
+    @TestMetadata("unitCoercionWithElvis.kt")
+    public void testUnitCoercionWithElvis() {
+      runTest("compiler/testData/codegen/box/unit/unitCoercionWithElvis.kt");
     }
 
     @TestMetadata("UnitValue.kt")
@@ -47748,9 +48511,19 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
       runTest("compiler/testData/codegen/box/valueClasses/inlineFunctions.kt");
     }
 
+    @TestMetadata("kt54897.kt")
+    public void testKt54897() {
+      runTest("compiler/testData/codegen/box/valueClasses/kt54897.kt");
+    }
+
     @TestMetadata("kt59079.kt")
     public void testKt59079() {
       runTest("compiler/testData/codegen/box/valueClasses/kt59079.kt");
+    }
+
+    @TestMetadata("kt62455.kt")
+    public void testKt62455() {
+      runTest("compiler/testData/codegen/box/valueClasses/kt62455.kt");
     }
 
     @TestMetadata("mfvcAndIcInsideConstructorsOfEachOther.kt")
@@ -47881,6 +48654,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
     @TestMetadata("tryExpressions.kt")
     public void testTryExpressions() {
       runTest("compiler/testData/codegen/box/valueClasses/tryExpressions.kt");
+    }
+
+    @TestMetadata("uLongInValueClass.kt")
+    public void testULongInValueClass() {
+      runTest("compiler/testData/codegen/box/valueClasses/uLongInValueClass.kt");
     }
 
     @TestMetadata("visibility.kt")

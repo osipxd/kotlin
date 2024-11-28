@@ -5,48 +5,34 @@
 
 package org.jetbrains.kotlin.backend.common
 
-import org.jetbrains.kotlin.backend.common.ir.Ir
 import org.jetbrains.kotlin.backend.common.lower.InnerClassesSupport
 import org.jetbrains.kotlin.backend.common.phaser.BackendContextHolder
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.messageCollector
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.declarations.*
-import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.linkage.partial.PartialLinkageSupportForLowerings
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.IrTypeSystemContext
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
-interface CommonBackendContext : BackendContext, LoggingContext, ErrorReportingContext, BackendContextHolder {
-    override val ir: Ir<CommonBackendContext>
+/**
+ * A context that is used to pass data to the second stage compiler lowerings
+ * (those that are executed after deserializing IR from KLIBs, or any lowering in the JVM backend).
+ */
+interface CommonBackendContext : LoweringContext, LoggingContext, ErrorReportingContext, BackendContextHolder {
+    val typeSystem: IrTypeSystemContext
 
     override val heldBackendContext: CommonBackendContext
         get() = this
 
-    val configuration: CompilerConfiguration
-    val scriptMode: Boolean
-
     override val messageCollector: MessageCollector
         get() = configuration.messageCollector
-
-    fun throwUninitializedPropertyAccessException(builder: IrBuilderWithScope, name: String): IrExpression {
-        val throwErrorFunction = ir.symbols.throwUninitializedPropertyAccessException.owner
-        return builder.irCall(throwErrorFunction).apply {
-            putValueArgument(0, builder.irString(name))
-        }
-    }
-
-    val mapping: Mapping
-
-    fun isSideEffectFree(call: IrCall): Boolean {
-        return false
-    }
 
     val preferJavaLikeCounterLoop: Boolean
         get() = false
@@ -62,11 +48,6 @@ interface CommonBackendContext : BackendContext, LoggingContext, ErrorReportingC
 
     val optimizeNullChecksUsingKotlinNullability: Boolean
         get() = true
-
-    fun remapMultiFieldValueClassStructure(
-        oldFunction: IrFunction, newFunction: IrFunction,
-        parametersMappingOrNull: Map<IrValueParameter, IrValueParameter>?
-    ) = Unit
 
     /**
      * See [InlineClassesUtils].

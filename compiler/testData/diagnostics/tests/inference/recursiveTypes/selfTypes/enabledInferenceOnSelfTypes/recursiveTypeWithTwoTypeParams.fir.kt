@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: BACKEND
 // LANGUAGE: +TypeInferenceOnCallsWithSelfTypes
 
 // FILE: JavaBodySpec.java
@@ -19,5 +20,5 @@ fun test(b: BodySpec<String, *>) {
 
 fun testJava(b: JavaBodySpec<String, *>) {
     val x = b.isEqualTo("")
-    <!DEBUG_INFO_EXPRESSION_TYPE("JavaBodySpec<kotlin.String..kotlin.String?!, *>..JavaBodySpec<kotlin.String..kotlin.String?!, *>?!")!>x<!>
+    <!DEBUG_INFO_EXPRESSION_TYPE("(JavaBodySpec<(kotlin.String..kotlin.String?), *>..JavaBodySpec<(kotlin.String..kotlin.String?), *>?)")!>x<!>
 }

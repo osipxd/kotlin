@@ -1,4 +1,5 @@
-// LANGUAGE: +EnumEntries -PrioritizedEnumEntries
+// RUN_PIPELINE_TILL: BACKEND
+// LANGUAGE: +EnumEntries
 // WITH_STDLIB
 
 enum class Some {}

@@ -251,7 +251,7 @@ abstract class AbstractFirStatusResolveTransformer(
         typeAlias: FirTypeAlias,
         data: FirResolvedDeclarationStatus?
     ): FirStatement = whileAnalysing(session, typeAlias) {
-        typeAlias.typeParameters.forEach { transformDeclaration(it, data) }
+        typeAlias.typeParameters.forEach { it.transformSingle(this, data) }
         typeAlias.transformStatus(this, statusResolver.resolveStatus(typeAlias, containingClass, isLocal = false))
         return transformDeclaration(typeAlias, data) as FirTypeAlias
     }
@@ -324,6 +324,14 @@ abstract class AbstractFirStatusResolveTransformer(
 
     fun transformClassStatus(firClass: FirClass) {
         firClass.transformStatus(this, statusResolver.resolveStatus(firClass, containingClass, isLocal = false))
+    }
+
+    override fun transformReplSnippet(
+        replSnippet: FirReplSnippet,
+        data: FirResolvedDeclarationStatus?,
+    ): FirReplSnippet {
+        replSnippet.body.transformChildren(this, data)
+        return super.transformReplSnippet(replSnippet, data)
     }
 
     open fun forceResolveStatusesOfSupertypes(regularClass: FirClass) {

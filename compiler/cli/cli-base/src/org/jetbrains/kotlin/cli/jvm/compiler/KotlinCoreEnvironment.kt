@@ -64,7 +64,6 @@ import org.jetbrains.kotlin.cli.jvm.javac.JavacWrapperRegistrar
 import org.jetbrains.kotlin.cli.jvm.modules.CliJavaModuleFinder
 import org.jetbrains.kotlin.cli.jvm.modules.CliJavaModuleResolver
 import org.jetbrains.kotlin.codegen.extensions.ClassFileFactoryFinalizerExtension
-import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.compiler.plugin.registerInProject
@@ -76,7 +75,6 @@ import org.jetbrains.kotlin.extensions.internal.TypeResolutionInterceptor
 import org.jetbrains.kotlin.fir.extensions.FirAnalysisHandlerExtension
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrarAdapter
 import org.jetbrains.kotlin.idea.KotlinFileType
-import org.jetbrains.kotlin.js.translate.extensions.JsSyntheticTranslateExtension
 import org.jetbrains.kotlin.load.java.structure.impl.source.JavaElementSourceFactory
 import org.jetbrains.kotlin.load.java.structure.impl.source.JavaFixedElementSourceFactory
 import org.jetbrains.kotlin.load.kotlin.KotlinBinaryClassCache
@@ -291,9 +289,9 @@ class KotlinCoreEnvironment private constructor(
             CliJavaModuleResolver(classpathRootsResolver.javaModuleGraph, javaModules, javaModuleFinder.systemModules.toList(), project)
         )
 
-        val finderFactory = CliVirtualFileFinderFactory(rootsIndex, releaseTarget != null)
-        project.registerService(MetadataFinderFactory::class.java, finderFactory)
-        project.registerService(VirtualFileFinderFactory::class.java, finderFactory)
+        val fileFinderFactory = CliVirtualFileFinderFactory(rootsIndex, releaseTarget != null)
+        project.registerService(VirtualFileFinderFactory::class.java, fileFinderFactory)
+        project.registerService(MetadataFinderFactory::class.java, CliMetadataFinderFactory(fileFinderFactory))
 
         project.putUserData(APPEND_JAVA_SOURCE_ROOTS_HANDLER_KEY, fun(roots: List<File>) {
             updateClasspath(roots.map { JavaSourceRoot(it, null) })
@@ -713,7 +711,6 @@ class KotlinCoreEnvironment private constructor(
         @OptIn(InternalNonStableExtensionPoints::class)
         @Suppress("MemberVisibilityCanPrivate") // made public for CLI Android Lint
         fun registerPluginExtensionPoints(project: MockProject) {
-            ExpressionCodegenExtension.registerExtensionPoint(project)
             SyntheticResolveExtension.registerExtensionPoint(project)
             SyntheticJavaResolveExtension.registerExtensionPoint(project)
             @Suppress("DEPRECATION_ERROR")
@@ -725,7 +722,6 @@ class KotlinCoreEnvironment private constructor(
             StorageComponentContainerContributor.registerExtensionPoint(project)
             DeclarationAttributeAltererExtension.registerExtensionPoint(project)
             PreprocessedVirtualFileFactoryExtension.registerExtensionPoint(project)
-            JsSyntheticTranslateExtension.registerExtensionPoint(project)
             CompilerConfigurationExtension.registerExtensionPoint(project)
             CollectAdditionalSourcesExtension.registerExtensionPoint(project)
             ProcessSourcesBeforeCompilingExtension.registerExtensionPoint(project)

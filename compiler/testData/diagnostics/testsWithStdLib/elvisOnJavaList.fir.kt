@@ -1,4 +1,4 @@
-
+// RUN_PIPELINE_TILL: FRONTEND
 // FILE: P.java
 
 import java.util.ArrayList;

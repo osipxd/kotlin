@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // DIAGNOSTICS: -CONTEXT_RECEIVERS_DEPRECATED
 // LANGUAGE: +ContextReceivers
 
@@ -15,5 +16,5 @@ fun test() {
     with(f) {
         listOf(1, 2, 3).iterator(null)
     }
-    listOf(1, 2, 3).<!CANNOT_INFER_PARAMETER_TYPE, NO_CONTEXT_RECEIVER!>iterator<!>(null)
+    listOf(1, 2, 3).<!CANNOT_INFER_PARAMETER_TYPE, NO_CONTEXT_ARGUMENT!>iterator<!>(null)
 }

@@ -1,7 +1,7 @@
 RAW_FIR:
 FILE: [ResolvedTo(RAW_FIR)] simpleScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-simpleScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -23,7 +23,7 @@ FILE: [ResolvedTo(RAW_FIR)] simpleScript.kts
 IMPORTS:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-simpleScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -45,7 +45,7 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
 COMPILER_REQUIRED_ANNOTATIONS:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-simpleScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -67,7 +67,7 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
 COMPANION_GENERATION:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-simpleScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -89,7 +89,7 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
 SUPER_TYPES:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-simpleScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -111,7 +111,7 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
 TYPES:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-simpleScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -127,13 +127,13 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
         public? final? const [ResolvedTo(RAW_FIR)] val constant: <implicit> = LAZY_EXPRESSION
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
-        public final [ResolvedTo(TYPES)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(<strcat>(String(type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested nested type: ), constant#))  kotlin/Int>>|
+        public final [ResolvedTo(TYPES)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/Int>>|
 
 
 STATUS:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-simpleScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -149,13 +149,13 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
         public? final? const [ResolvedTo(RAW_FIR)] val constant: <implicit> = LAZY_EXPRESSION
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
-        public final [ResolvedTo(STATUS)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(<strcat>(String(type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested nested type: ), constant#))  kotlin/Int>>|
+        public final [ResolvedTo(STATUS)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/Int>>|
 
 
 EXPECT_ACTUAL_MATCHING:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-simpleScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -171,13 +171,13 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
         public? final? const [ResolvedTo(RAW_FIR)] val constant: <implicit> = LAZY_EXPRESSION
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
-        public final [ResolvedTo(EXPECT_ACTUAL_MATCHING)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(<strcat>(String(type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested nested type: ), constant#))  kotlin/Int>>|
+        public final [ResolvedTo(EXPECT_ACTUAL_MATCHING)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/Int>>|
 
 
 CONTRACTS:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-simpleScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -193,13 +193,13 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
         public? final? const [ResolvedTo(RAW_FIR)] val constant: <implicit> = LAZY_EXPRESSION
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
-        public final [ResolvedTo(CONTRACTS)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(<strcat>(String(type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested nested type: ), constant#))  kotlin/Int>>|
+        public final [ResolvedTo(CONTRACTS)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/Int>>|
 
 
 IMPLICIT_TYPES_BODY_RESOLVE:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-simpleScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -215,13 +215,13 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
         public? final? const [ResolvedTo(RAW_FIR)] val constant: <implicit> = LAZY_EXPRESSION
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
-        public final [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(<strcat>(String(type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested nested type: ), constant#))  kotlin/Int>>|
+        public final [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/Int>>|
 
 
 CONSTANT_EVALUATION:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-simpleScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -237,13 +237,13 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
         public? final? const [ResolvedTo(RAW_FIR)] val constant: <implicit> = LAZY_EXPRESSION
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
-        public final [ResolvedTo(CONSTANT_EVALUATION)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(<strcat>(String(type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested type: ), constant#))  kotlin/collections/List<@R|TypeAnnWithArg|(<strcat>(String(nested nested type: ), constant#))  kotlin/Int>>|
+        public final [ResolvedTo(CONSTANT_EVALUATION)] typealias MyTypeAlias = R|@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/collections/List<@R|TypeAnnWithArg|(LAZY_EXPRESSION)  kotlin/Int>>|
 
 
 ANNOTATION_ARGUMENTS:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-simpleScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -265,7 +265,7 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
 BODY_RESOLVE:
 FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-simpleScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {
@@ -287,7 +287,7 @@ FILE: [ResolvedTo(IMPORTS)] simpleScript.kts
 FILE RAW TO BODY:
 FILE: [ResolvedTo(BODY_RESOLVE)] simpleScript.kts
     SCRIPT: [ResolvedTo(BODY_RESOLVE)] <script-simpleScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(BODY_RESOLVE)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(BODY_RESOLVE)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](allowedTargets = vararg(Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|)) public final [ResolvedTo(BODY_RESOLVE)] [ContainingScriptKey=FirScriptSymbol <script-simpleScript.kts>] annotation class TypeAnnWithArg : R|kotlin/Annotation| {

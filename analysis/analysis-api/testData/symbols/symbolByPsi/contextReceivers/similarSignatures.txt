@@ -66,7 +66,7 @@ KaNamedFunctionSymbol:
   compilerVisibility: Public
   contextReceivers: [
     KtContextReceiver:
-      label: null
+      label: A
       type: KaUsualClassType:
         annotations: []
         typeArguments: []
@@ -100,6 +100,7 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: KaFileSymbol(similarSignatures.kt)
   getContainingJvmClassName: SimilarSignaturesKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 
@@ -109,7 +110,7 @@ KaNamedFunctionSymbol:
   compilerVisibility: Public
   contextReceivers: [
     KtContextReceiver:
-      label: null
+      label: B
       type: KaUsualClassType:
         annotations: []
         typeArguments: []
@@ -143,6 +144,7 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: KaFileSymbol(similarSignatures.kt)
   getContainingJvmClassName: SimilarSignaturesKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 
@@ -152,13 +154,13 @@ KaNamedFunctionSymbol:
   compilerVisibility: Public
   contextReceivers: [
     KtContextReceiver:
-      label: null
+      label: A
       type: KaUsualClassType:
         annotations: []
         typeArguments: []
         type: A
     KtContextReceiver:
-      label: null
+      label: B
       type: KaUsualClassType:
         annotations: []
         typeArguments: []
@@ -192,6 +194,7 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: KaFileSymbol(similarSignatures.kt)
   getContainingJvmClassName: SimilarSignaturesKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 
@@ -201,13 +204,13 @@ KaNamedFunctionSymbol:
   compilerVisibility: Public
   contextReceivers: [
     KtContextReceiver:
-      label: null
+      label: B
       type: KaUsualClassType:
         annotations: []
         typeArguments: []
         type: B
     KtContextReceiver:
-      label: null
+      label: A
       type: KaUsualClassType:
         annotations: []
         typeArguments: []
@@ -241,5 +244,6 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: KaFileSymbol(similarSignatures.kt)
   getContainingJvmClassName: SimilarSignaturesKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null

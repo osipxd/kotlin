@@ -45,9 +45,33 @@ object FirDiagnosticRenderers {
                 propertyAccessorRenderer = null,
                 callArgumentsRenderer = FirCallNoArgumentsRenderer(),
                 modifierRenderer = FirPartialModifierRenderer(),
-                valueParameterRenderer = FirValueParameterRendererForReadability(),
+                callableSignatureRenderer = FirCallableSignatureRendererForReadability(),
                 declarationRenderer = FirDeclarationRenderer("local "),
                 annotationRenderer = null,
+                lineBreakAfterContextReceivers = false,
+                renderFieldAnnotationSeparately = false,
+            ).renderElementAsString(symbol.fir, trim = true)
+            is FirTypeParameterSymbol -> symbol.name.asString()
+            else -> "???"
+        }
+    }
+
+    @OptIn(SymbolInternals::class)
+    val TYPE_PARAMETER_OWNER_SYMBOL = Renderer { symbol: FirBasedSymbol<*> ->
+        when (symbol) {
+            is FirClassLikeSymbol, is FirCallableSymbol -> FirRenderer(
+                typeRenderer = ConeTypeRendererForReadability { ConeIdShortRenderer() },
+                idRenderer = ConeIdShortRenderer(),
+                classMemberRenderer = FirNoClassMemberRenderer(),
+                bodyRenderer = null,
+                propertyAccessorRenderer = null,
+                callArgumentsRenderer = FirCallNoArgumentsRenderer(),
+                modifierRenderer = null,
+                callableSignatureRenderer = null,
+                declarationRenderer = FirDeclarationRenderer("local "),
+                annotationRenderer = null,
+                contractRenderer = null,
+                supertypeRenderer = null,
                 lineBreakAfterContextReceivers = false,
                 renderFieldAnnotationSeparately = false,
             ).renderElementAsString(symbol.fir, trim = true)
@@ -61,6 +85,20 @@ object FirDiagnosticRenderers {
      */
     val SYMBOLS_ON_NEXT_LINES = Renderer { symbols: Collection<FirBasedSymbol<*>> ->
         symbols.joinToString(separator = "\n", prefix = "\n", transform = SYMBOL::render)
+    }
+
+    /**
+     * Prepends [singular] or [plural] depending on the elements count.
+     */
+    fun <Q> prefix(
+        singular: String,
+        plural: String,
+        renderer: ContextIndependentParameterRenderer<Collection<Q>>,
+    ): ContextIndependentParameterRenderer<Collection<Q>> {
+        return Renderer { elements ->
+            val decoration = if (elements.size == 1) singular else plural
+            decoration + renderer.render(elements)
+        }
     }
 
     val SYMBOLS_ON_NEWLINE_WITH_INDENT = object : ContextIndependentParameterRenderer<Collection<FirCallableSymbol<*>>> {
@@ -104,12 +142,12 @@ object FirDiagnosticRenderers {
     }
 
     val DECLARATION_NAME = Renderer { symbol: FirBasedSymbol<*> ->
-        val name = when (symbol) {
-            is FirCallableSymbol<*> -> symbol.name
-            is FirClassLikeSymbol<*> -> symbol.classId.shortClassName
+        when (symbol) {
+            is FirValueParameterSymbol -> (symbol.resolvedReturnType.parameterName ?: symbol.name).asString()
+            is FirCallableSymbol<*> -> symbol.name.asString()
+            is FirClassLikeSymbol<*> -> symbol.classId.shortClassName.asString()
             else -> return@Renderer "???"
         }
-        name.asString()
     }
 
     val DECLARATION_FQ_NAME = Renderer { symbol: FirBasedSymbol<*> ->
@@ -191,18 +229,24 @@ object FirDiagnosticRenderers {
                     val representation = simpleRepresentationsByConstructor.getValue(it)
 
                     val typesWithSameRepresentation = constructorsByRepresentation.getValue(representation)
-                    if (typesWithSameRepresentation.size == 1) return@associateWith representation
+                    if (typesWithSameRepresentation.size == 1 && typesWithSameRepresentation.single() !is ConeTypeParameterLookupTag) {
+                        return@associateWith "$representation^"
+                    }
 
                     val index = typesWithSameRepresentation.indexOf(it) + 1
 
                     buildString {
                         append(representation)
-                        append('#')
-                        append(index)
+                        if (typesWithSameRepresentation.size > 1) {
+                            append('#')
+                            append(index)
+                        }
+                        // Special symbol to be replaced with a nullability marker, like "", "?", "!", or maybe something else in future
+                        append("^")
 
                         if (it is ConeTypeParameterLookupTag) {
-                            append(" (type parameter of ")
-                            append(SYMBOL.render(it.typeParameterSymbol.containingDeclarationSymbol))
+                            append(" (of ")
+                            append(TYPE_PARAMETER_OWNER_SYMBOL.render(it.typeParameterSymbol.containingDeclarationSymbol))
                             append(')')
                         }
                     }

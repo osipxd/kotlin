@@ -281,6 +281,18 @@ public class FirIdeDependentAnalysisSourceModuleHLExpressionTypeTestGenerated ex
   }
 
   @Test
+  @TestMetadata("thisExpression_plusAssign_this.kt")
+  public void testThisExpression_plusAssign_this() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/expressionType/thisExpression_plusAssign_this.kt");
+  }
+
+  @Test
+  @TestMetadata("typealiasedConstructorCallWithImplicitTypeArguments.kt")
+  public void testTypealiasedConstructorCallWithImplicitTypeArguments() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/expressionType/typealiasedConstructorCallWithImplicitTypeArguments.kt");
+  }
+
+  @Test
   @TestMetadata("underscoreTypeArgument.kt")
   public void testUnderscoreTypeArgument() {
     runTest("analysis/analysis-api/testData/components/expressionTypeProvider/expressionType/underscoreTypeArgument.kt");

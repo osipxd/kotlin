@@ -13,13 +13,19 @@ import org.jetbrains.kotlin.analysis.api.fir.symbols.dispatchReceiverType
 import org.jetbrains.kotlin.analysis.api.fir.types.KaFirType
 import org.jetbrains.kotlin.analysis.api.fir.types.PublicTypeApproximator
 import org.jetbrains.kotlin.analysis.api.fir.utils.ConeSupertypeCalculationMode
+import org.jetbrains.kotlin.analysis.api.fir.utils.firSymbol
 import org.jetbrains.kotlin.analysis.api.fir.utils.getAllStrictSupertypes
 import org.jetbrains.kotlin.analysis.api.fir.utils.getDirectSupertypes
 import org.jetbrains.kotlin.analysis.api.impl.base.components.KaSessionComponent
 import org.jetbrains.kotlin.analysis.api.lifetime.withValidityAssertion
+import org.jetbrains.kotlin.analysis.api.symbols.KaAnonymousObjectSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassifierSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaReceiverParameterSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaTypeAliasSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaTypeParameterSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
 import org.jetbrains.kotlin.analysis.low.level.api.fir.api.*
@@ -35,10 +41,15 @@ import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.java.enhancement.EnhancedForWarningConeSubstitutor
 import org.jetbrains.kotlin.fir.psi
 import org.jetbrains.kotlin.fir.resolve.SessionHolderImpl
+import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirTypeAliasSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirTypeParameterSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.*
+import org.jetbrains.kotlin.fir.utils.exceptions.withFirSymbolEntry
 import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.utils.exceptions.errorWithAttachment
@@ -84,12 +95,19 @@ internal class KaFirTypeProvider(
             return enhancedConeType?.asKtType()
         }
 
-    override val KaNamedClassSymbol.defaultType: KaType
+    override val KaClassifierSymbol.defaultType: KaType
         get() = withValidityAssertion {
-            analysisSession.buildClassType(this) {
-                for (typeParameterSymbol in typeParameters) {
-                    argument(analysisSession.buildTypeParameterType(typeParameterSymbol))
+            with(analysisSession) {
+                val firSymbol = firSymbol
+                val defaultConeType = when (firSymbol) {
+                    is FirTypeParameterSymbol -> firSymbol.defaultType
+                    is FirClassLikeSymbol<*> -> firSymbol.defaultType()
+                    else -> errorWithAttachment("Unexpected ${firSymbol::class.simpleName}") {
+                        withFirSymbolEntry("symbol", firSymbol)
+                    }
                 }
+
+                defaultConeType.asKtType()
             }
         }
 
@@ -243,7 +261,7 @@ internal class KaFirTypeProvider(
                 withPsiEntry("position", position)
             }
 
-        return context.towerDataContext.implicitReceiverStack.map { it.type.asKtType() }
+        return context.towerDataContext.implicitValueStorage.implicitReceivers.map { it.type.asKtType() }
     }
 
     override fun KaType.directSupertypes(shouldApproximate: Boolean): Sequence<KaType> = withValidityAssertion {

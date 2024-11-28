@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // DIAGNOSTICS: -UNUSED_PARAMETER
 // RENDER_DIAGNOSTICS_MESSAGES
 
@@ -11,5 +12,5 @@ class C<T> {
 }
 
 fun test(a: C<out CharSequence>) {
-    a[1] = <!ARGUMENT_TYPE_MISMATCH("@A() CapturedType(out kotlin.CharSequence); kotlin.Int")!>25<!>
+    a[1] = <!MEMBER_PROJECTED_OUT("C<out kotlin.CharSequence>; out; fun set(x: @A() Int, y: @A() T): Unit")!>25<!>
 }

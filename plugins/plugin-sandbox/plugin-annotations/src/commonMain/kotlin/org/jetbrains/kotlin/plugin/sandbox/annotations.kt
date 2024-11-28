@@ -39,7 +39,10 @@ annotation class SupertypeWithTypeArgument(val kClass: KClass<*>)
 annotation class MetaSupertype
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE, AnnotationTarget.PROPERTY_GETTER)
-annotation class MyComposable
+annotation class MyInlineable
+
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE, AnnotationTarget.PROPERTY_GETTER)
+annotation class MyNotInlineable
 
 annotation class AllPropertiesConstructor
 
@@ -70,3 +73,9 @@ annotation class AddNestedClassesBasedOnArgument(val kClass: KClass<*>)
 annotation class AddNestedGeneratedClass
 
 annotation class GeneratedEntityType
+
+@Retention(AnnotationRetention.SOURCE)
+annotation class EmitMetadata(val value: Int)
+
+@Retention(AnnotationRetention.SOURCE)
+annotation class GenerateBodyUsingEmittedMetadata

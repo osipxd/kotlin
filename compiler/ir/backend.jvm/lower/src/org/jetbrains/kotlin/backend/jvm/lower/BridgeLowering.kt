@@ -24,7 +24,6 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.ir.types.isPrimitiveType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.*
@@ -110,7 +109,6 @@ import org.jetbrains.org.objectweb.asm.commons.Method
  */
 @PhaseDescription(
     name = "Bridge",
-    description = "Generate bridges",
     prerequisite = [JvmInlineClassLowering::class, InheritedDefaultMethodsOnClassesLowering::class]
 )
 internal class BridgeLowering(val context: JvmBackendContext) : ClassLoweringPass {
@@ -160,14 +158,7 @@ internal class BridgeLowering(val context: JvmBackendContext) : ClassLoweringPas
 
         // We don't produce bridges for abstract functions in interfaces.
         if (isJvmAbstract(context.config.jvmDefaultMode)) {
-            if (parentAsClass.isJvmInterface) {
-                // If function requires a special bridge, we should record it for generic signatures generation.
-                if (specialBridgeOrNull != null) {
-                    this.hasSpecialBridge = true
-                }
-                return false
-            }
-            return true
+            return !parentAsClass.isJvmInterface
         }
 
         // Finally, the JVM backend also ignores concrete fake overrides whose implementation is directly inherited from an interface.
@@ -471,15 +462,13 @@ internal class BridgeLowering(val context: JvmBackendContext) : ClassLoweringPas
             returnType = specialBridge.substitutedReturnType?.eraseToScope(target.parentAsClass)
                 ?: specialBridge.overridden.returnType.eraseTypeParameters()
         }.apply {
-            target.hasSpecialBridge = true
-
             copyParametersWithErasure(this@addSpecialBridge, specialBridge.overridden, specialBridge.substitutedParameterTypes)
             context.remapMultiFieldValueClassStructure(specialBridge.overridden, this, parametersMappingOrNull = null)
 
             body = context.createIrBuilder(symbol, startOffset, endOffset).irBlockBody {
                 specialBridge.methodInfo?.let { info ->
                     valueParameters.take(info.argumentsToCheck).forEach {
-                        +parameterTypeCheck(it, target.valueParameters[it.index].type, info.defaultValueGenerator(this@apply))
+                        +parameterTypeCheck(it, target.valueParameters[it.indexInOldValueParameters].type, info.defaultValueGenerator(this@apply))
                     }
                 }
                 +irReturn(delegatingCall(this@apply, target, specialBridge.superQualifierSymbol))

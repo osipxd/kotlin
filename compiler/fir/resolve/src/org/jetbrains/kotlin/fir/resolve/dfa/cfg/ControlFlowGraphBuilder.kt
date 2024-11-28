@@ -770,10 +770,30 @@ class ControlFlowGraphBuilder {
         return exitGraph()
     }
 
+    fun enterReplSnippet(snippet: FirReplSnippet, buildGraph: Boolean): ReplSnippetEnterNode? {
+        if (!buildGraph) {
+            graphs.push(ControlFlowGraph(declaration = null, "<discarded snippet graph>", ControlFlowGraph.Kind.Script))
+            return null
+        }
+        return enterGraph(snippet, "REPL_SNIPPET_GRAPH", ControlFlowGraph.Kind.Script) {
+            createReplSnippetEnterNode(it) to createReplSnippetExitNode(it)
+        }
+    }
+
+    fun exitReplSnippet(): Pair<ReplSnippetExitNode?, ControlFlowGraph?> {
+        require(currentGraph.kind == ControlFlowGraph.Kind.Script)
+        if (currentGraph.declaration == null) {
+            graphs.pop() // Discard empty graph
+            return null to null
+        }
+        return exitGraph()
+    }
+
+
     // ----------------------------------- Value parameters (and it's defaults) -----------------------------------
 
     fun enterValueParameter(valueParameter: FirValueParameter): Pair<EnterValueParameterNode, EnterDefaultArgumentsNode>? {
-        if (valueParameter.defaultValue == null) return null
+        if (valueParameter.defaultValue == null || valueParameter.valueParameterKind != FirValueParameterKind.Regular) return null
 
         val outerEnterNode = createEnterValueParameterNode(valueParameter).also { addNewSimpleNode(it) }
         val enterNode = enterGraph(valueParameter, "default value of ${valueParameter.name}", ControlFlowGraph.Kind.DefaultArgument) {
@@ -784,7 +804,7 @@ class ControlFlowGraphBuilder {
     }
 
     fun exitValueParameter(valueParameter: FirValueParameter): Triple<ExitDefaultArgumentsNode, ExitValueParameterNode, ControlFlowGraph>? {
-        if (valueParameter.defaultValue == null) return null
+        if (valueParameter.defaultValue == null || valueParameter.valueParameterKind != FirValueParameterKind.Regular) return null
 
         val (exitNode, graph) = exitGraph<ExitDefaultArgumentsNode>()
         val outerExitNode = createExitValueParameterNode(valueParameter)

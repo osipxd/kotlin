@@ -48,7 +48,7 @@
 
 FILE: [ResolvedTo(IMPORTS)] propertyWithExplicitTypeUnavailableScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-propertyWithExplicitTypeUnavailableScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE_PARAMETER|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol <script-propertyWithExplicitTypeUnavailableScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -80,7 +80,7 @@ FILE: [ResolvedTo(IMPORTS)] propertyWithExplicitTypeUnavailableScript.kts
                 ^getValue IntegerLiteral(1)
             }
 
-            public open override [ResolvedTo(CONTRACTS)] fun setValue([ResolvedTo(CONTRACTS)] thisRef: R|kotlin/Any?|, [ResolvedTo(CONTRACTS)] property: R|kotlin/reflect/KProperty<*>|, [ResolvedTo(CONTRACTS)] value: R|@R|Anno|(<strcat>(String(setValue type ref ), prop#))  kotlin/collections/List<@R|Anno|(<strcat>(String(setValue nested type ref ), prop#))  kotlin/collections/List<@R|Anno|(<strcat>(String(setValue nested nested type ref ), prop#))  kotlin/Int>>|): R|kotlin/Unit| {
+            public open override [ResolvedTo(CONTRACTS)] fun setValue([ResolvedTo(CONTRACTS)] thisRef: R|kotlin/Any?|, [ResolvedTo(CONTRACTS)] property: R|kotlin/reflect/KProperty<*>|, [ResolvedTo(CONTRACTS)] value: R|@R|Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|kotlin/Unit| {
             }
 
         }

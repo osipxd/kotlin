@@ -333,7 +333,7 @@ open class RenderIrElementVisitor(private val options: DumpIrTreeOptions = DumpI
         declaration.runTrimEnd {
             "VALUE_PARAMETER ${renderOriginIfNonTrivial(options)}" +
                     "name:$name " +
-                    (if (index >= 0) "index:$index " else "") +
+                    (if (indexInOldValueParameters >= 0) "index:$indexInOldValueParameters " else "") +
                     "type:${type.render()} " +
                     (varargElementType?.let { "varargElementType:${it.render()} " } ?: "") +
                     renderValueParameterFlags()
@@ -414,7 +414,7 @@ open class RenderIrElementVisitor(private val options: DumpIrTreeOptions = DumpI
         "ENUM_CONSTRUCTOR_CALL '${expression.symbol.renderReference()}'"
 
     override fun visitInstanceInitializerCall(expression: IrInstanceInitializerCall, data: Nothing?): String =
-        "INSTANCE_INITIALIZER_CALL classDescriptor='${expression.classSymbol.renderReference()}'"
+        "INSTANCE_INITIALIZER_CALL classDescriptor='${expression.classSymbol.renderReference()}' type=${expression.type.render()}"
 
     override fun visitGetValue(expression: IrGetValue, data: Nothing?): String =
         "GET_VAR '${expression.symbol.renderReference()}' type=${expression.type.render()} origin=${expression.origin}"

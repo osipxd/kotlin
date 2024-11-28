@@ -1,5 +1,7 @@
 // ISSUE: KT-67355
 
+// This test contains the same code as superInLambdaNoArrows.kt. Please keep them in sync!
+
 open class A {
     open val foo: String = "1"
 }

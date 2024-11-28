@@ -44,7 +44,7 @@ using namespace kotlin;
 #define DEFAULT_WIDTH MAX_ACCURACY_WIDTH
 
 extern "C" {
-KDouble Kotlin_native_FloatingPointParser_parseDoubleImpl (KString s, KInt e);
+KDouble Kotlin_native_FloatingPointParser_parseDoubleImpl (KConstRef s, KInt e);
 
 void Kotlin_native_NumberConverter_bigIntDigitGeneratorInstImpl (KRef results,
                                                          KRef uArray,
@@ -643,15 +643,13 @@ OutOfMemory:
 #pragma optimize("",on)         /*restore optimizations */
 #endif
 
-KDouble Kotlin_native_FloatingPointParser_parseDoubleImpl (KString s, KInt e)
+KDouble Kotlin_native_FloatingPointParser_parseDoubleImpl (KConstRef s, KInt e)
 {
-  const KChar* utf16 = CharArrayAddressOfElementAt(s, 0);
   std::string utf8;
-  utf8.reserve(s->count_);
   try {
-    utf8::utf16to8(utf16, utf16 + s->count_, back_inserter(utf8));
+    utf8 = kotlin::to_string<KStringConversionMode::CHECKED>(s);
   } catch (...) {
-    /* Illegal UTF-16 string. */
+    /* Illegal string. */
     ThrowNumberFormatException();
   }
   const char *str = utf8.c_str();

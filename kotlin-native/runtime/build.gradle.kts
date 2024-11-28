@@ -559,12 +559,12 @@ tasks.named("clean", Delete::class) {
 
 val stdlibBuildTask by tasks.registering(KonanCompileTask::class) {
     group = BasePlugin.BUILD_GROUP
-    description = "Build the Kotlin/Native standard library '$name'"
+    description = "Build the Kotlin/Native standard library"
 
+    // Requires Native distribution with the compiler JARs.
     this.compilerDistribution.set(nativeDistribution)
     dependsOn(":kotlin-native:distCompiler")
 
-    this.konanTarget.set(HostManager.host)
     this.outputDirectory.set(
             layout.buildDirectory.dir("stdlib/${HostManager.hostName}/stdlib")
     )
@@ -589,7 +589,15 @@ val stdlibBuildTask by tasks.registering(KonanCompileTask::class) {
             "-Xdont-warn-on-error-suppression",
             "-Xstdlib-compilation",
             "-Xfragment-refines=nativeMain:nativeWasm,nativeMain:common,nativeWasm:common",
+            "-Xmanifest-native-targets=${platformManager.targetValues.joinToString(separator = ",") { it.visibleName }}",
     ))
+
+    // TODO(KT-72747): Make it compatible with CC
+    notCompatibleWithConfigurationCache("""
+        Could not load the value of field `values` of `org.gradle.api.internal.collections.SortedSetElementSource` bean
+        found in field `store` of `org.gradle.api.internal.FactoryNamedDomainObjectContainer` bean
+        found in field `sourceSets` of task `:kotlin-native:runtime:stdlibBuildTask` of type `org.jetbrains.kotlin.gradle.plugin.konan.tasks.KonanCompileTask`.
+    """.trimIndent())
 
     val common by sourceSets.creating {
         srcDir(project(":kotlin-stdlib").file("common/src/kotlin"))
@@ -617,45 +625,23 @@ val stdlibBuildTask by tasks.registering(KonanCompileTask::class) {
 val nativeStdlib by tasks.registering(Sync::class) {
     from(stdlibBuildTask)
     into(project.layout.buildDirectory.dir("nativeStdlib"))
-
-    val allPossibleTargets = project.extensions.getByType<PlatformManager>().targetValues.map { it.name }
-    val kotlinVersion = kotlinVersion
-    eachFile {
-        if (name == "manifest") {
-            // Stdlib is a common library that doesn't depend on anything target-specific.
-            // The current compiler can't create a library with manifest file that lists all targets.
-            // So, add all targets to the manifest file.
-            KFile(file.absolutePath).run {
-                val props = loadProperties()
-                props[KLIB_PROPERTY_NATIVE_TARGETS] = allPossibleTargets.joinToString(separator = " ")
-
-                // Check that we didn't get other than the requested version from cache, previous build or due to some other build issue
-                val versionFromManifest = props[KLIB_PROPERTY_COMPILER_VERSION]
-                check(versionFromManifest == kotlinVersion) {
-                    "Manifest file ($this) processing: $versionFromManifest was found while $kotlinVersion was expected"
-                }
-
-                saveProperties(props)
-            }
-        }
-    }
 }
 
 val cacheableTargetNames = platformManager.hostPlatform.cacheableTargets
 
 cacheableTargetNames.forEach { targetName ->
     tasks.register("${targetName}StdlibCache", KonanCacheTask::class.java) {
-        notCompatibleWithConfigurationCache("project used in execution time")
-        target = targetName
-        originalKlib.fileProvider(nativeStdlib.map { it.destinationDir })
-        klibUniqName = "stdlib"
-        cacheRoot = project.layout.buildDirectory.dir("cache/$targetName").get().asFile.absolutePath
-
         val dist = nativeDistribution
+
+        // Requires Native distribution with stdlib klib and runtime modules for `targetName`.
         this.compilerDistribution.set(dist)
         dependsOn(":kotlin-native:${targetName}CrossDistRuntime")
-        // stdlib cache links in runtime modules from the K/N distribution.
-        inputs.dir(dist.map { it.runtime(targetName) })
+        inputs.dir(dist.map { it.runtime(targetName) }) // manually depend on runtime modules (stdlib cache links these modules in)
+
+        this.klib.fileProvider(nativeStdlib.map { it.destinationDir })
+        this.target.set(targetName)
+        // This path is used in `:kotlin-native:${targetName}StdlibCache`
+        this.outputDirectory.set(layout.buildDirectory.dir("cache/$targetName/$targetName-gSTATIC/$KOTLIN_NATIVE_STDLIB_NAME-cache"))
     }
 }
 

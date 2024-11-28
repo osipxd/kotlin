@@ -191,7 +191,21 @@ class FirExpectActualMatchingContextImpl private constructor(
         }
     }
 
-    override fun RegularClassSymbolMarker.getMembersForExpectClass(name: Name): List<FirCallableSymbol<*>> {
+    override fun RegularClassSymbolMarker.collectAllStaticCallables(isActualDeclaration: Boolean): List<FirCallableSymbol<*>> {
+        val symbol = asSymbol()
+        val session = when (isActualDeclaration) {
+            true -> actualSession
+            else -> symbol.moduleData.session
+        }
+        val scope = symbol.staticScope(SessionHolderImpl(session, actualScopeSession)) ?: return emptyList()
+        val result = ArrayList<FirCallableSymbol<*>>()
+        for (name in scope.getCallableNames()) {
+            scope.getMembersTo(result, name)
+        }
+        return result
+    }
+
+    override fun RegularClassSymbolMarker.getCallablesForExpectClass(name: Name): List<FirCallableSymbol<*>> {
         val symbol = asSymbol()
         val scope = symbol.defaultType().scope(
             useSiteSession = symbol.moduleData.session,
@@ -203,6 +217,14 @@ class FirExpectActualMatchingContextImpl private constructor(
         return mutableListOf<FirCallableSymbol<*>>().apply {
             scope.getMembersTo(this, name)
         }
+    }
+
+    override fun RegularClassSymbolMarker.getStaticCallablesForExpectClass(name: Name): List<FirCallableSymbol<*>> {
+        val symbol = asSymbol()
+        val scope = symbol.staticScope(SessionHolderImpl(symbol.moduleData.session, actualScopeSession)) ?: return emptyList()
+        val result = ArrayList<FirCallableSymbol<*>>()
+        scope.getMembersTo(result, name)
+        return result
     }
 
     override fun FirClassSymbol<*>.getConstructors(
@@ -225,7 +247,7 @@ class FirExpectActualMatchingContextImpl private constructor(
         scope.getDeclaredConstructors().mapTo(destination) { it }
     }
 
-    private fun FirTypeScope.getMembersTo(destination: MutableList<in FirCallableSymbol<*>>, name: Name) {
+    private fun FirScope.getMembersTo(destination: MutableList<in FirCallableSymbol<*>>, name: Name) {
         processFunctionsByName(name) { destination.add(it) }
         processPropertiesByName(name) { destination.add(it) }
     }
@@ -430,7 +452,7 @@ class FirExpectActualMatchingContextImpl private constructor(
         get() = this is FirFieldSymbol && this.fir.unwrapFakeOverrides().isJava
 
     override val CallableSymbolMarker.canBeActualizedByJavaField: Boolean
-        get() = this is FirPropertySymbol && callableId == abstractMutableListModCountCallableId
+        get() = this.isJavaField || this is FirPropertySymbol && callableId == abstractMutableListModCountCallableId
 
     override val DeclarationSymbolMarker.annotations: List<AnnotationCallInfo>
         get() = asSymbol().resolvedAnnotationsWithArguments.map(::AnnotationCallInfoImpl)

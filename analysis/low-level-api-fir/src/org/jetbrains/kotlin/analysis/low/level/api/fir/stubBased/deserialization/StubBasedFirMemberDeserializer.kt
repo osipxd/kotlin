@@ -5,9 +5,10 @@
 
 package org.jetbrains.kotlin.analysis.low.level.api.fir.stubBased.deserialization
 
-import org.jetbrains.kotlin.KtFakeSourceElement
+import org.jetbrains.kotlin.KtFakePsiSourceElement
 import org.jetbrains.kotlin.KtFakeSourceElementKind
 import org.jetbrains.kotlin.KtRealPsiSourceElement
+import org.jetbrains.kotlin.SuspiciousFakeSourceCheck
 import org.jetbrains.kotlin.descriptors.EffectiveVisibility
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
@@ -18,7 +19,9 @@ import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.containingClassForStaticMemberAttr
 import org.jetbrains.kotlin.fir.copyWithNewSourceKind
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.FirValueParameterKind
 import org.jetbrains.kotlin.fir.declarations.builder.*
+import org.jetbrains.kotlin.fir.declarations.builder.buildValueParameter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyBackingField
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyGetter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertySetter
@@ -38,6 +41,7 @@ import org.jetbrains.kotlin.fir.types.impl.FirImplicitUnitTypeRef
 import org.jetbrains.kotlin.fir.utils.exceptions.withFirSymbolEntry
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.*
+import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.hasExpectModifier
 import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedContainerSource
@@ -324,6 +328,10 @@ internal class StubBasedFirMemberDeserializer(
                 buildReceiverParameter {
                     typeRef = receiverType
                     annotations += receiverAnnotations
+                    this.symbol = FirReceiverParameterSymbol()
+                    moduleData = c.moduleData
+                    origin = initialOrigin
+                    containingDeclarationSymbol = symbol
                 }
             }
 
@@ -402,9 +410,18 @@ internal class StubBasedFirMemberDeserializer(
             }
 
             this.containerSource = c.containerSource
-            this.initializer = c.annotationDeserializer.loadConstant(property, symbol.callableId)
+            this.initializer = c.annotationDeserializer.loadConstant(
+                property,
+                symbol.callableId,
+                isUnsigned = returnTypeRef.coneType.isUnsignedType
+            )
 
-            property.contextReceivers.mapNotNull { it.typeReference() }.mapTo(contextReceivers, ::loadContextReceiver)
+            property.contextReceiverList?.contextReceivers()?.mapTo(contextReceivers) {
+                loadContextReceiver(it, symbol)
+            }
+            property.contextReceiverList?.contextParameters()?.mapTo(contextReceivers) {
+                loadContextReceiver(it, symbol)
+            }
         }.apply {
             setLazyPublishedVisibility(c.session)
             this.getter?.setLazyPublishedVisibility(annotations, this, c.session)
@@ -414,18 +431,55 @@ internal class StubBasedFirMemberDeserializer(
         }
     }
 
-    private fun loadContextReceiver(typeReference: KtTypeReference): FirContextReceiver {
-        val typeRef = typeReference.toTypeRef(c)
-        return buildContextReceiver {
-            source = KtRealPsiSourceElement(typeReference)
-            val type = typeRef.coneType
-            this.labelNameFromTypeRef = (type as? ConeLookupTagBasedType)?.lookupTag?.name
-            this.typeRef = typeRef
+    private fun loadContextReceiver(contextReceiver: KtContextReceiver, containingDeclarationSymbol: FirBasedSymbol<*>): FirValueParameter {
+        return buildValueParameter {
+            this.moduleData = c.moduleData
+            this.origin = initialOrigin
+            this.name = SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
+            this.symbol = FirValueParameterSymbol(name)
+            this.returnTypeRef = contextReceiver.typeReference()?.toTypeRef(c) ?: errorWithAttachment("KtParameter doesn't have type") {
+                withPsiEntry("contextReceiver", contextReceiver)
+                withFirSymbolEntry("functionSymbol", containingDeclarationSymbol)
+            }
+            this.containingDeclarationSymbol = containingDeclarationSymbol
+            this.valueParameterKind = FirValueParameterKind.LegacyContextReceiver
+            this.resolvePhase = FirResolvePhase.ANALYZED_DEPENDENCIES
         }
     }
 
-    internal fun createContextReceiversForClass(classOrObject: KtClassOrObject): List<FirContextReceiver> =
-        classOrObject.contextReceivers.mapNotNull { it.typeReference() }.map(::loadContextReceiver)
+    private fun loadContextReceiver(parameter: KtParameter, containingDeclarationSymbol: FirBasedSymbol<*>): FirValueParameter {
+        return buildValueParameter {
+            this.moduleData = c.moduleData
+            this.origin = initialOrigin
+            this.name = if (parameter.name == "_") SpecialNames.UNDERSCORE_FOR_UNUSED_VAR else parameter.nameAsSafeName
+            this.symbol = FirValueParameterSymbol(name)
+            this.returnTypeRef = parameter.typeReference?.toTypeRef(c) ?: errorWithAttachment("KtParameter doesn't have type") {
+                withPsiEntry("ktParameter", parameter)
+                withFirSymbolEntry("functionSymbol", containingDeclarationSymbol)
+            }
+            this.containingDeclarationSymbol = containingDeclarationSymbol
+            this.valueParameterKind = FirValueParameterKind.ContextParameter
+            this.resolvePhase = FirResolvePhase.ANALYZED_DEPENDENCIES
+        }
+    }
+
+    internal fun createContextReceiversForClass(
+        classOrObject: KtClassOrObject,
+        containingDeclarationSymbol: FirBasedSymbol<*>,
+    ): List<FirValueParameter> {
+        return classOrObject.contextReceivers.mapNotNull { it.typeReference() }.map {
+            buildValueParameter {
+                this.moduleData = c.moduleData
+                this.origin = initialOrigin
+                this.name = SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
+                this.symbol = FirValueParameterSymbol(name)
+                this.returnTypeRef = it.toTypeRef(c)
+                this.containingDeclarationSymbol = containingDeclarationSymbol
+                this.valueParameterKind = FirValueParameterKind.ContextParameter
+                this.resolvePhase = FirResolvePhase.ANALYZED_DEPENDENCIES
+            }
+        }
+    }
 
     fun loadFunction(
         function: KtNamedFunction,
@@ -455,6 +509,10 @@ internal class StubBasedFirMemberDeserializer(
                 buildReceiverParameter {
                     typeRef = receiverType
                     annotations += receiverAnnotations
+                    this.symbol = FirReceiverParameterSymbol()
+                    moduleData = c.moduleData
+                    origin = initialOrigin
+                    containingDeclarationSymbol = symbol
                 }
             }
 
@@ -488,7 +546,8 @@ internal class StubBasedFirMemberDeserializer(
             deprecationsProvider = annotations.getDeprecationsProviderFromAnnotations(c.session, fromJava = false)
             this.containerSource = c.containerSource
 
-            function.contextReceivers.mapNotNull { it.typeReference() }.mapTo(contextReceivers, ::loadContextReceiver)
+            function.contextReceiverList?.contextReceivers()?.mapTo(contextReceivers) { loadContextReceiver(it, symbol) }
+            function.contextReceiverList?.contextParameters()?.mapTo(contextReceivers) { loadContextReceiver(it, symbol) }
         }.apply {
             setLazyPublishedVisibility(c.session)
         }
@@ -501,6 +560,7 @@ internal class StubBasedFirMemberDeserializer(
         return simpleFunction
     }
 
+    @OptIn(SuspiciousFakeSourceCheck::class)
     fun loadConstructor(
         constructor: KtConstructor<*>,
         classOrObject: KtClassOrObject,
@@ -520,7 +580,7 @@ internal class StubBasedFirMemberDeserializer(
                 typeParameters.map { ConeTypeParameterTypeImpl(it.symbol.toLookupTag(), false) }.toTypedArray(),
                 false
             )
-            source = KtFakeSourceElement(classOrObject, KtFakeSourceElementKind.ClassSelfTypeRef)
+            source = KtFakePsiSourceElement(classOrObject, KtFakeSourceElementKind.ClassSelfTypeRef)
         }
 
         return if (isPrimary) {
@@ -564,7 +624,7 @@ internal class StubBasedFirMemberDeserializer(
             containerSource = c.containerSource
             deprecationsProvider = annotations.getDeprecationsProviderFromAnnotations(c.session, fromJava = false)
 
-            contextReceivers.addAll(createContextReceiversForClass(classOrObject))
+            contextReceivers.addAll(createContextReceiversForClass(classOrObject, symbol))
         }.build().apply {
             containingClassForStaticMemberAttr = c.dispatchReceiver!!.lookupTag
             setLazyPublishedVisibility(c.session)
@@ -581,7 +641,7 @@ internal class StubBasedFirMemberDeserializer(
             buildValueParameter {
                 source = KtRealPsiSourceElement(ktParameter)
                 moduleData = c.moduleData
-                this.containingFunctionSymbol = functionSymbol
+                this.containingDeclarationSymbol = functionSymbol
                 origin = initialOrigin
                 returnTypeRef =
                     ktParameter.typeReference?.toTypeRef(c)

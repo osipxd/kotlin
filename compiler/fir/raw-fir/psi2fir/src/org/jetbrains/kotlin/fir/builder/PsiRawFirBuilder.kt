@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.builtins.StandardNames.BACKING_FIELD
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget.*
 import org.jetbrains.kotlin.fir.*
+import org.jetbrains.kotlin.fir.analysis.firstFunctionCallInBlockHasLambdaArgumentWithLabel
 import org.jetbrains.kotlin.fir.analysis.isCallTheFirstStatement
 import org.jetbrains.kotlin.fir.contracts.FirContractDescription
 import org.jetbrains.kotlin.fir.contracts.builder.buildRawContractDescription
@@ -57,6 +58,11 @@ open class PsiRawFirBuilder(
     val baseScopeProvider: FirScopeProvider,
     bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) : AbstractRawFirBuilder<PsiElement>(session) {
+    /**
+     * @see generateAccessorsByDelegate
+     */
+    protected open val KtProperty.sourceForDelegatedPropertyAccessors: KtSourceElement? get() = null
+
     protected open fun bindFunctionTarget(target: FirFunctionTarget, function: FirFunction) {
         target.bind(function)
     }
@@ -265,9 +271,11 @@ open class PsiRawFirBuilder(
         fun convertProperty(
             property: KtProperty,
             ownerRegularOrAnonymousObjectSymbol: FirClassSymbol<*>?,
+            forceLocal: Boolean = false,
         ): FirProperty = property.toFirProperty(
             ownerRegularOrAnonymousObjectSymbol,
-            context
+            context,
+            forceLocal
         )
 
         private fun KtTypeReference?.toFirOrImplicitType(): FirTypeRef =
@@ -425,6 +433,7 @@ open class PsiRawFirBuilder(
                                 val blockSourcePsi = it.source?.psi
                                 val diagnostic = when {
                                     blockSourcePsi == null || !isCallTheFirstStatement(blockSourcePsi) -> ConeContractShouldBeFirstStatement
+                                    functionCallHasLabel(blockSourcePsi) -> ConeContractMayNotHaveLabel
                                     else -> null
                                 }
                                 processLegacyContractDescription(block, diagnostic)
@@ -443,6 +452,9 @@ open class PsiRawFirBuilder(
 
         private fun isCallTheFirstStatement(psi: PsiElement): Boolean =
             isCallTheFirstStatement(psi, { it.elementType }, { it.allChildren.toList() })
+
+        private fun functionCallHasLabel(psi: PsiElement): Boolean =
+            firstFunctionCallInBlockHasLambdaArgumentWithLabel(psi, { it.elementType }, { it.allChildren.toList() })
 
         private fun ValueArgument?.toFirExpression(): FirExpression {
             if (this == null) {
@@ -649,7 +661,7 @@ open class PsiRawFirBuilder(
 
         private fun KtParameter.toFirValueParameter(
             defaultTypeRef: FirTypeRef?,
-            functionSymbol: FirFunctionSymbol<*>,
+            containingDeclarationSymbol: FirBasedSymbol<*>,
             valueParameterDeclaration: ValueParameterDeclaration,
             additionalAnnotations: List<FirAnnotation> = emptyList(),
         ): FirValueParameter {
@@ -683,11 +695,23 @@ open class PsiRawFirBuilder(
                 }
 
                 defaultValue = if (hasDefaultValue()) {
-                    buildOrLazyExpression(null) { { this@toFirValueParameter.defaultValue }.toFirExpression("Should have default value") }
+                    if (valueParameterDeclaration == ValueParameterDeclaration.CONTEXT_PARAMETER) {
+                        buildErrorExpression {
+                            source = this@toFirValueParameter.toFirSourceElement(KtFakeSourceElementKind.ContextParameterDefaultValue)
+                            diagnostic = ConeContextParameterWithDefaultValue
+                        }
+                    } else {
+                        buildOrLazyExpression(null) { { this@toFirValueParameter.defaultValue }.toFirExpression("Should have default value") }
+                    }
                 } else null
                 isCrossinline = hasModifier(CROSSINLINE_KEYWORD)
                 isNoinline = hasModifier(NOINLINE_KEYWORD)
-                containingFunctionSymbol = functionSymbol
+                valueParameterKind = if (valueParameterDeclaration == ValueParameterDeclaration.CONTEXT_PARAMETER) {
+                    FirValueParameterKind.ContextParameter
+                } else {
+                    FirValueParameterKind.Regular
+                }
+                this.containingDeclarationSymbol = containingDeclarationSymbol
                 annotations += additionalAnnotations
             }
         }
@@ -940,28 +964,27 @@ open class PsiRawFirBuilder(
          */
         protected fun buildFieldForSupertypeDelegate(
             entry: KtDelegatedSuperTypeEntry,
-            type: FirTypeRef?,
+            type: FirTypeRef,
             fieldOrd: Int,
         ): FirField {
             val delegateSource = entry.toFirSourceElement(KtFakeSourceElementKind.ClassDelegationField)
 
-            val delegateExpression = buildOrLazyExpression(delegateSource) {
-                { entry.delegateExpression }
-                    .toFirExpression("Should have delegate")
-            }
             return buildField {
                 source = delegateSource
                 moduleData = baseModuleData
                 origin = FirDeclarationOrigin.Synthetic.DelegateField
                 name = NameUtils.delegateFieldName(fieldOrd)
                 symbol = FirFieldSymbol(CallableId(this@PsiRawFirBuilder.context.currentClassId, name))
-                returnTypeRef = type ?: withContainerSymbol(symbol) {
-                    entry.typeReference.toFirOrErrorType()
+                returnTypeRef = type
+                withContainerSymbol(symbol) {
+                    initializer = buildOrLazyExpression(delegateSource) {
+                        { entry.delegateExpression }
+                            .toFirExpression("Should have delegate")
+                    }
                 }
 
                 isVar = false
                 status = FirDeclarationStatusImpl(Visibilities.Private, Modality.FINAL)
-                initializer = delegateExpression
                 dispatchReceiverType = currentDispatchReceiverType()
             }
         }
@@ -993,10 +1016,9 @@ open class PsiRawFirBuilder(
                         val type = superTypeListEntry.typeReference.toFirOrErrorType()
                         container.superTypeRefs += type
 
-                        /**
-                         * [FirAnnotationCall.containingDeclarationSymbol] have to be from [container], so we should calculate it here
-                         */
-                        val delegateField = buildFieldForSupertypeDelegate(superTypeListEntry, type, delegateFieldsMap.size)
+                        val delegateField = buildFieldForSupertypeDelegate(
+                            superTypeListEntry, type, delegateFieldsMap.size
+                        )
                         delegateFieldsMap[index] = delegateField.symbol
                     }
                 }
@@ -1148,7 +1170,7 @@ open class PsiRawFirBuilder(
                     isActual = this@toFirConstructor?.hasActualModifier() == true || isImplicitlyActual
 
                     // a warning about inner script class is reported on the class itself
-                    isInner = owner.parent.parent !is KtScript && owner.hasModifier(INNER_KEYWORD)
+                    isInner = owner.parent.parent !is KtScript && owner.hasInnerModifier()
                     isFromSealedClass = owner.hasModifier(SEALED_KEYWORD) && explicitVisibility !== Visibilities.Private
                     isFromEnumClass = owner.hasModifier(ENUM_KEYWORD)
                 }
@@ -1168,7 +1190,7 @@ open class PsiRawFirBuilder(
                     symbol = constructorSymbol
                     delegatedConstructor = firDelegatedCall
                     typeParameters += constructorTypeParametersFromConstructedClass(ownerTypeParameters)
-                    this.contextReceivers.addAll(convertContextReceivers(owner.contextReceivers))
+                    this.contextReceivers.addContextReceivers(owner.contextReceiverList, constructorSymbol)
                     this@toFirConstructor?.extractAnnotationsTo(this)
                     this@toFirConstructor?.extractValueParametersTo(this, symbol, ValueParameterDeclaration.PRIMARY_CONSTRUCTOR)
                     this.body = null
@@ -1181,7 +1203,7 @@ open class PsiRawFirBuilder(
         }
 
         private fun KtClassOrObject.obtainDispatchReceiverForConstructor(): ConeClassLikeType? =
-            if (hasModifier(INNER_KEYWORD)) dispatchReceiverForInnerClassConstructor() else null
+            if (hasInnerModifier()) dispatchReceiverForInnerClassConstructor() else null
 
         override fun visitKtFile(file: KtFile, data: FirElement?): FirElement {
             context.packageFqName = when (mode) {
@@ -1223,20 +1245,7 @@ open class PsiRawFirBuilder(
                 } else {
                     for (declaration in file.declarations) {
                         declarations += when (declaration) {
-                            is KtScript -> {
-                                requireWithAttachment(
-                                    file.declarations.size == 1,
-                                    message = { "Expect the script to be the only declaration in the file" },
-                                ) {
-                                    withEntry("fileName", file.name)
-                                }
-
-                                convertScript(declaration, name, sourceFile) {
-                                    for (configurator in baseSession.extensionService.scriptConfigurators) {
-                                        with(configurator) { configureContainingFile(this@buildFile) }
-                                    }
-                                }
-                            }
+                            is KtScript -> convertScriptOrSnippets(declaration, this@buildFile)
                             is KtDestructuringDeclaration -> buildErrorTopLevelDestructuringDeclaration(declaration.toFirSourceElement())
                             else -> declaration.convert()
                         }
@@ -1244,6 +1253,47 @@ open class PsiRawFirBuilder(
 
                     for (danglingModifierList in file.danglingModifierLists) {
                         declarations += buildErrorTopLevelDeclarationForDanglingModifierList(danglingModifierList)
+                    }
+                }
+            }
+        }
+
+        private fun convertScriptOrSnippets(declaration: KtScript, fileBuilder: FirFileBuilder): FirDeclaration {
+            val file = declaration.parent as? KtFile
+            requireWithAttachment(
+                file?.declarations?.size == 1,
+                message = { "Expect the script to be the only declaration in the file ${file?.name}" },
+            ) {
+                withEntry("fileName", fileBuilder.name)
+            }
+
+            val scriptSource = declaration.toFirSourceElement()
+
+            val repSnippetConfigurator =
+                baseSession.extensionService.replSnippetConfigurators.filter {
+                    it.isReplSnippetsSource(fileBuilder.sourceFile, scriptSource)
+                }.let {
+                    requireWithAttachment(
+                        it.size <= 1,
+                        message = { "More than one REPL snippet configurator is found for the file" },
+                    ) {
+                        withEntry("fileName", fileBuilder.name)
+                        withEntry("configurators", it.joinToString { "${it::class.java.name}" })
+                    }
+                    it.firstOrNull()
+                }
+
+            return if (repSnippetConfigurator != null) {
+                convertReplSnippet(declaration, scriptSource, fileBuilder.name) {
+                    with (repSnippetConfigurator) {
+                        configureContainingFile(fileBuilder)
+                        configure(fileBuilder.sourceFile, context)
+                    }
+                }
+            } else {
+                convertScript(declaration, scriptSource, fileBuilder.name, fileBuilder.sourceFile) {
+                    for (configurator in baseSession.extensionService.scriptConfigurators) {
+                        with(configurator) { configureContainingFile(fileBuilder) }
                     }
                 }
             }
@@ -1289,6 +1339,7 @@ open class PsiRawFirBuilder(
 
         private fun convertScript(
             script: KtScript,
+            scriptSource: KtPsiSourceElement,
             fileName: String,
             sourceFile: KtSourceFile?,
             setup: FirScriptBuilder.() -> Unit = {},
@@ -1297,7 +1348,7 @@ open class PsiRawFirBuilder(
             val scriptSymbol = FirScriptSymbol(context.packageFqName.child(scriptName))
 
             return buildScript {
-                source = script.toFirSourceElement()
+                source = scriptSource
                 moduleData = baseModuleData
                 origin = FirDeclarationOrigin.Source
                 name = scriptName
@@ -1359,6 +1410,79 @@ open class PsiRawFirBuilder(
             }
         }
 
+        private fun convertReplSnippet(
+            script: KtScript,
+            scriptSource: KtPsiSourceElement,
+            fileName: String,
+            setup: FirReplSnippetBuilder.() -> Unit = {},
+        ): FirReplSnippet {
+            val snippetName = Name.special("<snippet-$fileName>")
+            val snippetSymbol = FirReplSnippetSymbol(snippetName)
+
+            return buildReplSnippet {
+                source = scriptSource
+                moduleData = baseModuleData
+                origin = FirDeclarationOrigin.Source
+                name = snippetName
+                symbol = snippetSymbol
+
+                body = buildOrLazyBlock {
+                    withContainerSymbol(snippetSymbol, isLocal = true) {
+                        buildBlock {
+                            script.declarations.forEach { declaration ->
+                                when (declaration) {
+                                    is KtScriptInitializer -> {
+                                        val initializer = buildAnonymousInitializer(
+                                            initializer = declaration,
+                                            containingDeclarationSymbol = snippetSymbol,
+                                            allowLazyBody = true,
+                                            isLocal = true,
+                                        )
+
+                                        statements.addAll(initializer.body!!.statements)
+                                    }
+                                    is KtDestructuringDeclaration -> {
+                                        val destructuringContainerVar = buildScriptDestructuringDeclaration(declaration)
+                                        statements.add(destructuringContainerVar)
+
+                                        addDestructuringVariables(
+                                            statements,
+                                            this@Visitor,
+                                            baseModuleData,
+                                            declaration,
+                                            destructuringContainerVar,
+                                            tmpVariable = false,
+                                            forceLocal = false,
+                                        ) {
+                                            configureScriptDestructuringDeclarationEntry(it, destructuringContainerVar)
+                                        }
+                                    }
+                                    is KtProperty -> {
+                                        withForcedLocalContext {
+                                            val firProperty = convertProperty(declaration, null, forceLocal = true)
+                                            statements.add(firProperty)
+                                        }
+                                    }
+                                    else -> {
+                                        val firStatement = declaration.toFirStatement()
+                                        if (firStatement is FirDeclaration) {
+                                            statements.add(firStatement)
+                                        } else {
+                                            error("unexpected declaration type in script")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // TODO: proper lazy support - see the script
+                resultTypeRef =
+                    if (body.statements.lastOrNull() is FirDeclaration) implicitUnitType else FirImplicitTypeRefImplWithoutSource
+                setup()
+            }
+        }
+
         private fun convertCodeFragment(
             file: KtCodeFragment,
             // We ask to pass the fileBuilder explicitly despite it's not in use: FirFile should be always a parent
@@ -1403,7 +1527,7 @@ open class PsiRawFirBuilder(
                             name = StandardNames.DEFAULT_VALUE_PARAMETER
 
                             symbol = FirValueParameterSymbol(name)
-                            containingFunctionSymbol = functionSymbol
+                            containingDeclarationSymbol = functionSymbol
 
                             returnTypeRef = file.getContentElement().toFirOrErrorType()
                             isCrossinline = false
@@ -1423,7 +1547,7 @@ open class PsiRawFirBuilder(
             val ktFile = script.containingKtFile
             val fileName = ktFile.name
             val fileForSource = (data as? FirScript)?.psi?.containingFile as? KtFile ?: ktFile
-            return convertScript(script, fileName, KtPsiSourceFile(fileForSource))
+            return convertScript(script, script.toFirSourceElement(), fileName, KtPsiSourceFile(fileForSource))
         }
 
         protected fun KtEnumEntry.toFirEnumEntry(
@@ -1513,16 +1637,37 @@ open class PsiRawFirBuilder(
             }
         }
 
-        private fun convertContextReceivers(receivers: List<KtContextReceiver>): List<FirContextReceiver> {
-            return receivers.map { contextReceiverElement ->
-                buildContextReceiver {
-                    this.source = contextReceiverElement.toFirSourceElement()
-                    this.customLabelName = contextReceiverElement.labelNameAsName()
-                    this.labelNameFromTypeRef = contextReceiverElement.typeReference()?.nameForReceiverLabel()?.let(Name::identifier)
+        private fun MutableList<FirValueParameter>.addContextReceivers(
+            contextList: KtContextReceiverList?,
+            containingDeclarationSymbol: FirBasedSymbol<*>,
+        ) {
+            if (contextList == null) return
+            contextList.contextParameters().mapTo(this) { contextParameterElement ->
+                contextParameterElement.toFirValueParameter(
+                    defaultTypeRef = null,
+                    containingDeclarationSymbol = containingDeclarationSymbol,
+                    valueParameterDeclaration = ValueParameterDeclaration.CONTEXT_PARAMETER,
+                )
+            }
 
-                    contextReceiverElement.typeReference()?.toFirType()?.let {
-                        this.typeRef = it
+            contextList.contextReceivers().mapTo(this) { contextReceiverElement ->
+                buildValueParameter {
+                    this.source = contextReceiverElement.toFirSourceElement()
+                    this.moduleData = baseModuleData
+                    this.origin = FirDeclarationOrigin.Source
+
+                    val customLabelName = contextReceiverElement.labelNameAsName()
+                    val labelNameFromTypeRef = contextReceiverElement.typeReference()?.nameForReceiverLabel()?.let(Name::identifier)
+
+                    // We're abusing the value parameter name for the label/type name of legacy context receivers.
+                    // Luckily, legacy context receivers are getting removed soon.
+                    this.name = customLabelName ?: labelNameFromTypeRef ?: SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
+                    this.symbol = FirValueParameterSymbol(name)
+                    withContainerSymbol(this.symbol) {
+                        this.returnTypeRef = contextReceiverElement.typeReference().toFirOrErrorType()
                     }
+                    this.containingDeclarationSymbol = containingDeclarationSymbol
+                    this.valueParameterKind = FirValueParameterKind.LegacyContextReceiver
                 }
             }
         }
@@ -1555,7 +1700,7 @@ open class PsiRawFirBuilder(
                     ).apply {
                         isExpect = classIsExpect
                         isActual = classOrObject.hasActualModifier()
-                        isInner = classOrObject.hasModifier(INNER_KEYWORD) && classOrObject.parent.parent !is KtScript
+                        isInner = classOrObject.hasInnerModifier() && classOrObject.parent.parent !is KtScript
                         isCompanion = (classOrObject as? KtObjectDeclaration)?.isCompanion() == true
                         isData = classOrObject.hasModifier(DATA_KEYWORD)
                         isInline = classOrObject.hasModifier(INLINE_KEYWORD) || classOrObject.hasModifier(VALUE_KEYWORD)
@@ -1634,18 +1779,17 @@ open class PsiRawFirBuilder(
                                 DataClassMembersGenerator(
                                     classOrObject,
                                     this,
+                                    firPrimaryConstructor,
                                     zippedParameters,
                                     context.packageFqName,
                                     context.className,
-                                    createClassTypeRefWithSourceKind = { firPrimaryConstructor.returnTypeRef.copyWithNewSourceKind(it) },
-                                    createParameterTypeRefWithSourceKind = { property, newKind ->
-                                        property.returnTypeRef.copyWithNewSourceKind(newKind)
-                                    },
                                     addValueParameterAnnotations = {
-                                        addAnnotationsFrom(
-                                            it as KtParameter,
-                                            isFromPrimaryConstructor = true,
-                                        )
+                                        withContainerSymbol(symbol) {
+                                            addAnnotationsFrom(
+                                                it as KtParameter,
+                                                isFromPrimaryConstructor = true,
+                                            )
+                                        }
                                     },
                                 ).generate()
                             }
@@ -1670,7 +1814,7 @@ open class PsiRawFirBuilder(
                             initCompanionObjectSymbolAttr()
 
                             context.popFirTypeParameters()
-                            contextReceivers.addAll(convertContextReceivers(classOrObject.contextReceivers))
+                            contextReceivers.addContextReceivers(classOrObject.contextReceiverList, classSymbol)
                         }.also {
                             it.delegateFieldsMap = delegatedFieldsMap
                         }
@@ -1743,6 +1887,7 @@ open class PsiRawFirBuilder(
             return withChildClassName(typeAlias.nameAsSafeName, isExpect = typeAliasIsExpect) {
                 buildTypeAlias {
                     symbol = FirTypeAliasSymbol(context.currentClassId)
+                    val isInner = typeAlias.hasInnerModifier()
                     withContainerSymbol(symbol) {
                         source = typeAlias.toFirSourceElement()
                         moduleData = baseModuleData
@@ -1755,10 +1900,15 @@ open class PsiRawFirBuilder(
                         ).apply {
                             isExpect = typeAliasIsExpect
                             isActual = typeAlias.hasActualModifier()
+                            this.isInner = isInner
                         }
                         expandedTypeRef = typeAlias.getTypeReference().toFirOrErrorType()
                         typeAlias.extractAnnotationsTo(this)
                         typeAlias.extractTypeParametersTo(this, symbol)
+
+                        if (isInner || isLocal) {
+                            context.appendOuterTypeParameters(ignoreLastLevel = false, typeParameters)
+                        }
                     }
                 }
             }
@@ -1781,12 +1931,15 @@ open class PsiRawFirBuilder(
                     typeReference.toFirOrImplicitType()
                 }
 
-                val receiverType = function.receiverTypeReference?.toFirType()
+                val receiverTypeCalculator: (() -> FirTypeRef)? = function.receiverTypeReference?.let {
+                    { it.toFirType() }
+                }
+
                 val labelName: String?
 
                 val functionBuilder = if (isAnonymousFunction) {
                     FirAnonymousFunctionBuilder().apply {
-                        receiverParameter = receiverType?.convertToReceiverParameter()
+                        receiverParameter = receiverTypeCalculator?.let { createReceiverParameter(it, baseModuleData, functionSymbol) }
                         symbol = functionSymbol as FirAnonymousFunctionSymbol
                         isLambda = false
                         hasExplicitParameterList = true
@@ -1798,7 +1951,7 @@ open class PsiRawFirBuilder(
                     }
                 } else {
                     FirSimpleFunctionBuilder().apply {
-                        receiverParameter = receiverType?.convertToReceiverParameter()
+                        receiverParameter = receiverTypeCalculator?.let { createReceiverParameter(it, baseModuleData, functionSymbol) }
                         name = function.nameAsSafeName
                         labelName = context.getLastLabel(function)?.name ?: runIf(!name.isSpecial) { name.identifier }
                         symbol = functionSymbol as FirNamedFunctionSymbol
@@ -1818,7 +1971,7 @@ open class PsiRawFirBuilder(
                             isSuspend = function.hasModifier(SUSPEND_KEYWORD)
                         }
 
-                        contextReceivers.addAll(convertContextReceivers(function.contextReceivers))
+                        contextReceivers.addContextReceivers(function.contextReceiverList, functionSymbol)
                     }
                 }
 
@@ -1908,8 +2061,8 @@ open class PsiRawFirBuilder(
                 moduleData = baseModuleData
                 origin = FirDeclarationOrigin.Source
                 returnTypeRef = FirImplicitTypeRefImplWithoutSource
-                receiverParameter = literalSource.asReceiverParameter()
                 symbol = FirAnonymousFunctionSymbol()
+                receiverParameter = literalSource.asReceiverParameter(moduleData, symbol)
                 isLambda = true
                 hasExplicitParameterList = expression.functionLiteral.arrow != null
 
@@ -1920,7 +2073,7 @@ open class PsiRawFirBuilder(
                         val name = SpecialNames.DESTRUCT
                         val multiParameter = buildValueParameter {
                             source = valueParameter.toFirSourceElement()
-                            containingFunctionSymbol = this@buildAnonymousFunction.symbol
+                            containingDeclarationSymbol = this@buildAnonymousFunction.symbol
                             moduleData = baseModuleData
                             origin = FirDeclarationOrigin.Source
                             returnTypeRef = valueParameter.typeReference.toFirOrImplicitType()
@@ -2018,12 +2171,15 @@ open class PsiRawFirBuilder(
                     status = FirDeclarationStatusImpl(explicitVisibility ?: constructorDefaultVisibility(owner), Modality.FINAL).apply {
                         isExpect = hasExpectModifier() || this@PsiRawFirBuilder.context.containerIsExpect
                         isActual = hasActualModifier()
-                        isInner = owner.hasModifier(INNER_KEYWORD)
+                        isInner = owner.hasInnerModifier()
                         isFromSealedClass = owner.hasModifier(SEALED_KEYWORD) && explicitVisibility !== Visibilities.Private
                         isFromEnumClass = owner.hasModifier(ENUM_KEYWORD)
                     }
                     dispatchReceiverType = owner.obtainDispatchReceiverForConstructor()
-                    contextReceivers.addAll(convertContextReceivers(owner.contextReceivers))
+                    contextReceivers.addContextReceivers(owner.contextReceiverList, symbol)
+                    if (contextParameterEnabled) {
+                        contextReceivers.addContextReceivers(this@toFirConstructor.getChildOfType(), symbol)
+                    }
                     if (!owner.hasModifier(EXTERNAL_KEYWORD) && !status.isExpect || isExplicitDelegationCall()) {
                         delegatedConstructor = buildOrLazyDelegatedConstructorCall(
                             isThis = isDelegatedCallToThis(),
@@ -2098,6 +2254,7 @@ open class PsiRawFirBuilder(
         private fun <T> KtProperty.toFirProperty(
             ownerRegularOrAnonymousObjectSymbol: FirClassSymbol<*>?,
             context: Context<T>,
+            forceLocal: Boolean = false,
         ): FirProperty {
             val propertyName = nameAsSafeName
             val propertySymbol = if (isLocal) {
@@ -2121,7 +2278,10 @@ open class PsiRawFirBuilder(
                     name = propertyName
                     this.isVar = isVar
 
-                    receiverParameter = receiverTypeReference?.toFirType()?.convertToReceiverParameter()
+                    receiverParameter = receiverTypeReference?.let {
+                        createReceiverParameter({ it.toFirType() }, moduleData, propertySymbol)
+                    }
+
                     initializer = propertyInitializer
 
                     val propertyAnnotations = mutableListOf<FirAnnotationCall>()
@@ -2164,7 +2324,7 @@ open class PsiRawFirBuilder(
                             )
                         }
                     } else {
-                        isLocal = false
+                        isLocal = forceLocal
                         symbol = propertySymbol
                         dispatchReceiverType = currentDispatchReceiverType()
                         extractTypeParametersTo(this, symbol)
@@ -2203,20 +2363,27 @@ open class PsiRawFirBuilder(
                                 isExternal = hasModifier(EXTERNAL_KEYWORD)
                             }
 
-                            val psiPropertyDelegate = this@toFirProperty.delegate
-                            if (psiPropertyDelegate != null) {
-                                fun extractDelegateExpression(): FirExpression {
-                                    return buildOrLazyExpression(psiPropertyDelegate.expression?.toFirSourceElement(KtFakeSourceElementKind.WrappedDelegate)) {
-                                        psiPropertyDelegate.expression?.toFirExpression("Should have delegate") ?: buildErrorExpression {
+                            if (hasDelegate()) {
+                                val fakeDelegateSource = this@toFirProperty.toFirSourceElement(KtFakeSourceElementKind.WrappedDelegate)
+                                fun extractDelegateExpression(): FirExpression = buildOrLazyExpression(fakeDelegateSource) {
+                                    this@toFirProperty.delegate
+                                        ?.expression?.toFirExpression("Should have delegate")
+                                        ?: buildErrorExpression {
                                             diagnostic = ConeSimpleDiagnostic("Should have delegate", DiagnosticKind.ExpressionExpected)
                                         }
-                                    }
                                 }
 
                                 val delegateBuilder = FirWrappedDelegateExpressionBuilder().apply {
                                     val delegateExpression = extractDelegateExpression()
-                                    source = (psiPropertyDelegate.expression ?: psiPropertyDelegate)
-                                        .toFirSourceElement(KtFakeSourceElementKind.WrappedDelegate)
+                                    source = buildOrLazy(
+                                        build = {
+                                            val psiPropertyDelegate = this@toFirProperty.delegate
+                                            (psiPropertyDelegate?.expression ?: psiPropertyDelegate)?.toFirSourceElement(
+                                                KtFakeSourceElementKind.WrappedDelegate
+                                            )
+                                        },
+                                        lazy = { fakeDelegateSource },
+                                    )
 
                                     expression = delegateExpression
                                 }
@@ -2234,7 +2401,8 @@ open class PsiRawFirBuilder(
                                     isExtension = receiverTypeReference != null,
                                     lazyDelegateExpression = lazyDelegateExpression,
                                     lazyBodyForGeneratedAccessors = lazyBody,
-                                    ::bindFunctionTarget,
+                                    bindFunction = ::bindFunctionTarget,
+                                    explicitDeclarationSource = sourceForDelegatedPropertyAccessors,
                                 )
                             }
                         }
@@ -2244,7 +2412,7 @@ open class PsiRawFirBuilder(
                         else -> propertyAnnotations.filterStandalonePropertyRelevantAnnotations(isVar)
                     }
 
-                    contextReceivers.addAll(convertContextReceivers(this@toFirProperty.contextReceivers))
+                    contextReceivers.addContextReceivers(this@toFirProperty.contextReceiverList, propertySymbol)
                 }.also {
                     if (!isLocal) {
                         fillDanglingConstraintsTo(it)
@@ -2643,6 +2811,9 @@ open class PsiRawFirBuilder(
                         symbol = FirPropertySymbol(name)
                         isLocal = true
                         status = FirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL)
+                        receiverParameter = ktSubjectExpression.receiverTypeReference?.let {
+                            createReceiverParameter({ it.toFirType() }, moduleData, symbol)
+                        }
                         ktSubjectExpression.extractAnnotationsTo(this)
                     }
                 }
@@ -2930,6 +3101,7 @@ open class PsiRawFirBuilder(
                         firOperation,
                         leftArgument.annotations,
                         expression.right,
+                        expression.left?.elementType in UNWRAPPABLE_TOKEN_TYPES,
                     ) {
                         (this as KtExpression).toFirExpression(
                             sourceWhenInvalidExpression = expression,
@@ -3199,7 +3371,7 @@ open class PsiRawFirBuilder(
                 expression.baseExpression?.accept(this, data)
             }
 
-            return buildExpressionHandlingErrors(result, expression.toFirSourceElement(), forbiddenLabelKind, labelSource)
+            return buildExpressionHandlingLabelErrors(result, expression.toFirSourceElement(), forbiddenLabelKind, labelSource)
         }
 
         override fun visitAnnotatedExpression(expression: KtAnnotatedExpression, data: FirElement?): FirElement {

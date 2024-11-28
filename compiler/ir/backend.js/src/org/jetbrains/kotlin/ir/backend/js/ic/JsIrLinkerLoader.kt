@@ -43,6 +43,7 @@ internal data class LoadedJsIr(
     private val linker: JsIrLinker,
     private val functionTypeInterfacePackages: FunctionTypeInterfacePackages,
 ) {
+    val irBuiltIns = linker.builtIns
     private val signatureProvidersImpl = hashMapOf<KotlinLibraryFile, List<FileSignatureProvider>>()
 
     private val irFileSourceNames = hashMapOf<IrModuleFragment, Map<IrFile, KotlinSourceFile>>()
@@ -187,7 +188,6 @@ internal class JsIrLinkerLoader(
     fun loadIr(
         modifiedFiles: KotlinSourceFileMap<KotlinSourceFileExports>,
         loadAllIr: Boolean = false,
-        loadKotlinTest: Boolean = false,
     ): LoadedJsIr {
         val loadedModules = loadModules()
         val linkerContext = createLinker(loadedModules)
@@ -197,7 +197,6 @@ internal class JsIrLinkerLoader(
             val modifiedStrategy = when {
                 loadAllIr -> DeserializationStrategy.ALL
                 module == mainLibrary -> DeserializationStrategy.ALL
-                loadKotlinTest && descriptor.name.asString() == "<kotlin-test>" -> DeserializationStrategy.ALL //KT-71037
                 else -> DeserializationStrategy.EXPLICITLY_EXPORTED
             }
             val modified = modifiedFiles[libraryFile]?.keys?.mapTo(hashSetOf()) { it.path } ?: emptySet()

@@ -43,7 +43,7 @@ class FirPrimaryConstructor @FirImplementationDetail constructor(
     override var deprecationsProvider: DeprecationsProvider,
     override val containerSource: DeserializedContainerSource?,
     override val dispatchReceiverType: ConeSimpleKotlinType?,
-    override var contextReceivers: MutableOrEmptyList<FirContextReceiver>,
+    override var contextReceivers: MutableOrEmptyList<FirValueParameter>,
     override val valueParameters: MutableList<FirValueParameter>,
     override var contractDescription: FirContractDescription?,
     override var annotations: MutableOrEmptyList<FirAnnotation>,
@@ -79,7 +79,7 @@ class FirPrimaryConstructor @FirImplementationDetail constructor(
         transformStatus(transformer, data)
         transformReturnTypeRef(transformer, data)
         transformReceiverParameter(transformer, data)
-        contextReceivers.transformInplace(transformer, data)
+        transformContextReceivers(transformer, data)
         controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
         transformValueParameters(transformer, data)
         transformContractDescription(transformer, data)
@@ -106,6 +106,11 @@ class FirPrimaryConstructor @FirImplementationDetail constructor(
 
     override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirPrimaryConstructor {
         receiverParameter = receiverParameter?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirPrimaryConstructor {
+        contextReceivers.transformInplace(transformer, data)
         return this
     }
 
@@ -150,7 +155,7 @@ class FirPrimaryConstructor @FirImplementationDetail constructor(
         deprecationsProvider = newDeprecationsProvider
     }
 
-    override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>) {
+    override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>) {
         contextReceivers = newContextReceivers.toMutableOrEmpty()
     }
 

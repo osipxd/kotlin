@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // LANGUAGE: +AllowContractsForCustomFunctions +UseReturnsEffect +AllowContractsForNonOverridableMembers +AllowReifiedGenericsInContracts
 // OPT_IN: kotlin.contracts.ExperimentalContracts
 // DIAGNOSTICS: -INVISIBLE_REFERENCE -INVISIBLE_MEMBER
@@ -20,7 +21,7 @@ class Generic<T> {
 
 fun referToSubstituted(x: Any?) {
     contract {
-        returns() implies (x is <!CANNOT_CHECK_FOR_ERASED!>Generic<String><!>)
+        <!ERROR_IN_CONTRACT_DESCRIPTION!>returns() implies (x is <!CANNOT_CHECK_FOR_ERASED!>Generic<String><!>)<!>
     }
 }
 
@@ -36,13 +37,13 @@ typealias SimpleType = Int
 
 fun referToAliasedGeneric(x: Any?) {
     contract {
-        returns() implies (x is <!CANNOT_CHECK_FOR_ERASED!>GenericString<!>)
+        <!ERROR_IN_CONTRACT_DESCRIPTION!>returns() implies (x is <!CANNOT_CHECK_FOR_ERASED!>GenericString<!>)<!>
     }
 }
 
 fun referToAliasedFunctionType(x: Any?) {
     contract {
-        returns() implies (x is <!CANNOT_CHECK_FOR_ERASED!>FunctionalType<!>)
+        <!ERROR_IN_CONTRACT_DESCRIPTION!>returns() implies (x is <!CANNOT_CHECK_FOR_ERASED!>FunctionalType<!>)<!>
     }
 }
 

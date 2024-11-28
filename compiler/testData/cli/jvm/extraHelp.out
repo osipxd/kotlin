@@ -28,6 +28,7 @@ where advanced options include:
   -Xemit-jvm-type-annotations Emit JVM type annotations in bytecode.
   -Xdebug                    Enable debug mode for compilation.
                              Currently this includes spilling all variables in a suspending context regardless of whether they are alive.
+                             If API Level >= 2.2 -- no-op.
   -Xir-inliner               Inline functions using the IR inliner instead of the bytecode inliner.
   -Xjvm-enable-preview       Allow using Java features that are in the preview phase.
                              This works like '--enable-preview' in Java. All class files are marked as compiled with preview features, meaning it won't be possible to use them in release environments.
@@ -160,6 +161,7 @@ where advanced options include:
                              They should be a subset of sources passed as free arguments.
   -Xconsistent-data-class-copy-visibility
                              The effect of this compiler flag is the same as applying @ConsistentCopyVisibility annotation to all data classes in the module. See https://youtrack.jetbrains.com/issue/KT-11914
+  -Xcontext-parameters       Enable experimental context parameters.
   -Xcontext-receivers        Enable experimental context receivers.
   -Xdirect-java-actualization Enable experimental direct Java actualization support.
   -Xdisable-default-scripting-plugin
@@ -238,11 +240,6 @@ where advanced options include:
   -Xverify-ir={none|warning|error}
                              IR verification mode (no verification by default).
   -Xverify-ir-visibility     Check for visibility violations in IR when validating it before running any lowerings. Only has effect if '-Xverify-ir' is not 'none'.
-  -Xverify-ir-visibility-after-inlining
-                             Check for visibility violations in IR when validating it after the function inlining phase.
-                             Only has effect if '-Xverify-ir' is not 'none'.
-                             This flag is deprecated and will soon be removed in favor of '-Xverify-ir-visibility'.
-
   -Xwhen-guards              Enable experimental language support for when guards.
 
 Advanced options are non-standard and may be changed or removed without any notice.

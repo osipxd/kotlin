@@ -34,6 +34,9 @@ import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addIfNotNull
 
+/**
+ * Transforms statement-like-expression nodes into pure-statement to make it easily transform into JS.
+ */
 class JsBlockDecomposerLowering(val context: JsIrBackendContext) : AbstractBlockDecomposerLowering(context) {
     override fun unreachableExpression(): IrExpression =
         JsIrBuilder.buildCall(context.intrinsics.unreachable, context.irBuiltIns.nothingType)
@@ -539,7 +542,7 @@ class BlockDecomposerTransformer(
                     compositesLeft == 0 -> value
                     index == 0 && dontDetachFirstArgument -> value
                     value == null -> value
-                    value.isPure(anyVariable = false, context = context) -> value
+                    value.isPure(anyVariable = false, symbols = context.ir.symbols) -> value
                     else -> {
                         // TODO: do not wrap if value is pure (const, variable, etc)
                         val (newArg, tempVar) = mapArgument(value)

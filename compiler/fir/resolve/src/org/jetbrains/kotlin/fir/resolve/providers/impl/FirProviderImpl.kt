@@ -77,9 +77,8 @@ class FirProviderImpl(val session: FirSession, val kotlinScopeProvider: FirKotli
             destination += (state.propertyMap[CallableId(packageFqName, name)] ?: emptyList())
         }
 
-        override fun getPackage(fqName: FqName): FqName? {
-            if (fqName in state.allSubPackages) return fqName
-            return null
+        override fun hasPackage(fqName: FqName): Boolean {
+            return fqName in state.allSubPackages
         }
 
         override val symbolNamesProvider: FirSymbolNamesProvider = object : FirSymbolNamesProvider() {
@@ -201,6 +200,14 @@ class FirProviderImpl(val session: FirSession, val kotlinScopeProvider: FirKotli
             data.state.scriptContainerMap[symbol] = data.file
             data.file.sourceFile?.path?.let { data.state.scriptByFilePathMap[it] = symbol }
             script.acceptChildren(this, data)
+        }
+
+        override fun visitReplSnippet(
+            replSnippet: FirReplSnippet,
+            data: FirRecorderData,
+        ) {
+            replSnippet.body.acceptChildren(this, data)
+            super.visitReplSnippet(replSnippet, data)
         }
     }
 

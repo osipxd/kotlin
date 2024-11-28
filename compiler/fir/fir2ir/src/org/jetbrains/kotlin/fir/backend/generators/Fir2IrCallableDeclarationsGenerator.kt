@@ -1,44 +1,42 @@
 /*
- * Copyright 2010-2023 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package org.jetbrains.kotlin.fir.backend.generators
 
 import org.jetbrains.kotlin.descriptors.*
-import org.jetbrains.kotlin.fir.*
+import org.jetbrains.kotlin.fir.FirAnnotationContainer
 import org.jetbrains.kotlin.fir.backend.*
 import org.jetbrains.kotlin.fir.backend.utils.*
-import org.jetbrains.kotlin.fir.backend.utils.convertCatching
-import org.jetbrains.kotlin.fir.backend.utils.convertWithOffsets
+import org.jetbrains.kotlin.fir.containingClassLookupTag
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyGetter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertySetter
 import org.jetbrains.kotlin.fir.declarations.utils.*
 import org.jetbrains.kotlin.fir.descriptors.FirModuleDescriptor
 import org.jetbrains.kotlin.fir.descriptors.FirPackageFragmentDescriptor
-import org.jetbrains.kotlin.fir.expressions.FirLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.FirExpression
+import org.jetbrains.kotlin.fir.expressions.FirLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression
 import org.jetbrains.kotlin.fir.expressions.impl.FirExpressionStub
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaField
 import org.jetbrains.kotlin.fir.java.hasJvmFieldAnnotation
 import org.jetbrains.kotlin.fir.lazy.Fir2IrLazyClass
+import org.jetbrains.kotlin.fir.originalForSubstitutionOverride
 import org.jetbrains.kotlin.fir.references.toResolvedBaseSymbol
 import org.jetbrains.kotlin.fir.resolve.calls.FirSimpleSyntheticPropertySymbol
 import org.jetbrains.kotlin.fir.resolve.isKFunctionInvoke
 import org.jetbrains.kotlin.fir.resolve.providers.firProvider
 import org.jetbrains.kotlin.fir.resolve.providers.getContainingFile
+import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.lazyResolveToPhase
 import org.jetbrains.kotlin.fir.types.*
+import org.jetbrains.kotlin.fir.unwrapFakeOverrides
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.*
-import org.jetbrains.kotlin.ir.declarations.impl.IrExternalPackageFragmentImpl
-import org.jetbrains.kotlin.ir.declarations.impl.IrFactoryImpl
-import org.jetbrains.kotlin.ir.declarations.impl.IrScriptImpl
-import org.jetbrains.kotlin.ir.declarations.impl.IrVariableImpl
-import org.jetbrains.kotlin.ir.declarations.impl.SCRIPT_K2_ORIGIN
+import org.jetbrains.kotlin.ir.declarations.impl.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrErrorExpressionImpl
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.*
@@ -505,7 +503,6 @@ class Fir2IrCallableDeclarationsGenerator(private val c: Fir2IrComponents) : Fir
     private val FirProperty.fieldVisibility: Visibility
         get() = when {
             hasExplicitBackingField -> backingField?.visibility ?: status.visibility
-            isLateInit -> setter?.visibility ?: status.visibility
             isConst -> status.visibility
             hasJvmFieldAnnotation(session) -> status.visibility
             origin == FirDeclarationOrigin.ScriptCustomization.ResultProperty -> status.visibility
@@ -522,7 +519,7 @@ class Fir2IrCallableDeclarationsGenerator(private val c: Fir2IrComponents) : Fir
         val irType = type.toIrType(c)
 
         val parentIsExternal = irParent.isExternalParent()
-        if (field is FirJavaField && field.isStatic && field.isFinal && parentIsExternal) {
+        if (field is FirJavaField && field.isStatic && field.isVal && parentIsExternal) {
             // We are going to create IR for Java static final fields lazily because they can refer to some Kotlin const.
             // This way we delay const evaluation of Java fields until IR tree is fully built, and we can run IR interpreter.
             return lazyDeclarationsGenerator.createIrLazyField(field, symbol, irParent!!, origin, irPropertySymbol = null).apply {
@@ -601,22 +598,26 @@ class Fir2IrCallableDeclarationsGenerator(private val c: Fir2IrComponents) : Fir
     }
 
     fun addContextReceiverParametersTo(
-        contextReceivers: List<FirContextReceiver>,
+        contextReceivers: List<FirValueParameter>,
         parent: IrFunction,
         result: MutableList<IrValueParameter>,
     ) {
         contextReceivers.mapIndexedTo(result) { index, contextReceiver ->
-            createIrParameterFromContextReceiver(contextReceiver, index).apply {
+            if (contextReceiver.isLegacyContextReceiver()) {
+                createIrParameterFromContextReceiver(contextReceiver, index)
+            } else {
+                this.declarationStorage.createAndCacheParameter(contextReceiver)
+            }.apply {
                 this.parent = parent
             }
         }
     }
 
     private fun createIrParameterFromContextReceiver(
-        contextReceiver: FirContextReceiver,
+        contextReceiver: FirValueParameter,
         index: Int,
     ): IrValueParameter = convertCatching(contextReceiver) {
-        val type = contextReceiver.typeRef.toIrType(c)
+        val type = contextReceiver.returnTypeRef.toIrType(c)
         return contextReceiver.convertWithOffsets { startOffset, endOffset ->
             IrFactoryImpl.createValueParameter(
                 startOffset = startOffset,
@@ -744,7 +745,7 @@ class Fir2IrCallableDeclarationsGenerator(private val c: Fir2IrComponents) : Fir
                 origin = origin,
                 name = valueParameter.name,
                 type = type,
-                isAssignable = valueParameter.containingFunctionSymbol.fir.shouldParametersBeAssignable(c),
+                isAssignable = valueParameter.containingDeclarationSymbol.fir.let { it is FirCallableDeclaration && it.shouldParametersBeAssignable(c) },
                 symbol = IrValueParameterSymbolImpl(),
                 varargElementType = valueParameter.varargElementType?.toIrType(c, typeOrigin),
                 isCrossinline = valueParameter.isCrossinline,
@@ -761,7 +762,7 @@ class Fir2IrCallableDeclarationsGenerator(private val c: Fir2IrComponents) : Fir
                      */
                     if (!c.configuration.allowNonCachedDeclarations) return@tryFindInExpect null
 
-                    val actualFunction = valueParameter.containingFunctionSymbol
+                    val actualFunction = valueParameter.containingDeclarationSymbol as FirFunctionSymbol
                     if (!actualFunction.isActual) return@tryFindInExpect null
 
                     val expectFunction = actualFunction.getSingleMatchedExpectForActualOrNull()
@@ -851,6 +852,7 @@ class Fir2IrCallableDeclarationsGenerator(private val c: Fir2IrComponents) : Fir
             givenOrigin != null -> givenOrigin
             variable.name == SpecialNames.ITERATOR -> IrDeclarationOrigin.FOR_LOOP_ITERATOR
             variable.name.isSpecial -> IrDeclarationOrigin.IR_TEMPORARY_VARIABLE
+            variable.isDestructuredParameter() -> IrDeclarationOrigin.IR_DESTRUCTURED_PARAMETER_VARIABLE
             else -> IrDeclarationOrigin.DEFINED
         }
         val isLateInit = if (variable is FirProperty) variable.isLateInit else false

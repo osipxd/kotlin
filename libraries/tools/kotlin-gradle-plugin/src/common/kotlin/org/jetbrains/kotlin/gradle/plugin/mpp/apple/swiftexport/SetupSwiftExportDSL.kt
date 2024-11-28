@@ -14,13 +14,13 @@ import org.jetbrains.kotlin.gradle.plugin.PropertiesProvider.Companion.kotlinPro
 import org.jetbrains.kotlin.gradle.plugin.addExtension
 import org.jetbrains.kotlin.gradle.plugin.diagnostics.KotlinToolingDiagnostics
 import org.jetbrains.kotlin.gradle.plugin.diagnostics.reportDiagnosticOncePerBuild
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.StaticLibrary
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XcodeEnvironment
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.registerEmbedSwiftExportTask
 import org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl
 
 internal object SwiftExportDSLConstants {
-    const val SWIFT_EXPORT_LIBRARY_PREFIX = "swiftExport"
     const val SWIFT_EXPORT_EXTENSION_NAME = "swiftExport"
     const val TASK_GROUP = "SwiftExport"
 }
@@ -53,17 +53,14 @@ private fun Project.registerSwiftExportPipeline(
     multiplatformExtension
         .supportedAppleTargets()
         .configureEach { target ->
-            target.binaries.staticLib(SwiftExportDSLConstants.SWIFT_EXPORT_LIBRARY_PREFIX) {
-                setupSwiftExport(this, environment, swiftExportExtension)
-            }
+            setupSwiftExport(target, environment, swiftExportExtension)
         }
 }
 
 private fun Project.setupSwiftExport(
-    library: StaticLibrary,
+    target: KotlinNativeTarget,
     environment: XcodeEnvironment,
     swiftExportExtension: SwiftExportExtension,
 ) {
-    swiftExportExtension.addBinary(library)
-    registerEmbedSwiftExportTask(library, environment, swiftExportExtension)
+    registerEmbedSwiftExportTask(target, environment, swiftExportExtension)
 }

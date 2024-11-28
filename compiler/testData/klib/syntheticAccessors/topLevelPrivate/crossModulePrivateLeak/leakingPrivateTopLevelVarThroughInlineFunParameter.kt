@@ -1,3 +1,6 @@
+// IGNORE_NATIVE: cacheMode=STATIC_USE_HEADERS_EVERYWHERE
+// ^^^ To be fixed in KT-72862: No function found for symbol
+// NO_CHECK_LAMBDA_INLINING
 // MODULE: lib
 // FILE: a.kt
 private val privateVal = 21

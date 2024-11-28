@@ -61,31 +61,43 @@ private fun invokeKlibTool(
     }
 }
 
-internal fun TestCompilationArtifact.KLIB.dumpMetadata(
+fun TestCompilationArtifact.KLIB.dumpMetadata(
+    kotlinNativeClassLoader: ClassLoader,
+    printSignatures: Boolean,
+    signatureVersion: KotlinIrSignatureVersion?
+): String = klibFile.dumpMetadata(kotlinNativeClassLoader, printSignatures, signatureVersion)
+
+internal fun File.dumpMetadata(
     kotlinNativeClassLoader: ClassLoader,
     printSignatures: Boolean,
     signatureVersion: KotlinIrSignatureVersion?
 ): String = invokeKlibTool(
     kotlinNativeClassLoader,
-    klibFile,
+    klibFile = this,
     command = "dump-metadata",
     printSignatures,
     signatureVersion
 )
 
-internal fun TestCompilationArtifact.KLIB.dumpIr(
+fun TestCompilationArtifact.KLIB.dumpIr(
+    kotlinNativeClassLoader: ClassLoader,
+    printSignatures: Boolean,
+    signatureVersion: KotlinIrSignatureVersion?
+): String = klibFile.dumpIr(kotlinNativeClassLoader, printSignatures, signatureVersion)
+
+internal fun File.dumpIr(
     kotlinNativeClassLoader: ClassLoader,
     printSignatures: Boolean,
     signatureVersion: KotlinIrSignatureVersion?
 ): String = invokeKlibTool(
     kotlinNativeClassLoader,
-    klibFile,
+    klibFile = this,
     command = "dump-ir",
     printSignatures,
     signatureVersion
 )
 
-internal fun TestCompilationArtifact.KLIB.dumpMetadataSignatures(
+fun TestCompilationArtifact.KLIB.dumpMetadataSignatures(
     kotlinNativeClassLoader: ClassLoader,
     signatureVersion: KotlinIrSignatureVersion,
 ): String = invokeKlibTool(
@@ -96,7 +108,7 @@ internal fun TestCompilationArtifact.KLIB.dumpMetadataSignatures(
     signatureVersion
 )
 
-internal fun TestCompilationArtifact.KLIB.dumpIrSignatures(
+fun TestCompilationArtifact.KLIB.dumpIrSignatures(
     kotlinNativeClassLoader: ClassLoader,
     signatureVersion: KotlinIrSignatureVersion,
 ): String = invokeKlibTool(

@@ -38,6 +38,6 @@ inline fun case_3(block: () -> Unit) {
 
 // TESTCASE NUMBER: 4
 inline fun case_4(block: () -> Unit) {
-    contract { <!ERROR_IN_CONTRACT_DESCRIPTION!>callsInPlace(block, SampleObject.invocationKind)<!> }
+    contract { <!ERROR_IN_CONTRACT_DESCRIPTION!>callsInPlace(block, <!INFERENCE_ERROR!>SampleObject.invocationKind<!>)<!> }
     return block()
 }

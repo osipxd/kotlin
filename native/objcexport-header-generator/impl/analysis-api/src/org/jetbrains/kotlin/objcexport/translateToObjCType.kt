@@ -56,7 +56,6 @@ internal fun ObjCExportContext.translateToObjCReferenceType(type: KaType): ObjCR
 /**
  * [org.jetbrains.kotlin.backend.konan.objcexport.ObjCExportTranslatorImpl.mapReferenceTypeIgnoringNullability]
  */
-@OptIn(KaExperimentalApi::class)
 internal fun ObjCExportContext.mapToReferenceTypeIgnoringNullability(type: KaType): ObjCNonNullReferenceType {
     with(analysisSession) {
 
@@ -167,7 +166,7 @@ internal fun ObjCExportContext.mapToReferenceTypeIgnoringNullability(type: KaTyp
                  * 3.2 When type parameter symbol is local
                  */
                 val upperBound = if (definingSymbol != null && classifierContext != null && definingSymbol != classifierContext) {
-                    findUpperBoundMatchingTypeParameter(definingSymbol as KaClassSymbol, fullyExpandedType)
+                    findUpperBoundMatchingTypeParameter(definingSymbol as KaClassSymbol, fullyExpandedType) ?: return ObjCIdType
                 } else if (isLocal) {
                     findUpperBoundMatchingTypeParameter(definingSymbol as KaClassSymbol, fullyExpandedType)
                 } else null

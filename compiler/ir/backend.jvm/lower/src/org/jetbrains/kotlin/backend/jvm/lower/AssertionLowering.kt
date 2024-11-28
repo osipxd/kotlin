@@ -22,18 +22,20 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.impl.IrCompositeImpl
 import org.jetbrains.kotlin.ir.util.getPackageFragment
-import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
+import org.jetbrains.kotlin.ir.visitors.IrTransformer
 
+/**
+ * Lowers [assert] calls depending on the assertions mode.
+ */
 @PhaseDescription(
     name = "Assertion",
-    description = "Lower assert calls depending on the assertions mode",
     // Necessary to place the `$assertionsDisabled` field into the reference's class, not the
     // class that contains it.
     prerequisite = [FunctionReferenceLowering::class]
 )
 internal class AssertionLowering(private val context: JvmBackendContext) :
     FileLoweringPass,
-    IrElementTransformer<AssertionLowering.ClassInfo?> {
+    IrTransformer<AssertionLowering.ClassInfo?>() {
     // Keeps track of the $assertionsDisabled field, which we generate lazily for classes containing
     // assertions when compiled with -Xassertions=jvm.
     class ClassInfo(val irClass: IrClass, val topLevelClass: IrClass, var assertionsDisabledField: IrField? = null)

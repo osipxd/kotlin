@@ -5,21 +5,13 @@
 
 package org.jetbrains.kotlin.test.services.configuration
 
-import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.config.*
 import org.jetbrains.kotlin.config.AnalysisFlags.allowFullyQualifiedNameInKClass
 import org.jetbrains.kotlin.ir.backend.js.transformers.irToJs.TranslationMode
 import org.jetbrains.kotlin.js.config.*
-import org.jetbrains.kotlin.js.facade.MainCallParameters
 import org.jetbrains.kotlin.platform.js.JsPlatforms
-import org.jetbrains.kotlin.resolve.CompilerEnvironment
-import org.jetbrains.kotlin.resolve.TargetEnvironment
-import org.jetbrains.kotlin.serialization.js.JsModuleDescriptor
-import org.jetbrains.kotlin.serialization.js.KotlinJavascriptSerializationUtil
 import org.jetbrains.kotlin.serialization.js.ModuleKind
 import org.jetbrains.kotlin.test.TargetBackend
-import org.jetbrains.kotlin.test.directives.CodegenTestDirectives.DUMP_KLIB_SYNTHETIC_ACCESSORS
-import org.jetbrains.kotlin.test.directives.CodegenTestDirectives.KLIB_SYNTHETIC_ACCESSORS_WITH_NARROWED_VISIBILITY
 import org.jetbrains.kotlin.test.directives.ConfigurationDirectives
 import org.jetbrains.kotlin.test.directives.JsEnvironmentConfigurationDirectives
 import org.jetbrains.kotlin.test.directives.JsEnvironmentConfigurationDirectives.GENERATE_INLINE_ANONYMOUS_FUNCTIONS
@@ -27,17 +19,19 @@ import org.jetbrains.kotlin.test.directives.JsEnvironmentConfigurationDirectives
 import org.jetbrains.kotlin.test.directives.JsEnvironmentConfigurationDirectives.NO_INLINE
 import org.jetbrains.kotlin.test.directives.JsEnvironmentConfigurationDirectives.PROPERTY_LAZY_INITIALIZATION
 import org.jetbrains.kotlin.test.directives.JsEnvironmentConfigurationDirectives.SOURCE_MAP_EMBED_SOURCES
+import org.jetbrains.kotlin.test.directives.KlibIrInlinerTestDirectives
+import org.jetbrains.kotlin.test.directives.KlibIrInlinerTestDirectives.DUMP_KLIB_SYNTHETIC_ACCESSORS
+import org.jetbrains.kotlin.test.directives.KlibIrInlinerTestDirectives.KLIB_SYNTHETIC_ACCESSORS_WITH_NARROWED_VISIBILITY
 import org.jetbrains.kotlin.test.directives.model.DirectivesContainer
 import org.jetbrains.kotlin.test.directives.model.RegisteredDirectives
 import org.jetbrains.kotlin.test.model.*
 import org.jetbrains.kotlin.test.services.*
 import org.jetbrains.kotlin.test.util.joinToArrayString
-import org.jetbrains.kotlin.utils.KotlinJavascriptMetadataUtils
 import java.io.File
 
 class JsEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
     override val directiveContainers: List<DirectivesContainer>
-        get() = listOf(JsEnvironmentConfigurationDirectives)
+        get() = listOf(JsEnvironmentConfigurationDirectives, KlibIrInlinerTestDirectives)
 
     companion object : KlibBasedEnvironmentConfiguratorUtils {
         const val TEST_DATA_DIR_PATH = "js/js.translator/testData"
@@ -54,21 +48,6 @@ class JsEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigu
         )
 
         private const val MINIFICATION_OUTPUT_DIR_NAME = "minOutputDir"
-
-        object ExceptionThrowingReporter : JsConfig.Reporter() {
-            override fun error(message: String) {
-                throw AssertionError("Error message reported: $message")
-            }
-        }
-
-        private val METADATA_CACHE by lazy {
-            listOf(StandardLibrariesPathProviderForKotlinProject.fullJsStdlib().absolutePath, StandardLibrariesPathProviderForKotlinProject.kotlinTestJsKLib().absolutePath).flatMap { path ->
-                KotlinJavascriptMetadataUtils.loadMetadata(path).map { metadata ->
-                    val parts = KotlinJavascriptSerializationUtil.readModuleAsProto(metadata.body, metadata.version)
-                    JsModuleDescriptor(metadata.moduleName, parts.kind, parts.importedModules, parts)
-                }
-            }
-        }
 
         fun getJsModuleArtifactPath(testServices: TestServices, moduleName: String, translationMode: TranslationMode = TranslationMode.FULL_DEV): String {
             return getJsArtifactsOutputDir(testServices, translationMode).absolutePath + File.separator + getJsModuleArtifactName(testServices, moduleName)
@@ -94,31 +73,6 @@ class JsEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigu
             return testServices.temporaryDirectoryManager.getOrCreateTempDirectory(MINIFICATION_OUTPUT_DIR_NAME)
         }
 
-
-        private fun getPrefixPostfixFile(module: TestModule, prefix: Boolean): File? {
-            val suffix = if (prefix) ".prefix" else ".postfix"
-            val originalFile = module.files.first().originalFile
-            return originalFile.parentFile.resolve(originalFile.name + suffix).takeIf { it.exists() }
-        }
-
-        fun getPrefixFile(module: TestModule): File? = getPrefixPostfixFile(module, prefix = true)
-
-        fun getPostfixFile(module: TestModule): File? = getPrefixPostfixFile(module, prefix = false)
-
-        fun createJsConfig(
-            project: Project, configuration: CompilerConfiguration, compilerEnvironment: TargetEnvironment = CompilerEnvironment
-        ): JsConfig {
-            return JsConfig(
-                project,
-                configuration,
-                compilerEnvironment,
-                METADATA_CACHE,
-                setOf(
-                    StandardLibrariesPathProviderForKotlinProject.fullJsStdlib().absolutePath,
-                    StandardLibrariesPathProviderForKotlinProject.kotlinTestJsKLib().absolutePath
-                )
-            )
-        }
 
         fun getMainModule(testServices: TestServices): TestModule {
             val modules = testServices.moduleStructure.modules
@@ -154,13 +108,13 @@ class JsEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigu
             return result
         }
 
-        fun getMainCallParametersForModule(module: TestModule): MainCallParameters {
+        fun getMainCallParametersForModule(module: TestModule): List<String>? {
             return when {
-                JsEnvironmentConfigurationDirectives.CALL_MAIN in module.directives -> MainCallParameters.mainWithArguments(listOf())
+                JsEnvironmentConfigurationDirectives.CALL_MAIN in module.directives -> listOf()
                 JsEnvironmentConfigurationDirectives.MAIN_ARGS in module.directives -> {
-                    MainCallParameters.mainWithArguments(module.directives[JsEnvironmentConfigurationDirectives.MAIN_ARGS].single())
+                    module.directives[JsEnvironmentConfigurationDirectives.MAIN_ARGS].single()
                 }
-                else -> MainCallParameters.noCall()
+                else -> null
             }
         }
 
@@ -214,7 +168,6 @@ class JsEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigu
                 testServices.standardLibrariesPathProvider.kotlinTestJsKLib().absolutePath
             )
             TargetBackend.JS_IR, TargetBackend.JS_IR_ES6 -> dependencies + friends
-            TargetBackend.JS -> listOf(testServices.standardLibrariesPathProvider.fullJsStdlib().absolutePath, testServices.standardLibrariesPathProvider.kotlinTestJsKLib().absolutePath) + dependencies + friends
             else -> error("Unsupported target backend: ${module.targetBackend}")
         }
         configuration.put(JSConfigurationKeys.LIBRARIES, libraries)

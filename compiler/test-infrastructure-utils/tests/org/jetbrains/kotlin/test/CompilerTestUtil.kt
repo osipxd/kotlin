@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.konan.file.File.Companion.userDir
-import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmMetadataVersion
+import org.jetbrains.kotlin.metadata.deserialization.MetadataVersion
 import org.jetbrains.kotlin.test.util.KtTestUtil
 import org.jetbrains.kotlin.utils.JsMetadataVersion
 import org.jetbrains.kotlin.utils.PathUtil.kotlinPathsForDistDirectory
@@ -81,11 +81,11 @@ object CompilerTestUtil {
             .replace(KtTestUtil.getJdk17Home().absolutePath.replace("\\", "/"), "\$JDK_17")
             .replace(KtTestUtil.getJdk21Home().absolutePath.replace("\\", "/"), "\$JDK_21")
             .replace("info: executable production duration: \\d+ms".toRegex(), "info: executable production duration: [time]")
-            .replace(KotlinCompilerVersion.VERSION, "\$VERSION$")
             .replace(System.getProperty("java.runtime.version"), "\$JVM_VERSION$")
-            .replace(" " + JvmMetadataVersion.INSTANCE, " \$ABI_VERSION$")
-            .replace(" " + JsMetadataVersion.INSTANCE, " \$ABI_VERSION$")
-            .replace(" " + JvmMetadataVersion.INSTANCE_NEXT, " \$ABI_VERSION_NEXT$")
+            .replace((" " + MetadataVersion.INSTANCE.toString().replace(".", "\\.") + "(?!\\-)").toRegex(), " \\\$ABI_VERSION\\\$")
+            .replace((" " + JsMetadataVersion.INSTANCE.toString().replace(".", "\\.") + "(?!\\-)").toRegex(), " \\\$ABI_VERSION\\\$")
+            .replace(KotlinCompilerVersion.VERSION, "\$VERSION$")
+            .replace(" " + MetadataVersion.INSTANCE_NEXT, " \$ABI_VERSION_NEXT$")
             .replace("\n" + Usage.BAT_DELIMITER_CHARACTERS_NOTE + "\n", "")
             .replace("log4j:WARN.*\n".toRegex(), "")
     }

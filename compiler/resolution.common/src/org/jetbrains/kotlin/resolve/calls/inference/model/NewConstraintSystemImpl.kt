@@ -41,6 +41,10 @@ class NewConstraintSystemImpl(
     private val properTypesCache: MutableSet<KotlinTypeMarker> = SmartSet.create()
     private val notProperTypesCache: MutableSet<KotlinTypeMarker> = SmartSet.create()
     private val intersectionTypesCache: MutableMap<Collection<KotlinTypeMarker>, EmptyIntersectionTypeInfo?> = mutableMapOf()
+
+    // Cached value that should be reset on each new constraint or fork point
+    private var hasContradictionInForkPointsCache: Boolean? = null
+
     override var typeVariablesThatAreCountedAsProperTypes: Set<TypeConstructorMarker>? = null
 
     private var couldBeResolvedWithUnrestrictedBuilderInference: Boolean = false
@@ -118,6 +122,12 @@ class NewConstraintSystemImpl(
 
     override fun asReadOnlyStorage(): ConstraintStorage {
         checkState(State.BUILDING, State.FREEZED)
+
+        if (languageVersionSettings.supportsFeature(LanguageFeature.ConsiderForkPointsWhenCheckingContradictions) && areThereContradictionsInForks()) {
+            // If there are contradictions already, we might apply all the forks because CS is anyway already failed
+            resolveForkPointsConstraints()
+        }
+
         state = State.FREEZED
         return storage
     }
@@ -296,13 +306,20 @@ class NewConstraintSystemImpl(
 
     // ConstraintSystemBuilder, KotlinConstraintSystemCompleter.Context
     override val hasContradiction: Boolean
-        get() = storage.hasContradiction.also {
+        get() {
             checkState(
                 State.FREEZED,
                 State.BUILDING,
                 State.COMPLETION,
                 State.TRANSACTION
             )
+
+            if (storage.hasContradiction) return true
+
+            if (!languageVersionSettings.supportsFeature(LanguageFeature.ConsiderForkPointsWhenCheckingContradictions)) return false
+
+            // Since 2.2 at each hasContradiction check, we make sure that all forks might be successfully resolved, too
+            return areThereContradictionsInForks()
         }
 
     fun addOuterSystem(outerSystem: ConstraintStorage) {
@@ -379,6 +396,7 @@ class NewConstraintSystemImpl(
         storage.postponedTypeVariables.addAll(otherSystem.postponedTypeVariables)
         storage.constraintsFromAllForkPoints.addAll(otherSystem.constraintsFromAllForkPoints)
 
+        hasContradictionInForkPointsCache = null
     }
 
     @AssertionsOnly
@@ -492,7 +510,7 @@ class NewConstraintSystemImpl(
         }
 
     /**
-     * This function tries to find the solution (set of constraints) that is consistent with some branch of each fork
+     * This function tries to find the solution (set of constraints) that is consistent with some branch of each fork.
      * And those constraints are being immediately applied to the system
      */
     override fun resolveForkPointsConstraints() {
@@ -507,33 +525,36 @@ class NewConstraintSystemImpl(
         // 1. {Xv=Int} – is a one-element set (but potentially there might be more constraints in the set)
         // 2. {Xv=T} – second constraints set
         for ((position, forkPointData) in allForkPointsData) {
-            if (!applyConstraintsFromFirstSuccessfulBranchOfTheFork(forkPointData, position)) {
-                addError(NoSuccessfulFork(position))
-            }
+            applyTheBestBranchFromForkPoint(forkPointData, position)
         }
     }
 
+    override fun onNewConstraintOrForkPoint() {
+        hasContradictionInForkPointsCache = null
+    }
+
     /**
-     * Checks if current state of forked constraints is not contradictory.
+     * Checks if the current state of forked constraints is not contradictory.
      *
-     * That function is expected to be pure, i.e. it should leave the system in the same state it was found before the call.
+     * That function is expected to be pure, i.e., it should leave the system in the same state it was found before the call.
      *
-     * @return null if for each fork we found a possible branch that doesn't contradict with all other constraints
-     * @return non-nullable error if there's a contradiction we didn't manage to resolve
      */
-    fun checkIfForksMightBeSuccessfullyResolved(): ConstraintSystemError? {
-        if (constraintsFromAllForkPoints.isEmpty()) return null
+    fun areThereContradictionsInForks(): Boolean {
+        // Before freezing, we guarantee to apply contradictions to the regular storage if there are any
+        // (see NewConstraintSystemImpl.asReadOnlyStorage)
+        if (state == State.FREEZED) return false
+
+        if (constraintsFromAllForkPoints.isEmpty()) return false
+
+        hasContradictionInForkPointsCache?.let { return it }
 
         val allForkPointsData = constraintsFromAllForkPoints.toList()
         constraintsFromAllForkPoints.clear()
 
-        var result: ConstraintSystemError? = null
+        val isThereAnyUnsuccessful: Boolean
         runTransaction {
-            for ((position, forkPointData) in allForkPointsData) {
-                if (!applyConstraintsFromFirstSuccessfulBranchOfTheFork(forkPointData, position)) {
-                    result = NoSuccessfulFork(position)
-                    break
-                }
+            isThereAnyUnsuccessful = allForkPointsData.any { (position, forkPointData) ->
+                !applyTheBestBranchFromForkPoint(forkPointData, position)
             }
 
             false
@@ -541,31 +562,47 @@ class NewConstraintSystemImpl(
 
         constraintsFromAllForkPoints.addAll(allForkPointsData)
 
-        return result
+        return isThereAnyUnsuccessful.also { hasContradictionInForkPointsCache = it }
     }
 
     /**
-     * @return true if there is a successful constraints set for the fork
+     * Applies the first successful branch if there's any.
+     * Otherwise, applies just the first branch (containing contradictions)
+     *
+     * @return true if there is a successful constraint set for the fork point.
      */
-    private fun applyConstraintsFromFirstSuccessfulBranchOfTheFork(
+    private fun applyTheBestBranchFromForkPoint(
         forkPointData: ForkPointData,
         position: IncorporationConstraintPosition,
     ): Boolean {
-        return forkPointData.any { constraintSetForForkBranch ->
+        val isSuccessful = forkPointData.any { constraintSetForForkBranch ->
             runTransaction {
-                constraintInjector.processGivenForkPointBranchConstraints(
-                    this@NewConstraintSystemImpl.apply { checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION) },
-                    constraintSetForForkBranch,
-                    position,
-                )
+                applyForkPointBranch(constraintSetForForkBranch, position)
 
-                // Some new fork points constraints might be introduced, and we apply them immediately because we anyway at the
-                // completion state (as we already started resolving them)
-                resolveForkPointsConstraints()
-
-                !hasContradiction
+                !storage.hasContradiction
             }
         }
+
+        if (!isSuccessful) {
+            applyForkPointBranch(forkPointData.first(), position)
+        }
+
+        return isSuccessful
+    }
+
+    private fun applyForkPointBranch(
+        constraintSetForForkBranch: ForkPointBranchDescription,
+        position: IncorporationConstraintPosition,
+    ) {
+        constraintInjector.processGivenForkPointBranchConstraints(
+            this@NewConstraintSystemImpl.apply { checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION) },
+            constraintSetForForkBranch,
+            position,
+        )
+
+        // Some new fork points constraints might be introduced, and we apply them immediately because we anyway at the
+        // completion state (as we already started resolving them)
+        resolveForkPointsConstraints()
     }
 
     // ConstraintInjector.Context, KotlinConstraintSystemCompleter.Context

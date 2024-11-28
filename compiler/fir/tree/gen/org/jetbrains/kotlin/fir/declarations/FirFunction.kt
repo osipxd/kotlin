@@ -39,7 +39,7 @@ sealed class FirFunction : FirCallableDeclaration(), FirTargetElement, FirContro
     abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val containerSource: DeserializedContainerSource?
     abstract override val dispatchReceiverType: ConeSimpleKotlinType?
-    abstract override val contextReceivers: List<FirContextReceiver>
+    abstract override val contextReceivers: List<FirValueParameter>
     abstract override val controlFlowGraphReference: FirControlFlowGraphReference?
     abstract override val symbol: FirFunctionSymbol<FirFunction>
     abstract val valueParameters: List<FirValueParameter>
@@ -62,7 +62,7 @@ sealed class FirFunction : FirCallableDeclaration(), FirTargetElement, FirContro
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
-    abstract override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>)
+    abstract override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>)
 
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: FirControlFlowGraphReference?)
 
@@ -79,6 +79,8 @@ sealed class FirFunction : FirCallableDeclaration(), FirTargetElement, FirContro
     abstract override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirFunction
 
     abstract override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirFunction
+
+    abstract override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirFunction
 
     abstract fun <D> transformValueParameters(transformer: FirTransformer<D>, data: D): FirFunction
 

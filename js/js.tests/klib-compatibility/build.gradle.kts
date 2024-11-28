@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.targets.js.KotlinJsCompilerAttribute
 
 plugins {
     kotlin("jvm")
+    id("d8-configuration")
 }
 
 dependencies {
@@ -46,7 +47,9 @@ sourceSets {
 testsJar {}
 
 fun Test.setUpJsBoxTests() {
-    setupV8()
+    with(d8KotlinBuild) {
+        setupV8()
+    }
     dependsOn(":dist")
 
     workingDir = rootDir

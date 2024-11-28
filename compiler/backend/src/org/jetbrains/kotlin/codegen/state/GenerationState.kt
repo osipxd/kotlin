@@ -6,25 +6,16 @@
 package org.jetbrains.kotlin.codegen.state
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.ModificationTracker
-import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.codegen.*
-import org.jetbrains.kotlin.codegen.binding.CodegenBinding
-import org.jetbrains.kotlin.codegen.context.CodegenContext
-import org.jetbrains.kotlin.codegen.context.RootContext
 import org.jetbrains.kotlin.codegen.extensions.ClassFileFactoryFinalizerExtension
 import org.jetbrains.kotlin.codegen.inline.GlobalInlineContext
 import org.jetbrains.kotlin.codegen.inline.InlineCache
-import org.jetbrains.kotlin.codegen.intrinsics.IntrinsicMethods
 import org.jetbrains.kotlin.codegen.optimization.OptimizationClassBuilderFactory
 import org.jetbrains.kotlin.codegen.serialization.JvmSerializationBindings
-import org.jetbrains.kotlin.codegen.`when`.MappingsClassesForWhenByEnum
 import org.jetbrains.kotlin.config.*
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
-import org.jetbrains.kotlin.descriptors.ScriptDescriptor
-import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporterFactory
 import org.jetbrains.kotlin.diagnostics.DiagnosticSink
@@ -39,21 +30,21 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.BindingTrace
+import org.jetbrains.kotlin.resolve.CompilerDeserializationConfiguration
 import org.jetbrains.kotlin.resolve.DelegatingBindingTrace
 import org.jetbrains.kotlin.resolve.deprecation.DeprecationResolver
 import org.jetbrains.kotlin.resolve.diagnostics.Diagnostics
 import org.jetbrains.kotlin.resolve.diagnostics.OnDemandSuppressCache
 import org.jetbrains.kotlin.resolve.jvm.JvmClassName
-import org.jetbrains.kotlin.resolve.jvm.JvmCompilerDeserializationConfiguration
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.ErrorsJvm
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
-import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKind.*
 import org.jetbrains.kotlin.serialization.deserialization.DeserializationConfiguration
 import org.jetbrains.kotlin.storage.LockBasedStorageManager
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeApproximator
 import org.jetbrains.org.objectweb.asm.Type
 import java.io.File
+import java.lang.reflect.InvocationTargetException
 
 class GenerationState private constructor(
     val project: Project,
@@ -70,7 +61,6 @@ class GenerationState private constructor(
     val isIrBackend: Boolean,
     val ignoreErrors: Boolean,
     val diagnosticReporter: DiagnosticReporter,
-    val isIncrementalCompilation: Boolean
 ) {
     class Builder(
         private val project: Project,
@@ -119,10 +109,6 @@ class GenerationState private constructor(
         fun jvmBackendClassResolver(v: JvmBackendClassResolver) =
             apply { jvmBackendClassResolver = v }
 
-        var isIrBackend: Boolean = configuration.getBoolean(JVMConfigurationKeys.IR)
-        fun isIrBackend(v: Boolean) =
-            apply { isIrBackend = v }
-
         var ignoreErrors: Boolean = false
         fun ignoreErrors(v: Boolean): Builder =
             apply { ignoreErrors = v }
@@ -130,8 +116,6 @@ class GenerationState private constructor(
         var diagnosticReporter: DiagnosticReporter? = null
         fun diagnosticReporter(v: DiagnosticReporter) =
             apply { diagnosticReporter = v }
-
-        val isIncrementalCompilation: Boolean = configuration.getBoolean(CommonConfigurationKeys.INCREMENTAL_COMPILATION)
 
         // TODO: remove after cleanin up IDE counterpart
         private var files: List<KtFile>? = null
@@ -145,9 +129,8 @@ class GenerationState private constructor(
                 project, builderFactory, module, bindingContext, configuration,
                 generateDeclaredClassFilter, targetId,
                 moduleName, outDirectory, onIndependentPartCompilationEnd,
-                jvmBackendClassResolver, isIrBackend, ignoreErrors,
+                jvmBackendClassResolver, isIrBackend = true, ignoreErrors,
                 diagnosticReporter ?: DiagnosticReporterFactory.createReporter(configuration.messageCollector),
-                isIncrementalCompilation
             ).also {
                 it.files = files
                 it.codegenFactory = codegenFactory
@@ -184,7 +167,7 @@ class GenerationState private constructor(
     val packagesWithObsoleteParts: Set<FqName>
     val obsoleteMultifileClasses: List<FqName>
     val deserializationConfiguration: DeserializationConfiguration =
-        JvmCompilerDeserializationConfiguration(languageVersionSettings)
+        CompilerDeserializationConfiguration(languageVersionSettings)
 
     val deprecationProvider = DeprecationResolver(
         LockBasedStorageManager.NO_LOCKS, languageVersionSettings, JavaDeprecationSettings
@@ -219,17 +202,14 @@ class GenerationState private constructor(
     private val extraJvmDiagnosticsTrace: BindingTrace =
         DelegatingBindingTrace(
             originalFrontendBindingContext, "For extra diagnostics in ${this::class.java}", false,
-            customSuppressCache = if (isIrBackend) OnDemandSuppressCache(originalFrontendBindingContext) else null,
+            customSuppressCache = OnDemandSuppressCache(originalFrontendBindingContext),
         )
 
     private val interceptedBuilderFactory: ClassBuilderFactory
     private var used = false
 
     val diagnostics: DiagnosticSink get() = extraJvmDiagnosticsTrace
-    val collectedExtraJvmDiagnostics: Diagnostics = LazyJvmDiagnostics {
-        duplicateSignatureFactory?.reportDiagnostics()
-        extraJvmDiagnosticsTrace.bindingContext.diagnostics
-    }
+    val collectedExtraJvmDiagnostics: Diagnostics get() = extraJvmDiagnosticsTrace.bindingContext.diagnostics
 
     val moduleName: String = moduleName ?: JvmCodegenUtil.getModuleName(module)
     val classBuilderMode: ClassBuilderMode = builderFactory.classBuilderMode
@@ -245,29 +225,17 @@ class GenerationState private constructor(
         config.target,
         isIrBackend
     )
-    val intrinsics: IntrinsicMethods =
-        IntrinsicMethods(languageVersionSettings.apiVersion <= ApiVersion.parse(KotlinVersion.CURRENT.toString())!!)
 
-    val samWrapperClasses: SamWrapperClasses = SamWrapperClasses(this)
     val globalInlineContext: GlobalInlineContext = GlobalInlineContext()
-    val mappingsClassesForWhenByEnum: MappingsClassesForWhenByEnum = MappingsClassesForWhenByEnum(this)
-    val jvmRuntimeTypes: JvmRuntimeTypes = JvmRuntimeTypes(module, languageVersionSettings)
     val factory: ClassFileFactory
-    private var duplicateSignatureFactory: BuilderFactoryForDuplicateSignatureDiagnostics? = null
 
     val scriptSpecific = ForScript()
 
     // TODO: review usages and consider replace mutability with explicit passing of input and output
     class ForScript {
-        // quite a mess, this one is an input from repl interpreter
-        var earlierScriptsForReplInterpreter: List<ScriptDescriptor>? = null
-
-        // and the rest is an output from the codegen
         var resultFieldName: String? = null
         var resultType: KotlinType? = null
     }
-
-    val rootContext: CodegenContext<*> = RootContext(this)
 
     val jvmDefaultMode: JvmDefaultMode
         get() = config.jvmDefaultMode
@@ -304,18 +272,6 @@ class GenerationState private constructor(
                     else
                         it
                 },
-                {
-                    // In IR backend, we have more precise information about classes and methods we are going to generate,
-                    // and report signature conflict errors in JvmSignatureClashDetector.
-                    if (isIrBackend)
-                        it
-                    else
-                        BuilderFactoryForDuplicateSignatureDiagnostics(
-                            it, bindingContext, diagnostics, this.moduleName, languageVersionSettings,
-                            config.useOldManglingSchemeForFunctionsWithInlineClassesInSignatures,
-                            shouldGenerate = { origin -> !shouldOnlyCollectSignatures(origin) },
-                        ).apply { duplicateSignatureFactory = this }
-                },
                 { BuilderFactoryForDuplicateClassNameDiagnostics(it, this) },
             )
             .wrapWith(loadClassBuilderInterceptors()) { classBuilderFactory, extension ->
@@ -328,22 +284,21 @@ class GenerationState private constructor(
 
     @Suppress("UNCHECKED_CAST", "DEPRECATION_ERROR")
     private fun loadClassBuilderInterceptors(): List<org.jetbrains.kotlin.codegen.extensions.ClassBuilderInterceptorExtension> {
-        // Using Class.forName here because we're in the old JVM backend, and we need to load extensions declared in the JVM IR backend.
-        val adapted = Class.forName("org.jetbrains.kotlin.backend.jvm.extensions.ClassBuilderExtensionAdapter")
-            .getDeclaredMethod("getExtensions", Project::class.java)
-            .invoke(null, project) as List<org.jetbrains.kotlin.codegen.extensions.ClassBuilderInterceptorExtension>
+        val adapted = try {
+            // Using Class.forName here because we're in the old JVM backend, and we need to load extensions declared in the JVM IR backend.
+            Class.forName("org.jetbrains.kotlin.backend.jvm.extensions.ClassBuilderExtensionAdapter")
+                .getDeclaredMethod("getExtensions", Project::class.java)
+                .invoke(null, project) as List<org.jetbrains.kotlin.codegen.extensions.ClassBuilderInterceptorExtension>
+        } catch (e: InvocationTargetException) {
+            // Unwrap and rethrow any exception that happens. It's important e.g. in case of ProcessCanceledException.
+            throw e.targetException
+        }
 
         return org.jetbrains.kotlin.codegen.extensions.ClassBuilderInterceptorExtension.getInstances(project) + adapted
     }
 
     fun beforeCompile() {
         markUsed()
-    }
-
-    fun oldBEInitTrace(ktFiles: Collection<KtFile>) {
-        if (!isIrBackend) {
-            CodegenBinding.initTrace(this, ktFiles)
-        }
     }
 
     fun afterIndependentPart() {
@@ -360,32 +315,10 @@ class GenerationState private constructor(
         interceptedBuilderFactory.close()
     }
 
-    private fun shouldOnlyCollectSignatures(origin: JvmDeclarationOrigin) =
-        classBuilderMode == ClassBuilderMode.LIGHT_CLASSES && origin.originKind in doNotGenerateInLightClassMode
-
     val newFragmentCaptureParameters: MutableList<Triple<String, KotlinType, DeclarationDescriptor>> = mutableListOf()
     fun recordNewFragmentCaptureParameter(string: String, type: KotlinType, descriptor: DeclarationDescriptor) {
         newFragmentCaptureParameters.add(Triple(string, type, descriptor))
     }
-}
-
-private val doNotGenerateInLightClassMode = setOf(CLASS_MEMBER_DELEGATION_TO_DEFAULT_IMPL, BRIDGE, COLLECTION_STUB, AUGMENTED_BUILTIN_API)
-
-private class LazyJvmDiagnostics(compute: () -> Diagnostics) : Diagnostics {
-    private val delegate by lazy(LazyThreadSafetyMode.SYNCHRONIZED, compute)
-
-    override val modificationTracker: ModificationTracker
-        get() = delegate.modificationTracker
-
-    override fun all(): Collection<Diagnostic> = delegate.all()
-
-    override fun forElement(psiElement: PsiElement) = delegate.forElement(psiElement)
-
-    override fun isEmpty() = delegate.isEmpty()
-
-    override fun noSuppression() = delegate.noSuppression()
-
-    override fun iterator() = delegate.iterator()
 }
 
 interface GenerationStateEventCallback : (GenerationState) -> Unit {

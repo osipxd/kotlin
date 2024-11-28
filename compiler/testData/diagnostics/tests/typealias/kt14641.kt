@@ -1,8 +1,9 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // DIAGNOSTICS: -UNUSED_VARIABLE -UNUSED_PARAMETER -TOPLEVEL_TYPEALIASES_ONLY
 
 class A {
     public inner class B { }
-    public typealias BAlias = B
+    public <!WRONG_MODIFIER_TARGET!>inner<!> typealias BAlias = B
 }
 
 fun f() {

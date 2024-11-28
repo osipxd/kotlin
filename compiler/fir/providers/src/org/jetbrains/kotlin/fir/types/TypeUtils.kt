@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.fir.types
 
 import org.jetbrains.kotlin.KtFakeSourceElementKind
+import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.Visibility
@@ -19,8 +20,8 @@ import org.jetbrains.kotlin.fir.declarations.utils.visibility
 import org.jetbrains.kotlin.fir.diagnostics.ConeDiagnosticWithNullability
 import org.jetbrains.kotlin.fir.diagnostics.ConeRecursiveTypeParameterDuringErasureError
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
-import org.jetbrains.kotlin.fir.resolve.substitution.substitute
 import org.jetbrains.kotlin.fir.resolve.substitution.substitutorByMap
+import org.jetbrains.kotlin.fir.resolve.substitution.wrapProjection
 import org.jetbrains.kotlin.fir.resolve.toClassSymbol
 import org.jetbrains.kotlin.fir.resolvedTypeFromPrototype
 import org.jetbrains.kotlin.fir.symbols.ConeTypeParameterLookupTag
@@ -309,15 +310,13 @@ fun FirTypeRef.hasEnhancedNullability(): Boolean =
 fun FirTypeRef.withoutEnhancedNullability(): FirResolvedTypeRef {
     require(this is FirResolvedTypeRef)
     if (!hasEnhancedNullability()) return this
-    return buildResolvedTypeRef {
-        source = this@withoutEnhancedNullability.source
-        coneType = this@withoutEnhancedNullability.coneType.withAttributes(
+    return withReplacedSourceAndType(
+        source, coneType.withAttributes(
             ConeAttributes.create(
                 this@withoutEnhancedNullability.coneType.attributes.filter { it != CompilerConeAttributes.EnhancedNullability }
             ),
         )
-        annotations += this@withoutEnhancedNullability.annotations
-    }
+    )
 }
 
 // Unlike other cases, return types may be implicit, i.e. unresolved
@@ -342,19 +341,35 @@ fun FirTypeRef.withReplacedConeType(
         else
             this.source
 
-    return if (newType is ConeErrorType) {
-        buildErrorTypeRef {
-            source = newSource
-            coneType = newType
-            annotations += this@withReplacedConeType.annotations
-            diagnostic = newType.diagnostic
+    return withReplacedSourceAndType(newSource, newType)
+}
+
+internal fun FirResolvedTypeRef.withReplacedSourceAndType(newSource: KtSourceElement?, newType: ConeKotlinType): FirResolvedTypeRef {
+    return when {
+        newType is ConeErrorType -> {
+            buildErrorTypeRef {
+                source = newSource
+                coneType = newType
+                annotations += this@withReplacedSourceAndType.annotations
+                diagnostic = newType.diagnostic
+            }
         }
-    } else {
-        buildResolvedTypeRef {
-            source = newSource
-            coneType = newType
-            annotations += this@withReplacedConeType.annotations
-            delegatedTypeRef = this@withReplacedConeType.delegatedTypeRef
+        this is FirErrorTypeRef -> {
+            buildErrorTypeRef {
+                source = newSource
+                coneType = newType
+                annotations += this@withReplacedSourceAndType.annotations
+                diagnostic = this@withReplacedSourceAndType.diagnostic
+                delegatedTypeRef = this@withReplacedSourceAndType.delegatedTypeRef
+            }
+        }
+        else -> {
+            buildResolvedTypeRef {
+                source = newSource
+                coneType = newType
+                annotations += this@withReplacedSourceAndType.annotations
+                delegatedTypeRef = this@withReplacedSourceAndType.delegatedTypeRef
+            }
         }
     }
 }
@@ -488,7 +503,7 @@ internal fun ConeTypeContext.captureFromExpressionInternal(type: ConeKotlinType)
     }
 
     return when (type) {
-        is ConeCapturedType -> type.substitute { captureFromExpressionInternal(it) }
+        is ConeCapturedType -> captureCapturedType(type)
         is ConeDefinitelyNotNullType -> captureFromExpressionInternal(type.original)?.makeConeTypeDefinitelyNotNullOrNotNull(this)
         is ConeFlexibleType -> {
             capturedArgumentsByComponents = captureArgumentsForIntersectionType(type) ?: return null
@@ -518,6 +533,50 @@ internal fun ConeTypeContext.captureFromExpressionInternal(type: ConeKotlinType)
             captureFromArgumentsInternal(type, CaptureStatus.FROM_EXPRESSION)
         }
     }
+}
+
+/**
+ * To understand why we need to do capturing on captured types, consider the following case:
+ *
+ * ```kt
+ * class Box<T>(val value: T)
+ * interface Foo<T>
+ *
+ * fun test(x: Box<out Foo<*>>) {
+ *     someCall(x.value)
+ * }
+ * ```
+ *
+ * The type of `x.value` is `CapturedType(out Foo<*>)`.
+ * Note that capturing only applies to the top level, i.e., nested projections are not captured.
+ *
+ * When we use the expression with type `CapturedType(out Foo<*>)` as an argument of another call,
+ * it becomes necessary to support capturing of captured types,
+ * otherwise the star projection in `CapturedType(out Foo<*>)` is not properly captured.
+ *
+ * The method is a version of [org.jetbrains.kotlin.fir.resolve.substitution.substitute] specifically for capturing
+ * that doesn't have the issue of KT-64024 where nothing is done when neither [ConeCapturedType.lowerType]
+ * nor [ConeCapturedTypeConstructor.projection] need capturing.
+ */
+private fun ConeTypeContext.captureCapturedType(type: ConeCapturedType): ConeCapturedType? {
+    val capturedProjection = type.constructor.projection.type
+        ?.let { captureFromExpressionInternal(it) }
+        ?.let { wrapProjection(type.constructor.projection, it) }
+    val capturedSuperTypes = type.constructor.supertypes?.map { captureFromExpressionInternal(it) ?: it }
+    val capturedLowerType = type.lowerType?.let { captureFromExpressionInternal(it) }
+
+    if (capturedProjection == null && capturedLowerType == null && capturedSuperTypes == type.constructor.supertypes) {
+        return null
+    }
+
+    return type.copy(
+        constructor = ConeCapturedTypeConstructor(
+            projection = capturedProjection ?: type.constructor.projection,
+            supertypes = capturedSuperTypes,
+            typeParameterMarker = type.constructor.typeParameterMarker
+        ),
+        lowerType = capturedLowerType ?: type.lowerType,
+    )
 }
 
 private fun ConeTypeContext.captureArgumentsForIntersectionType(type: ConeKotlinType): List<CapturedArguments>? {

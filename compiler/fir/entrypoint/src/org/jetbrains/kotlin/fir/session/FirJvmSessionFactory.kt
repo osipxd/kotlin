@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.fir.java.FirJvmTargetProvider
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
 import org.jetbrains.kotlin.fir.java.JavaSymbolProvider
+import org.jetbrains.kotlin.fir.java.deserialization.FirJvmBuiltinsSymbolProvider
 import org.jetbrains.kotlin.fir.java.deserialization.JvmClassFileBasedSymbolProvider
 import org.jetbrains.kotlin.fir.java.deserialization.OptionalAnnotationClassesProvider
 import org.jetbrains.kotlin.fir.resolve.FirJvmActualizingBuiltinSymbolProvider
@@ -71,7 +72,7 @@ object FirJvmSessionFactory : FirAbstractSessionFactory<FirJvmSessionFactory.Lib
                     runUnless(languageVersionSettings.getFlag(AnalysisFlags.stdlibCompilation)) {
                         initializeBuiltinsProvider(session, builtinsModuleData, kotlinScopeProvider, kotlinClassFinder)
                     },
-                    FirBuiltinSyntheticFunctionInterfaceProvider.initialize(session, builtinsModuleData, kotlinScopeProvider),
+                    FirBuiltinSyntheticFunctionInterfaceProvider(session, builtinsModuleData, kotlinScopeProvider),
                     syntheticFunctionInterfaceProvider,
                     FirCloneableSymbolProvider(session, builtinsModuleData, kotlinScopeProvider),
                     OptionalAnnotationClassesProvider(
@@ -132,9 +133,9 @@ object FirJvmSessionFactory : FirAbstractSessionFactory<FirJvmSessionFactory.Lib
 
                 listOfNotNull(
                     symbolProvider,
+                    generatedSymbolsProvider,
                     *(incrementalCompilationSymbolProviders?.previousFirSessionsSymbolProviders?.toTypedArray() ?: emptyArray()),
                     incrementalCompilationSymbolProviders?.symbolProviderForBinariesFromIncrementalCompilation,
-                    generatedSymbolsProvider,
                     javaSymbolProvider,
                     initializeForStdlibIfNeeded(projectEnvironment, session, kotlinScopeProvider, dependencies),
                     *dependencies.toTypedArray(),
@@ -208,12 +209,8 @@ object FirJvmSessionFactory : FirAbstractSessionFactory<FirJvmSessionFactory.Lib
         builtinsModuleData: FirModuleData,
         kotlinScopeProvider: FirKotlinScopeProvider,
         kotlinClassFinder: KotlinClassFinder,
-    ): FirBuiltinsSymbolProvider = FirBuiltinsSymbolProvider(
-        session, FirClasspathBuiltinSymbolProvider(
-            session,
-            builtinsModuleData,
-            kotlinScopeProvider
-        ) { kotlinClassFinder.findBuiltInsData(it) },
+    ): FirJvmBuiltinsSymbolProvider = FirJvmBuiltinsSymbolProvider(
+        session,
         FirFallbackBuiltinSymbolProvider(session, builtinsModuleData, kotlinScopeProvider)
-    )
+    ) { kotlinClassFinder.findBuiltInsData(it) }
 }

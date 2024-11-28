@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.backend.common.peek
 import org.jetbrains.kotlin.backend.common.pop
 import org.jetbrains.kotlin.backend.common.push
 import org.jetbrains.kotlin.backend.jvm.codegen.anyTypeArgument
+import org.jetbrains.kotlin.backend.jvm.ir.isInPublicInlineScope
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.IrStatement
@@ -260,6 +261,8 @@ class ComposerLambdaMemoization(
     private var composableSingletonsClass: IrClass? = null
     private var currentFile: IrFile? = null
 
+    private val usedSingletonLambdaNames = hashSetOf<String>()
+
     private var inlineLambdaInfo = ComposeInlineLambdaLocator(context)
 
     private val rememberFunctions =
@@ -311,7 +314,7 @@ class ComposerLambdaMemoization(
             // the kotlin file class lowering produces, prefixed with `LiveLiterals$`.
             name = Name.identifier("ComposableSingletons${"$"}$shortName")
         }.also {
-            it.createParameterDeclarations()
+            it.createThisReceiverParameter()
 
             // store the full file path to the file that this class is associated with in an
             // annotation on the class. This will be used by tooling to associate the keys
@@ -331,7 +334,7 @@ class ComposerLambdaMemoization(
                         startOffset = this.startOffset,
                         endOffset = this.endOffset,
                         classSymbol = it.symbol,
-                        type = it.defaultType
+                        type = context.irBuiltIns.unitType,
                     )
                 }
             }
@@ -347,6 +350,7 @@ class ComposerLambdaMemoization(
             try {
                 currentFile = declaration
                 composableSingletonsClass = null
+                usedSingletonLambdaNames.clear()
                 val file = super.visitFile(declaration)
                 // if there were no constants found in the entire file, then we don't need to
                 // create this class at all
@@ -705,8 +709,6 @@ class ComposerLambdaMemoization(
             return functionExpression
         }
 
-        val wrapped = wrapFunctionExpression(declarationContext, functionExpression, collector)
-
         metrics.recordLambda(
             composable = true,
             memoized = true,
@@ -714,6 +716,8 @@ class ComposerLambdaMemoization(
         )
 
         if (!collector.hasCaptures) {
+            val enclosingFunction = declarationContext.functionContext?.declaration
+            val inPublicInlineScope = enclosingFunction?.isInPublicInlineScope == true
             if (!context.platform.isJvm() && hasTypeParameter(expression.type)) {
                 // This is a workaround
                 // for TypeParameters having initial parents (old IrFunctions before deepCopy).
@@ -721,14 +725,46 @@ class ComposerLambdaMemoization(
                 // Ideally we will find a solution to remap symbols of TypeParameters in
                 // ComposableSingletons properties after ComposerParamTransformer
                 // (deepCopy in ComposerParamTransformer didn't help).
-                return wrapped
+                return wrapFunctionExpression(declarationContext, functionExpression, collector, declarationContext.composable)
             }
-            return irGetComposableSingleton(
-                lambdaExpression = wrapped,
-                lambdaType = expression.type
+            val singleton = irGetComposableSingleton(
+                lambdaExpression = wrapFunctionExpression(
+                    declarationContext,
+                    functionExpression,
+                    collector,
+                    false
+                ),
+                lambdaType = expression.type,
+                lambdaName = createSingletonLambdaName(functionExpression)
             )
+            return if (inPublicInlineScope) {
+                // Public inline functions can't use singleton instance because changes to the function body
+                // can cause ABI incompatibilities. Note that we still generate singleton instances
+                // to ensure that we don't break existing consumers.
+                wrapFunctionExpression(declarationContext, functionExpression, collector, declarationContext.composable)
+                    .also {
+                        it.associatedComposableSingletonStub = singleton
+                    }
+            } else {
+                singleton
+            }
         } else {
-            return wrapped
+            return wrapFunctionExpression(declarationContext, functionExpression, collector, declarationContext.composable)
+        }
+    }
+
+    private fun createSingletonLambdaName(expression: IrFunctionExpression): String {
+        val name = "lambda$${expression.function.sourceKey()}"
+        if (usedSingletonLambdaNames.add(name)) {
+            return name
+        }
+
+        var manglingNumber = 0
+        while (true) {
+            val mangledName = "$name$${manglingNumber++}"
+            if (usedSingletonLambdaNames.add(mangledName)) {
+                return mangledName
+            }
         }
     }
 
@@ -739,9 +775,10 @@ class ComposerLambdaMemoization(
     private fun irGetComposableSingleton(
         lambdaExpression: IrExpression,
         lambdaType: IrType,
-    ): IrExpression {
+        lambdaName: String,
+    ): IrCall {
         val clazz = getOrCreateComposableSingletonsClass()
-        val lambdaName = "lambda-${clazz.declarations.size}"
+
         val lambdaProp = clazz.addProperty {
             name = Name.identifier(lambdaName)
             visibility = DescriptorVisibilities.INTERNAL
@@ -751,7 +788,7 @@ class ComposerLambdaMemoization(
                 endOffset = SYNTHETIC_OFFSET
                 name = Name.identifier(lambdaName)
                 type = lambdaType
-                visibility = DescriptorVisibilities.INTERNAL
+                visibility = DescriptorVisibilities.PRIVATE
                 isStatic = context.platform.isJvm()
             }.also { f ->
                 f.correspondingPropertySymbol = p.symbol
@@ -759,7 +796,7 @@ class ComposerLambdaMemoization(
                 f.initializer = DeclarationIrBuilder(context, clazz.symbol)
                     .irExprBody(lambdaExpression.markIsTransformedLambda())
             }
-            p.addGetter {
+            val getter = p.addGetter {
                 returnType = lambdaType
                 visibility = DescriptorVisibilities.INTERNAL
                 origin = IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR
@@ -771,7 +808,32 @@ class ComposerLambdaMemoization(
                     +irReturn(irGetField(irGet(thisParam), p.backingField!!))
                 }
             }
+
+            /*
+            Add property for backwards compatibility:
+            Previous versions of the compose compiler leaked this ComposableSingletons class through inline functions.
+            To keep compatibility, we're still generating a property with the old lambda naming schema.
+             */
+            if (currentFunctionContext?.declaration?.isInPublicInlineScope == true) {
+                clazz.addProperty {
+                    name = Name.identifier("lambda-${usedSingletonLambdaNames.size}")
+                    visibility = DescriptorVisibilities.INTERNAL
+                }.also { p ->
+                    p.addGetter {
+                        returnType = lambdaType
+                        visibility = DescriptorVisibilities.INTERNAL
+                    }.also { fn ->
+                        val thisParam = clazz.thisReceiver!!.copyTo(fn)
+                        fn.parent = clazz
+                        fn.dispatchReceiverParameter = thisParam
+                        fn.body = DeclarationIrBuilder(context, fn.symbol).irBlockBody {
+                            +irReturn(irCall(getter))
+                        }
+                    }
+                }
+            }
         }
+
         return irCall(
             lambdaProp.getter!!.symbol,
             dispatchReceiver = IrGetObjectValueImpl(
@@ -786,10 +848,11 @@ class ComposerLambdaMemoization(
     override fun visitFunctionExpression(expression: IrFunctionExpression): IrExpression {
         val declarationContext = declarationContextStack.peek()
             ?: return super.visitFunctionExpression(expression)
-        return if (expression.function.allowsComposableCalls)
+        return if (expression.function.allowsComposableCalls) {
             visitComposableFunctionExpression(expression, declarationContext)
-        else
+        } else {
             visitNonComposableFunctionExpression(expression)
+        }
     }
 
     private fun startCollector(collector: CaptureCollector) {
@@ -808,7 +871,8 @@ class ComposerLambdaMemoization(
         declarationContext: DeclarationContext,
         expression: IrFunctionExpression,
         collector: CaptureCollector,
-    ): IrExpression {
+        useComposableFactory: Boolean
+    ): IrCall {
         val function = expression.function
         val argumentCount = function.valueParameters.size
 
@@ -821,7 +885,6 @@ class ComposerLambdaMemoization(
         }
 
         val useComposableLambdaN = argumentCount > MAX_RESTART_ARGUMENT_COUNT
-        val useComposableFactory = collector.hasCaptures && declarationContext.composable
         val rememberComposable = rememberComposableLambdaFunction ?: composableLambdaFunction
         val requiresExplicitComposerParameter = useComposableFactory &&
                 rememberComposableLambdaFunction == null

@@ -16,8 +16,8 @@ import org.jetbrains.kotlin.analysis.low.level.api.fir.file.structure.LLFirDecla
 import org.jetbrains.kotlin.analysis.low.level.api.fir.projectStructure.llFirModuleData
 import org.jetbrains.kotlin.analysis.low.level.api.fir.state.LLFirResolvableResolveSession
 import org.jetbrains.kotlin.analysis.low.level.api.fir.util.*
-import org.jetbrains.kotlin.analysis.low.level.api.fir.util.checkDelegatedConstructorIsResolved
-import org.jetbrains.kotlin.fir.*
+import org.jetbrains.kotlin.fir.FirElementWithResolveState
+import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.utils.getExplicitBackingField
 import org.jetbrains.kotlin.fir.expressions.*
@@ -25,12 +25,17 @@ import org.jetbrains.kotlin.fir.expressions.builder.buildLazyDelegatedConstructo
 import org.jetbrains.kotlin.fir.expressions.builder.buildMultiDelegatedConstructorCall
 import org.jetbrains.kotlin.fir.expressions.impl.FirContractCallBlock
 import org.jetbrains.kotlin.fir.expressions.impl.FirLazyDelegatedConstructorCall
+import org.jetbrains.kotlin.fir.isCopyCreatedInScope
+import org.jetbrains.kotlin.fir.psi
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.references.FirSuperReference
 import org.jetbrains.kotlin.fir.references.FirThisReference
 import org.jetbrains.kotlin.fir.references.builder.buildExplicitSuperReference
 import org.jetbrains.kotlin.fir.references.builder.buildExplicitThisReference
-import org.jetbrains.kotlin.fir.resolve.*
+import org.jetbrains.kotlin.fir.resolve.FirCodeFragmentContext
+import org.jetbrains.kotlin.fir.resolve.ScopeSession
+import org.jetbrains.kotlin.fir.resolve.SessionHolderImpl
+import org.jetbrains.kotlin.fir.resolve.codeFragmentContext
 import org.jetbrains.kotlin.fir.resolve.dfa.FirControlFlowGraphReferenceImpl
 import org.jetbrains.kotlin.fir.resolve.dfa.RealVariable
 import org.jetbrains.kotlin.fir.resolve.dfa.cfg.isUsedInControlFlowGraphBuilderForClass
@@ -180,8 +185,9 @@ private class LLFirBodyTargetResolver(target: LLFirResolveTarget) : LLFirAbstrac
             }
 
             is FirCodeFragment -> {
-                resolveCodeFragmentContext(target)
+                val context = resolveCodeFragmentContext(target)
                 performCustomResolveUnderLock(target) {
+                    target.codeFragmentContext = context
                     resolve(target, BodyStateKeepers.CODE_FRAGMENT)
                 }
 
@@ -266,7 +272,7 @@ private class LLFirBodyTargetResolver(target: LLFirResolveTarget) : LLFirAbstrac
     }
 
     @OptIn(DelicateScopeAPI::class)
-    private fun resolveCodeFragmentContext(firCodeFragment: FirCodeFragment) {
+    private fun resolveCodeFragmentContext(firCodeFragment: FirCodeFragment): LLFirCodeFragmentContext {
         val ktCodeFragment = firCodeFragment.psi as? KtCodeFragment
             ?: errorWithAttachment("Code fragment source not found") {
                 withFirEntry("firCodeFragment", firCodeFragment)
@@ -286,7 +292,7 @@ private class LLFirBodyTargetResolver(target: LLFirResolveTarget) : LLFirAbstrac
         val contextPsiElement = ktCodeFragment.context
         val contextKtFile = contextPsiElement?.containingFile as? KtFile
 
-        firCodeFragment.codeFragmentContext = if (contextKtFile != null) {
+        return if (contextKtFile != null) {
             val contextModule = resolveSession.getModule(contextKtFile)
             val contextSession = resolveSession.sessionProvider.getResolvableSession(contextModule)
             val contextFirFile = resolveSession.getOrBuildFirFile(contextKtFile)
@@ -319,11 +325,12 @@ private class LLFirBodyTargetResolver(target: LLFirResolveTarget) : LLFirAbstrac
     @DelicateScopeAPI
     private fun FirTowerDataElement.withProperSession(
         session: FirSession,
-        scopeSession: ScopeSession
+        scopeSession: ScopeSession,
     ): FirTowerDataElement = FirTowerDataElement(
         scope?.withReplacedSessionOrNull(session, scopeSession) ?: scope,
         implicitReceiver?.withReplacedSessionOrNull(session, scopeSession),
-        contextReceiverGroup,
+        contextReceiverGroup?.map { it.withReplacedSessionOrNull(session, scopeSession) },
+        contextParameterGroup,
         isLocal,
         staticScopeOwnerSymbol
     )
@@ -343,7 +350,7 @@ private class LLFirBodyTargetResolver(target: LLFirResolveTarget) : LLFirAbstrac
             is FirAnonymousInitializer -> resolve(target, BodyStateKeepers.ANONYMOUS_INITIALIZER)
             is FirDanglingModifierList,
             is FirTypeAlias,
-            -> {
+                -> {
                 // No bodies here
             }
             else -> throwUnexpectedFirElementError(target)
@@ -358,84 +365,82 @@ private class LLFirBodyTargetResolver(target: LLFirResolveTarget) : LLFirAbstrac
 }
 
 internal object BodyStateKeepers {
-    val CODE_FRAGMENT: StateKeeper<FirCodeFragment, FirDesignation> = stateKeeper { _, _ ->
-        add(FirCodeFragment::block, FirCodeFragment::replaceBlock, ::blockGuard)
+    val CODE_FRAGMENT: StateKeeper<FirCodeFragment, FirDesignation> = stateKeeper { builder, _, _ ->
+        builder.add(FirCodeFragment::block, FirCodeFragment::replaceBlock, ::blockGuard)
     }
 
-    val ANONYMOUS_INITIALIZER: StateKeeper<FirAnonymousInitializer, FirDesignation> = stateKeeper { _, _ ->
-        add(FirAnonymousInitializer::body, FirAnonymousInitializer::replaceBody, ::blockGuard)
-        add(FirAnonymousInitializer::controlFlowGraphReference, FirAnonymousInitializer::replaceControlFlowGraphReference)
+    val ANONYMOUS_INITIALIZER: StateKeeper<FirAnonymousInitializer, FirDesignation> = stateKeeper { builder, _, _ ->
+        builder.add(FirAnonymousInitializer::body, FirAnonymousInitializer::replaceBody, ::blockGuard)
+        builder.add(FirAnonymousInitializer::controlFlowGraphReference, FirAnonymousInitializer::replaceControlFlowGraphReference)
     }
 
-    val FUNCTION: StateKeeper<FirFunction, FirDesignation> = stateKeeper { function, designation ->
+    val FUNCTION: StateKeeper<FirFunction, FirDesignation> = stateKeeper { builder, function, designation ->
         if (function.isCertainlyResolved) {
             if (!isCallableWithSpecialBody(function)) {
-                entityList(function.valueParameters, VALUE_PARAMETER, designation)
+                builder.entityList(function.valueParameters, VALUE_PARAMETER, designation)
             }
 
             return@stateKeeper
         }
 
-        add(FirFunction::returnTypeRef, FirFunction::replaceReturnTypeRef)
+        builder.add(FirFunction::returnTypeRef, FirFunction::replaceReturnTypeRef)
 
         if (!isCallableWithSpecialBody(function)) {
-            preserveContractBlock(function)
+            preserveContractBlock(builder, function)
 
-            add(FirFunction::body, FirFunction::replaceBody, ::blockGuard)
-            entityList(function.valueParameters, VALUE_PARAMETER, designation)
+            builder.add(FirFunction::body, FirFunction::replaceBody, ::blockGuard)
+            builder.entityList(function.valueParameters, VALUE_PARAMETER, designation)
         }
 
-        add(FirFunction::controlFlowGraphReference, FirFunction::replaceControlFlowGraphReference)
+        builder.add(FirFunction::controlFlowGraphReference, FirFunction::replaceControlFlowGraphReference)
     }
 
-    val CONSTRUCTOR: StateKeeper<FirConstructor, FirDesignation> = stateKeeper { _, designation ->
-        add(FUNCTION, designation)
-        add(FirConstructor::delegatedConstructor, FirConstructor::replaceDelegatedConstructor, ::delegatedConstructorCallGuard)
+    val CONSTRUCTOR: StateKeeper<FirConstructor, FirDesignation> = stateKeeper { builder, _, designation ->
+        builder.add(FUNCTION, designation)
+        builder.add(FirConstructor::delegatedConstructor, FirConstructor::replaceDelegatedConstructor, ::delegatedConstructorCallGuard)
     }
 
-    val VARIABLE: StateKeeper<FirVariable, FirDesignation> = stateKeeper { variable, _ ->
-        add(FirVariable::returnTypeRef, FirVariable::replaceReturnTypeRef)
+    val VARIABLE: StateKeeper<FirVariable, FirDesignation> = stateKeeper { builder, variable, _ ->
+        builder.add(FirVariable::returnTypeRef, FirVariable::replaceReturnTypeRef)
 
         if (!isCallableWithSpecialBody(variable)) {
-            add(FirVariable::initializerIfUnresolved, FirVariable::replaceInitializer, ::expressionGuard)
-            add(FirVariable::delegateIfUnresolved, FirVariable::replaceDelegate, ::expressionGuard)
+            builder.add(FirVariable::initializerIfUnresolved, FirVariable::replaceInitializer, ::expressionGuard)
+            builder.add(FirVariable::delegateIfUnresolved, FirVariable::replaceDelegate, ::expressionGuard)
         }
     }
 
-    private val VALUE_PARAMETER: StateKeeper<FirValueParameter, FirDesignation> = stateKeeper { valueParameter, _ ->
+    private val VALUE_PARAMETER: StateKeeper<FirValueParameter, FirDesignation> = stateKeeper { builder, valueParameter, _ ->
         if (valueParameter.defaultValue != null) {
-            add(FirValueParameter::defaultValue, FirValueParameter::replaceDefaultValue, ::expressionGuard)
+            builder.add(FirValueParameter::defaultValue, FirValueParameter::replaceDefaultValue, ::expressionGuard)
         }
 
-        add(FirValueParameter::controlFlowGraphReference, FirValueParameter::replaceControlFlowGraphReference)
+        builder.add(FirValueParameter::controlFlowGraphReference, FirValueParameter::replaceControlFlowGraphReference)
     }
 
-    val FIELD: StateKeeper<FirField, FirDesignation> = stateKeeper { _, designation ->
-        add(VARIABLE, designation)
-        add(FirField::controlFlowGraphReference, FirField::replaceControlFlowGraphReference)
+    val FIELD: StateKeeper<FirField, FirDesignation> = stateKeeper { builder, _, designation ->
+        builder.add(VARIABLE, designation)
+        builder.add(FirField::controlFlowGraphReference, FirField::replaceControlFlowGraphReference)
     }
 
-    val PROPERTY: StateKeeper<FirProperty, FirDesignation> = stateKeeper { property, designation ->
+    val PROPERTY: StateKeeper<FirProperty, FirDesignation> = stateKeeper { builder, property, designation ->
         if (property.bodyResolveState >= FirPropertyBodyResolveState.ALL_BODIES_RESOLVED) {
             return@stateKeeper
         }
 
-        add(VARIABLE, designation)
+        builder.add(VARIABLE, designation)
 
-        add(FirProperty::bodyResolveState, FirProperty::replaceBodyResolveState)
-        add(FirProperty::returnTypeRef, FirProperty::replaceReturnTypeRef)
+        builder.add(FirProperty::bodyResolveState, FirProperty::replaceBodyResolveState)
+        builder.add(FirProperty::returnTypeRef, FirProperty::replaceReturnTypeRef)
 
-        entity(property.getterIfUnresolved, FUNCTION, designation)
-        entity(property.setterIfUnresolved, FUNCTION, designation)
-        entity(property.backingFieldIfUnresolved, VARIABLE, designation)
+        builder.entity(property.getterIfUnresolved, FUNCTION, designation)
+        builder.entity(property.setterIfUnresolved, FUNCTION, designation)
+        builder.entity(property.backingFieldIfUnresolved, VARIABLE, designation)
 
-        add(FirProperty::controlFlowGraphReference, FirProperty::replaceControlFlowGraphReference)
+        builder.add(FirProperty::controlFlowGraphReference, FirProperty::replaceControlFlowGraphReference)
     }
 }
 
-context(StateKeeperBuilder)
-@Suppress("CONTEXT_RECEIVERS_DEPRECATED")
-private fun StateKeeperScope<FirFunction, FirDesignation>.preserveContractBlock(function: FirFunction) {
+private fun StateKeeperScope<FirFunction, FirDesignation>.preserveContractBlock(builder: StateKeeperBuilder, function: FirFunction) {
     val oldBody = function.body
     if (oldBody == null || oldBody is FirLazyBlock) {
         return
@@ -446,7 +451,7 @@ private fun StateKeeperScope<FirFunction, FirDesignation>.preserveContractBlock(
     // The old body starts with a contract definition
     if (oldFirstStatement is FirContractCallBlock) {
         if (oldFirstStatement.call.calleeReference is FirResolvedNamedReference) {
-            postProcess {
+            builder.postProcess {
                 val newBody = function.body
                 if (newBody != null && newBody.statements.isNotEmpty()) {
                     // Replace the newly created (and not yet resolved) contract block with the old, resolved one
@@ -460,7 +465,7 @@ private fun StateKeeperScope<FirFunction, FirDesignation>.preserveContractBlock(
 
     // The old body starts with a contract-like call (but it's not a proper contract definition)
     if (oldFirstStatement is FirFunctionCall && oldFirstStatement.calleeReference.name == FirContractsDslNames.CONTRACT.callableName) {
-        postProcess {
+        builder.postProcess {
             val newBody = function.body
             if (newBody != null && newBody.statements.isNotEmpty()) {
                 val newFirstStatement = newBody.statements.first()

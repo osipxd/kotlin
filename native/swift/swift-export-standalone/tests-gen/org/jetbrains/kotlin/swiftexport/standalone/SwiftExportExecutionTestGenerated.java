@@ -48,9 +48,27 @@ public class SwiftExportExecutionTestGenerated extends AbstractSwiftExportExecut
   }
 
   @Test
+  @TestMetadata("exceptions")
+  public void testExceptions() {
+    runTest("native/swift/swift-export-standalone/testData/execution/exceptions/");
+  }
+
+  @Test
   @TestMetadata("inheritance")
   public void testInheritance() {
     runTest("native/swift/swift-export-standalone/testData/execution/inheritance/");
+  }
+
+  @Test
+  @TestMetadata("list")
+  public void testList() {
+    runTest("native/swift/swift-export-standalone/testData/execution/list/");
+  }
+
+  @Test
+  @TestMetadata("map")
+  public void testMap() {
+    runTest("native/swift/swift-export-standalone/testData/execution/map/");
   }
 
   @Test
@@ -81,6 +99,12 @@ public class SwiftExportExecutionTestGenerated extends AbstractSwiftExportExecut
   @TestMetadata("referenceTypes")
   public void testReferenceTypes() {
     runTest("native/swift/swift-export-standalone/testData/execution/referenceTypes/");
+  }
+
+  @Test
+  @TestMetadata("set")
+  public void testSet() {
+    runTest("native/swift/swift-export-standalone/testData/execution/set/");
   }
 
   @Test

@@ -22,10 +22,12 @@ import org.jetbrains.kotlin.ir.util.isAnnotationClass
 import org.jetbrains.kotlin.ir.util.isPrimitiveArray
 import org.jetbrains.kotlin.ir.util.isUnsignedArray
 
-
+/**
+ * Creates synthetic annotations implementations and uses them in annotations constructor calls.
+ */
 // JS PIR (and IC) requires DeclarationTransformer instead of FileLoweringPass
-class JsAnnotationImplementationTransformer(val jsContext: JsIrBackendContext) :
-    AnnotationImplementationTransformer(jsContext, null),
+class JsAnnotationImplementationTransformer(jsContext: JsIrBackendContext) :
+    AnnotationImplementationTransformer(jsContext, jsContext.symbolTable, null),
     DeclarationTransformer {
 
     override fun transformFlat(declaration: IrDeclaration): List<IrDeclaration>? =

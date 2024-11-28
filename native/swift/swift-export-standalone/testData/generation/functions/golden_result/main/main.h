@@ -1,6 +1,20 @@
 #include <Foundation/Foundation.h>
 #include <stdint.h>
 
+void Foo_ext__TypesOfArguments__Swift_String__(uintptr_t self, NSString * receiver);
+
+uintptr_t __root___Foo_init_allocate();
+
+void __root___Foo_init_initialize__TypesOfArguments__Swift_UInt__(uintptr_t __kt);
+
+void __root___foo__TypesOfArguments__Swift_Int32__(int32_t receiver);
+
+void __root___foo__TypesOfArguments__Swift_Int32_opt___(NSNumber * receiver);
+
+void __root___foo__TypesOfArguments__main_Foo__(uintptr_t receiver);
+
+void __root___foo__TypesOfArguments__main_Foo_opt___(uintptr_t receiver);
+
 int32_t __root___foo();
 
 uintptr_t __root___return_any_should_append_runtime_import();

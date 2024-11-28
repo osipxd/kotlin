@@ -9,7 +9,6 @@ import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import org.jetbrains.kotlin.fir.FirSession
-import org.jetbrains.kotlin.fir.labelName
 import org.jetbrains.kotlin.fir.resolve.*
 import org.jetbrains.kotlin.fir.resolve.calls.*
 import org.jetbrains.kotlin.fir.scopes.FirContainingNamesAwareScope
@@ -25,45 +24,6 @@ import org.jetbrains.kotlin.fir.types.ConeStubType
 import org.jetbrains.kotlin.fir.types.coneType
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addIfNotNull
-
-fun SessionHolder.collectImplicitReceivers(
-    type: ConeKotlinType?,
-    owner: FirDeclaration
-): ImplicitReceivers {
-    val implicitCompanionValues = mutableListOf<ImplicitReceiverValue<*>>()
-    val contextReceiverValues = mutableListOf<ContextReceiverValue<*>>()
-    val implicitReceiverValue = when (owner) {
-        is FirClass -> {
-            val towerElementsForClass = collectTowerDataElementsForClass(owner, type!!)
-            implicitCompanionValues.addAll(towerElementsForClass.implicitCompanionValues)
-            contextReceiverValues.addAll(towerElementsForClass.contextReceivers)
-
-            towerElementsForClass.thisReceiver
-        }
-        is FirFunction -> {
-            contextReceiverValues.addAll(owner.createContextReceiverValues(this))
-            type?.let { ImplicitExtensionReceiverValue(owner.symbol, type, session, scopeSession) }
-        }
-        is FirVariable -> {
-            contextReceiverValues.addAll(owner.createContextReceiverValues(this))
-            type?.let { ImplicitExtensionReceiverValue(owner.symbol, type, session, scopeSession) }
-        }
-        else -> {
-            if (type != null) {
-                throw IllegalArgumentException("Incorrect label & receiver owner: ${owner.javaClass}")
-            }
-
-            null
-        }
-    }
-    return ImplicitReceivers(implicitReceiverValue, implicitCompanionValues, contextReceiverValues)
-}
-
-data class ImplicitReceivers(
-    val implicitReceiverValue: ImplicitReceiverValue<*>?,
-    val implicitCompanionValues: List<ImplicitReceiverValue<*>>,
-    val contextReceivers: List<ContextReceiverValue<*>>,
-)
 
 fun SessionHolder.collectTowerDataElementsForClass(owner: FirClass, defaultType: ConeKotlinType): TowerElementsForClass {
     val allImplicitCompanionValues = mutableListOf<ImplicitReceiverValue<*>>()
@@ -97,11 +57,15 @@ fun SessionHolder.collectTowerDataElementsForClass(owner: FirClass, defaultType:
     }
 
     val thisReceiver = ImplicitDispatchReceiverValue(owner.symbol, defaultType, session, scopeSession)
-    val contextReceivers = (owner as? FirRegularClass)?.contextReceivers?.mapIndexed { index, receiver ->
-        ContextReceiverValueForClass(
-            owner.symbol, receiver.typeRef.coneType, receiver.labelName, session, scopeSession,
-            contextReceiverNumber = index,
-        )
+    val contextReceivers = (owner as? FirRegularClass)?.contextReceivers?.mapNotNull { receiver ->
+        if (receiver.isLegacyContextReceiver()) {
+            ContextReceiverValue(
+                receiver.symbol, receiver.returnTypeRef.coneType, receiver.name, session, scopeSession,
+            )
+        } else {
+            // We don't support context parameters on classes
+            null
+        }
     }.orEmpty()
 
     return TowerElementsForClass(
@@ -111,20 +75,17 @@ fun SessionHolder.collectTowerDataElementsForClass(owner: FirClass, defaultType:
         companionReceiver,
         companionObject?.staticScope(this),
         superClassesStaticsAndCompanionReceivers.asReversed(),
-        allImplicitCompanionValues.asReversed()
     )
 }
 
 class TowerElementsForClass(
     val thisReceiver: ImplicitReceiverValue<*>,
-    val contextReceivers: List<ContextReceiverValueForClass>,
+    val contextReceivers: List<ContextReceiverValue>,
     val staticScope: FirScope?,
     val companionReceiver: ImplicitReceiverValue<*>?,
     val companionStaticScope: FirScope?,
     // Ordered from inner scopes to outer scopes.
     val superClassesStaticsAndCompanionReceivers: List<FirTowerDataElement>,
-    // Ordered from inner scopes to outer scopes.
-    val implicitCompanionValues: List<ImplicitReceiverValue<*>>
 )
 
 class FirTowerDataContext private constructor(
@@ -132,7 +93,7 @@ class FirTowerDataContext private constructor(
     // These properties are effectively redundant, their content should be consistent with `towerDataElements`,
     // i.e. implicitReceiverStack == towerDataElements.mapNotNull { it.receiver }
     // i.e. localScopes == towerDataElements.mapNotNull { it.scope?.takeIf { it.isLocal } }
-    val implicitReceiverStack: PersistentImplicitReceiverStack,
+    val implicitValueStorage: ImplicitValueStorage,
     val classesUnderInitialization: PersistentList<FirClassSymbol<*>>,
     val localScopes: FirLocalScopes,
     val nonLocalTowerDataElements: PersistentList<FirTowerDataElement>
@@ -140,7 +101,7 @@ class FirTowerDataContext private constructor(
 
     constructor() : this(
         persistentListOf(),
-        PersistentImplicitReceiverStack(),
+        ImplicitValueStorage(),
         persistentListOf(),
         persistentListOf(),
         persistentListOf()
@@ -152,7 +113,7 @@ class FirTowerDataContext private constructor(
 
         return FirTowerDataContext(
             towerDataElements.set(indexOfLastLocalScope, newLastScope.asTowerDataElement(isLocal = true)),
-            implicitReceiverStack,
+            implicitValueStorage,
             classesUnderInitialization,
             localScopes.set(localScopes.lastIndex, newLastScope),
             nonLocalTowerDataElements
@@ -162,9 +123,12 @@ class FirTowerDataContext private constructor(
     fun addNonLocalTowerDataElements(newElements: List<FirTowerDataElement>): FirTowerDataContext {
         return FirTowerDataContext(
             towerDataElements.addAll(newElements),
-            implicitReceiverStack
-                .addAll(newElements.mapNotNull { it.implicitReceiver })
-                .addAllContextReceivers(newElements.flatMap { it.contextReceiverGroup.orEmpty() }),
+            implicitValueStorage
+                .addAllImplicitReceivers(newElements.mapNotNull { it.implicitReceiver })
+                .addAllContexts(
+                    newElements.flatMap { it.contextReceiverGroup.orEmpty() },
+                    newElements.flatMap { it.contextParameterGroup.orEmpty() }
+                ),
             classesUnderInitialization,
             localScopes,
             nonLocalTowerDataElements.addAll(newElements)
@@ -174,7 +138,7 @@ class FirTowerDataContext private constructor(
     fun addLocalScope(localScope: FirLocalScope): FirTowerDataContext {
         return FirTowerDataContext(
             towerDataElements.add(localScope.asTowerDataElement(isLocal = true)),
-            implicitReceiverStack,
+            implicitValueStorage,
             classesUnderInitialization,
             localScopes.add(localScope),
             nonLocalTowerDataElements
@@ -185,20 +149,29 @@ class FirTowerDataContext private constructor(
         val element = implicitReceiverValue.asTowerDataElement()
         return FirTowerDataContext(
             towerDataElements.add(element),
-            implicitReceiverStack.add(name, implicitReceiverValue, additionalLabName),
+            implicitValueStorage.addImplicitReceiver(name, implicitReceiverValue, additionalLabName),
             classesUnderInitialization,
             localScopes,
             nonLocalTowerDataElements.add(element)
         )
     }
 
-    fun addContextReceiverGroup(contextReceiverGroup: ContextReceiverGroup): FirTowerDataContext {
-        if (contextReceiverGroup.isEmpty()) return this
-        val element = contextReceiverGroup.asTowerDataElement()
+    fun addContextGroups(
+        contextReceiverGroup: ContextReceiverGroup,
+        contextParameterGroup: ContextParameterGroup,
+    ): FirTowerDataContext {
+        if (contextReceiverGroup.isEmpty() && contextParameterGroup.isEmpty()) return this
+        val element = FirTowerDataElement(
+            scope = null,
+            implicitReceiver = null,
+            contextReceiverGroup = contextReceiverGroup,
+            contextParameterGroup = contextParameterGroup,
+            isLocal = false
+        )
 
         return FirTowerDataContext(
             towerDataElements.add(element),
-            contextReceiverGroup.fold(implicitReceiverStack, PersistentImplicitReceiverStack::addContextReceiver),
+            implicitValueStorage.addAllContexts(contextReceiverGroup, contextParameterGroup),
             classesUnderInitialization,
             localScopes,
             nonLocalTowerDataElements.add(element)
@@ -209,7 +182,7 @@ class FirTowerDataContext private constructor(
         val correspondingClass = anonymousInitializer.containingDeclarationSymbol as? FirClassSymbol<*> ?: return this
         return FirTowerDataContext(
             towerDataElements,
-            implicitReceiverStack,
+            implicitValueStorage,
             classesUnderInitialization.add(correspondingClass),
             localScopes,
             nonLocalTowerDataElements
@@ -240,7 +213,7 @@ class FirTowerDataContext private constructor(
         val element = scope.asTowerDataElement(isLocal = false)
         return FirTowerDataContext(
             towerDataElements.add(element),
-            implicitReceiverStack,
+            implicitValueStorage,
             classesUnderInitialization,
             localScopes,
             nonLocalTowerDataElements.add(element)
@@ -250,7 +223,7 @@ class FirTowerDataContext private constructor(
     private fun addNonLocalScopeElements(elements: List<FirTowerDataElement>): FirTowerDataContext {
         return FirTowerDataContext(
             towerDataElements.addAll(elements),
-            implicitReceiverStack,
+            implicitValueStorage,
             classesUnderInitialization,
             localScopes,
             nonLocalTowerDataElements.addAll(elements)
@@ -260,7 +233,7 @@ class FirTowerDataContext private constructor(
     fun createSnapshot(keepMutable: Boolean): FirTowerDataContext {
         return FirTowerDataContext(
             towerDataElements.map { it.createSnapshot(keepMutable) }.toPersistentList(),
-            implicitReceiverStack.createSnapshot(keepMutable),
+            implicitValueStorage.createSnapshot(keepMutable),
             classesUnderInitialization,
             localScopes.toPersistentList(),
             nonLocalTowerDataElements.map { it.createSnapshot(keepMutable) }.toPersistentList()
@@ -273,7 +246,7 @@ class FirTowerDataContext private constructor(
     ): FirTowerDataContext {
         return FirTowerDataContext(
             towerDataElements,
-            implicitReceiverStack,
+            implicitValueStorage,
             classesUnderInitialization,
             localScopes,
             nonLocalTowerDataElements
@@ -281,19 +254,39 @@ class FirTowerDataContext private constructor(
     }
 }
 
-// Each FirTowerDataElement has exactly one non-null value among values of properties: scope, implicitReceiver and contextReceiverGroup.
+/**
+ * Each FirTowerDataElement has exactly one non-null value among [scope], [implicitReceiver], and [contextReceiverGroup].
+ *
+ * If [contextReceiverGroup] is not-null, then [contextParameterGroup] is not-null as well.
+ * In that case, one of them will be non-empty.
+ *
+ */
 class FirTowerDataElement(
     val scope: FirScope?,
     val implicitReceiver: ImplicitReceiverValue<*>?,
     val contextReceiverGroup: ContextReceiverGroup? = null,
+    val contextParameterGroup: ContextParameterGroup? = null,
     val isLocal: Boolean,
-    val staticScopeOwnerSymbol: FirRegularClassSymbol? = null
+    val staticScopeOwnerSymbol: FirRegularClassSymbol? = null,
 ) {
+    init {
+        require((contextReceiverGroup != null) == (contextParameterGroup != null)) {
+            "contextReceiverGroup and contextParameterGroup must either be both null or both not-null"
+        }
+    }
+
+    val implicitContextGroup: List<ImplicitValue>? = if (contextReceiverGroup != null && contextParameterGroup != null) {
+        contextReceiverGroup + contextParameterGroup
+    } else {
+        null
+    }
+
     fun createSnapshot(keepMutable: Boolean): FirTowerDataElement =
         FirTowerDataElement(
             scope,
             implicitReceiver?.createSnapshot(keepMutable),
             contextReceiverGroup?.map { it.createSnapshot(keepMutable) },
+            contextParameterGroup?.map { it.createSnapshot(keepMutable) },
             isLocal,
             staticScopeOwnerSymbol
         )
@@ -329,9 +322,6 @@ class FirTowerDataElement(
 fun ImplicitReceiverValue<*>.asTowerDataElement(): FirTowerDataElement =
     FirTowerDataElement(scope = null, implicitReceiver = this, isLocal = false)
 
-fun ContextReceiverGroup.asTowerDataElement(): FirTowerDataElement =
-    FirTowerDataElement(scope = null, implicitReceiver = null, contextReceiverGroup = this, isLocal = false)
-
 fun FirScope.asTowerDataElement(isLocal: Boolean): FirTowerDataElement =
     FirTowerDataElement(scope = this, implicitReceiver = null, isLocal = isLocal)
 
@@ -347,15 +337,6 @@ fun FirClass.staticScope(sessionHolder: SessionHolder): FirContainingNamesAwareS
 fun FirClass.staticScope(session: FirSession, scopeSession: ScopeSession): FirContainingNamesAwareScope? =
     scopeProvider.getStaticScope(this, session, scopeSession)
 
-typealias ContextReceiverGroup = List<ContextReceiverValue<*>>
+typealias ContextReceiverGroup = List<ContextReceiverValue>
+typealias ContextParameterGroup = List<ImplicitContextParameterValue>
 typealias FirLocalScopes = PersistentList<FirLocalScope>
-
-fun FirCallableDeclaration.createContextReceiverValues(
-    sessionHolder: SessionHolder,
-): List<ContextReceiverValueForCallable> =
-    contextReceivers.mapIndexed { index, receiver ->
-        ContextReceiverValueForCallable(
-            symbol, receiver.typeRef.coneType, receiver.labelName, sessionHolder.session, sessionHolder.scopeSession,
-            contextReceiverNumber = index,
-        )
-    }

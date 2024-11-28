@@ -29,20 +29,19 @@ import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.util.OperatorNameConventions
 import org.jetbrains.kotlin.utils.addIfNotNull
 
 /**
- * This lowering pass optimizes calls to contains() (`in` operator) for ClosedRanges.
+ * Optimizes calls to `contains` (`in` operator) for [ClosedRange]s.
  *
  * For example, the expression `X in A..B` is transformed into `A <= X && X <= B`.
  */
-@PhaseDescription(
-    name = "RangeContainsLowering",
-    description = "Optimizes calls to contains() for ClosedRanges"
-)
+@PhaseDescription(name = "RangeContainsLowering")
 class RangeContainsLowering(val context: CommonBackendContext) : BodyLoweringPass {
     override fun lower(irBody: IrBody, container: IrDeclaration) {
         val transformer = Transformer(context, container as IrSymbolOwner)

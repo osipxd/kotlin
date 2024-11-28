@@ -40,6 +40,12 @@ public class FirOutOfContentRootLazyBodiesCalculatorTestGenerated extends Abstra
     }
 
     @Test
+    @TestMetadata("annotationOnDelegatedInterface.kt")
+    public void testAnnotationOnDelegatedInterface() {
+      runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotationOnDelegatedInterface.kt");
+    }
+
+    @Test
     @TestMetadata("annotationOnField.kt")
     public void testAnnotationOnField() {
       runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotationOnField.kt");
@@ -49,6 +55,12 @@ public class FirOutOfContentRootLazyBodiesCalculatorTestGenerated extends Abstra
     @TestMetadata("annotationOnProperty.kt")
     public void testAnnotationOnProperty() {
       runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotationOnProperty.kt");
+    }
+
+    @Test
+    @TestMetadata("annotationOnReceiver.kt")
+    public void testAnnotationOnReceiver() {
+      runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotationOnReceiver.kt");
     }
 
     @Test
@@ -127,6 +139,18 @@ public class FirOutOfContentRootLazyBodiesCalculatorTestGenerated extends Abstra
     @TestMetadata("constructorWithLocalDeclarations.kt")
     public void testConstructorWithLocalDeclarations() {
       runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/constructorWithLocalDeclarations.kt");
+    }
+
+    @Test
+    @TestMetadata("contextParameterDefaultValue.kt")
+    public void testContextParameterDefaultValue() {
+      runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contextParameterDefaultValue.kt");
+    }
+
+    @Test
+    @TestMetadata("contextParameters.kt")
+    public void testContextParameters() {
+      runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contextParameters.kt");
     }
 
     @Test

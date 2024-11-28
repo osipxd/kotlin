@@ -120,16 +120,16 @@ object CodegenTestDirectives : SimpleDirectivesContainer() {
         """.trimIndent()
     )
 
-    val IGNORE_JAVA_ERRORS by directive(
-        description = "Ignore compilation errors from java"
-    )
-
     val IGNORE_FIR_DIAGNOSTICS by directive(
         description = "Run backend even FIR reported some diagnostics with ERROR severity"
     )
 
     val IGNORE_FIR_DIAGNOSTICS_DIFF by directive(
         description = "Don't compare diagnostics in testdata for FIR codegen tests"
+    )
+
+    val IGNORE_BACKEND_DIAGNOSTICS by directive(
+        description = "Prevent adding backend diagnostics to GlobalMetadataInfoHandler. This is needed when the backend is executed for tests that originally were not designed for it."
     )
 
     val DUMP_IR by directive(
@@ -271,42 +271,14 @@ object CodegenTestDirectives : SimpleDirectivesContainer() {
         description = "Don't check for visibility violations when validating IR on the target backend"
     )
 
-    val ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING by directive(
-        description = """
-        Check for visibility violation when validating IR after inlining.
-        Equivalent to passing the '-Xverify-ir-visibility-after-inlining' CLI flag.
-        
-        This directive is opt-in rather than opt-out (like $DISABLE_IR_VISIBILITY_CHECKS) because right now most test pass with
-        visibility checks enabled before lowering, but enabling these checks after inlining by default will cause most tests to fail,
-        because some lowerings that are run before inlining generate calls to internal intrinsics (KT-70295), and inlining in general may
-        cause visibility violations until we start generating synthetic accessors (KT-64865).
-        """.trimIndent()
+    val DISABLE_IR_VARARG_TYPE_CHECKS by enumDirective<TargetBackend>(
+        description = "Don't check for vararg type mismatches when validating IR on the target backend"
     )
+}
 
-    val KLIB_SYNTHETIC_ACCESSORS_WITH_NARROWED_VISIBILITY by directive(
-        """
-            Narrow the visibility of generated synthetic accessors to _internal_" +
-            if such accessors are only used in inline functions that are not a part of public ABI
-            Equivalent to passing the '-Xsynthetic-accessors-with-narrowed-visibility' CLI flag.
-        """.trimIndent()
-    )
-
-    val DUMP_KLIB_SYNTHETIC_ACCESSORS by directive(
-        """
-            Enable dumping synthetic accessors and their use-sites immediately generation.
-            This directive makes sense only for KLIB-based backends.
-            Equivalent to passing the '-Xdump-synthetic-accessors-to=<tempDir>/synthetic-accessors' CLI flag.
-        """.trimIndent()
-    )
-
-    val IDENTICAL_KLIB_SYNTHETIC_ACCESSOR_DUMPS by directive(
-        """
-            Normally, there should be different dumps of synthetic accessors generated with and without
-            narrowing visibility (see ${::KLIB_SYNTHETIC_ACCESSORS_WITH_NARROWED_VISIBILITY.name} directive
-            for details). But sometimes these dumps are identical. In such cases with this directive
-            it's possible to have just one dump file.
-        """.trimIndent()
-    )
+fun ValueDirective<TargetBackend>.isApplicableTo(module: TestModule): Boolean {
+    val specifiedBackends = module.directives[this]
+    return module.targetBackend in specifiedBackends || TargetBackend.ANY in specifiedBackends
 }
 
 fun extractIgnoredDirectiveForTargetBackend(

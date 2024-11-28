@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.symbols.impl.IrSimpleFunctionSymbolImpl
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.load.java.JvmAbi
@@ -95,19 +96,15 @@ class ComposerParamTransformer(
     override fun visitLocalDelegatedPropertyReference(
         expression: IrLocalDelegatedPropertyReference,
     ): IrExpression {
-        val transformedGetter = expression.getter.owner.withComposerParamIfNeeded()
-        return super.visitLocalDelegatedPropertyReference(
-            IrLocalDelegatedPropertyReferenceImpl(
-                expression.startOffset,
-                expression.endOffset,
-                expression.type,
-                expression.symbol,
-                expression.delegate,
-                transformedGetter.symbol,
-                expression.setter,
-                expression.origin
-            )
-        )
+        expression.getter = expression.getter.owner.withComposerParamIfNeeded().symbol
+        expression.setter = expression.setter?.run { owner.withComposerParamIfNeeded().symbol }
+        return super.visitLocalDelegatedPropertyReference(expression)
+    }
+
+    override fun visitPropertyReference(expression: IrPropertyReference): IrExpression {
+        expression.getter = expression.getter?.run { owner.withComposerParamIfNeeded().symbol }
+        expression.setter = expression.setter?.run { owner.withComposerParamIfNeeded().symbol }
+        return super.visitPropertyReference(expression)
     }
 
     override fun visitLocalDelegatedProperty(declaration: IrLocalDelegatedProperty): IrStatement {
@@ -502,11 +499,9 @@ class ComposerParamTransformer(
 
             // update parameter types so they are ready to accept the default values
             fn.valueParameters.fastForEach { param ->
-                val newType = defaultParameterType(
-                    param,
-                    fn.hasDefaultExpressionDefinedForValueParameter(param.index)
-                )
-                param.type = newType
+                if (fn.hasDefaultExpressionDefinedForValueParameter(param.indexInOldValueParameters)) {
+                    param.type = param.type.defaultParameterType()
+                }
             }
 
             inlineLambdaInfo.scan(fn)
@@ -568,32 +563,6 @@ class ComposerParamTransformer(
         }
     }
 
-    private fun defaultParameterType(
-        param: IrValueParameter,
-        hasDefaultValue: Boolean,
-    ): IrType {
-        val type = param.type
-        if (!hasDefaultValue) return type
-        val constructorAccessible = !type.isPrimitiveType() &&
-                type.classOrNull?.owner?.primaryConstructor != null
-        return when {
-            type.isPrimitiveType() -> type
-            type.isInlineClassType() -> if (context.platform.isJvm() || constructorAccessible) {
-                if (type.unboxInlineClass().isPrimitiveType()) {
-                    type
-                } else {
-                    type.makeNullable()
-                }
-            } else {
-                // k/js and k/native: private constructors of value classes can be not accessible.
-                // Therefore it won't be possible to create a "fake" default argument for calls.
-                // Making it nullable allows to pass null.
-                type.makeNullable()
-            }
-            else -> type.makeNullable()
-        }
-    }
-
     /**
      * Creates stubs for @Composable function with value class parameters that have a default and
      * are wrapping a non-primitive instance.
@@ -635,10 +604,12 @@ class ComposerParamTransformer(
 
         val source = this
         val copy = source.deepCopyWithSymbols(parent)
+        copy.attributeOwnerId = copy
+        copy.originalBeforeInline = null
         copy.valueParameters.fastForEach {
             it.defaultValue = null
         }
-        copy.origin = ComposeDefaultValueStubOrigin
+        copy.isDefaultValueStub = true
         copy.annotations += IrConstructorCallImpl(
             startOffset = UNDEFINED_OFFSET,
             endOffset = UNDEFINED_OFFSET,
@@ -675,9 +646,4 @@ class ComposerParamTransformer(
     }
 
     private val PublishedApiFqName = StandardClassIds.Annotations.PublishedApi.asSingleFqName()
-
-    object ComposeDefaultValueStubOrigin : IrDeclarationOrigin {
-        override val name = "ComposeDefaultValueStubOrigin"
-        override val isSynthetic = true
-    }
 }

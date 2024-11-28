@@ -6,19 +6,16 @@
 package org.jetbrains.kotlin.backend.common.phaser
 
 import org.jetbrains.kotlin.backend.common.*
-import org.jetbrains.kotlin.config.CommonConfigurationKeys
-import org.jetbrains.kotlin.config.IrVerificationMode
-import org.jetbrains.kotlin.config.LanguageFeature
-import org.jetbrains.kotlin.config.languageVersionSettings
+import org.jetbrains.kotlin.config.*
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 
-abstract class IrValidationPhase<Context : CommonBackendContext>(val context: Context) : ModuleLoweringPass {
+abstract class IrValidationPhase<Context : LoweringContext>(val context: Context) : ModuleLoweringPass {
     protected abstract val defaultValidationConfig: IrValidatorConfig
 
     final override fun lower(irModule: IrModuleFragment) {
         val verificationMode = context.configuration.get(CommonConfigurationKeys.VERIFY_IR, IrVerificationMode.NONE)
         val phaseName = this.javaClass.simpleName
-        validateIr(context.messageCollector, verificationMode) {
+        validateIr(context.configuration.messageCollector, verificationMode) {
             performBasicIrValidation(
                 irModule,
                 context.irBuiltIns,
@@ -32,7 +29,8 @@ abstract class IrValidationPhase<Context : CommonBackendContext>(val context: Co
     protected open fun IrValidationContext.additionalValidation(irModule: IrModuleFragment, phaseName: String) {}
 }
 
-open class IrValidationBeforeLoweringPhase<Context : CommonBackendContext>(context: Context) : IrValidationPhase<Context>(context) {
+@PhaseDescription(name = "ValidateIrBeforeLowering")
+open class IrValidationBeforeLoweringPhase<Context : LoweringContext>(context: Context) : IrValidationPhase<Context>(context) {
     override val defaultValidationConfig: IrValidatorConfig
         get() = IrValidatorConfig(
             checkTypes = false, // TODO: Re-enable checking types (KT-68663)
@@ -44,10 +42,11 @@ open class IrValidationBeforeLoweringPhase<Context : CommonBackendContext>(conte
             checkAllKotlinFieldsArePrivate = context.configuration.getBoolean(CommonConfigurationKeys.ENABLE_IR_VISIBILITY_CHECKS) &&
                     !context.configuration.languageVersionSettings.supportsFeature(LanguageFeature.ExplicitBackingFields),
             checkVisibilities = context.configuration.getBoolean(CommonConfigurationKeys.ENABLE_IR_VISIBILITY_CHECKS),
+            checkVarargTypes = context.configuration.getBoolean(CommonConfigurationKeys.ENABLE_IR_VARARG_TYPES_CHECKS),
         )
 }
 
-class IrValidationAfterInliningOnlyPrivateFunctionsPhase<Context : CommonBackendContext>(
+class IrValidationAfterInliningOnlyPrivateFunctionsPhase<Context : LoweringContext>(
     context: Context,
     private val checkInlineFunctionCallSites: InlineFunctionUseSiteChecker
 ) : IrValidationPhase<Context>(context) {
@@ -56,6 +55,7 @@ class IrValidationAfterInliningOnlyPrivateFunctionsPhase<Context : CommonBackend
             checkTypes = false, // TODO: Re-enable checking types (KT-68663)
             checkVisibilities = false, // TODO: Enable checking visibilities (KT-69516)
             checkInlineFunctionUseSites = checkInlineFunctionCallSites,
+            checkVarargTypes = context.configuration.getBoolean(CommonConfigurationKeys.ENABLE_IR_VARARG_TYPES_CHECKS),
         )
 }
 
@@ -66,11 +66,12 @@ class IrValidationAfterInliningAllFunctionsPhase<Context : CommonBackendContext>
     override val defaultValidationConfig: IrValidatorConfig
         get() = IrValidatorConfig(
             checkTypes = false, // TODO: Re-enable checking types (KT-68663)
-            checkValueScopes = context.configuration.getBoolean(CommonConfigurationKeys.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING),
-            checkCrossFileFieldUsage = context.configuration.getBoolean(CommonConfigurationKeys.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING),
+            checkValueScopes = context.configuration.getBoolean(KlibConfigurationKeys.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING),
+            checkCrossFileFieldUsage = context.configuration.getBoolean(KlibConfigurationKeys.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING),
             checkTypeParameterScopes = false,
-            checkVisibilities = context.configuration.getBoolean(CommonConfigurationKeys.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING),
-            checkInlineFunctionUseSites = checkInlineFunctionCallSites
+            checkVisibilities = context.configuration.getBoolean(KlibConfigurationKeys.ENABLE_IR_VISIBILITY_CHECKS_AFTER_INLINING),
+            checkInlineFunctionUseSites = checkInlineFunctionCallSites,
+            checkVarargTypes = context.configuration.getBoolean(CommonConfigurationKeys.ENABLE_IR_VARARG_TYPES_CHECKS),
         )
 }
 

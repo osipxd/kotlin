@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.fir.psi
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
 import org.jetbrains.kotlin.fir.resolve.SessionHolder
 import org.jetbrains.kotlin.fir.resolve.SessionHolderImpl
+import org.jetbrains.kotlin.fir.resolve.calls.ImplicitValue
 import org.jetbrains.kotlin.fir.resolve.dfa.DataFlowAnalyzerContext
 import org.jetbrains.kotlin.fir.resolve.dfa.RealVariable
 import org.jetbrains.kotlin.fir.resolve.dfa.cfg.CFGNode
@@ -33,7 +34,6 @@ import org.jetbrains.kotlin.fir.resolve.dfa.smartCastedType
 import org.jetbrains.kotlin.fir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.BodyResolveContext
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.addReceiversFromExtensions
-import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.lazyResolveToPhase
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.typeContext
@@ -268,8 +268,9 @@ private class ContextCollectorVisitor(
         }
     }
 
+    @OptIn(ImplicitValue.ImplicitValueInternals::class)
     private fun computeContext(fir: FirElement, kind: ContextKind): Context {
-        val implicitReceiverStack = context.towerDataContext.implicitReceiverStack
+        val implicitReceiverStack = context.towerDataContext.implicitValueStorage
 
         val smartCasts = mutableMapOf<RealVariable, Set<ConeKotlinType>>()
 
@@ -293,9 +294,9 @@ private class ContextCollectorVisitor(
                 // The compiler pushes smart-cast types for implicit receivers to ease later lookups.
                 // Here we emulate such behavior. Unlike the compiler, though, modified types are only reflected in the created snapshot.
                 // See other usages of 'replaceReceiverType()' for more information.
-                if (realVariable.isReceiver) {
+                if (realVariable.isImplicit) {
                     val smartCastedType = typeStatement.smartCastedType(bodyHolder.session.typeContext)
-                    implicitReceiverStack.replaceReceiverType(realVariable.symbol, smartCastedType)
+                    implicitReceiverStack.replaceImplicitValueType(realVariable.symbol, smartCastedType)
                 }
             }
         }
@@ -303,8 +304,8 @@ private class ContextCollectorVisitor(
         val towerDataContextSnapshot = context.towerDataContext.createSnapshot(keepMutable = true)
 
         for (realVariable in smartCasts.keys) {
-            if (realVariable.isReceiver) {
-                implicitReceiverStack.replaceReceiverType(realVariable.symbol, realVariable.originalType)
+            if (realVariable.isImplicit) {
+                implicitReceiverStack.replaceImplicitValueType(realVariable.symbol, realVariable.originalType)
             }
         }
 

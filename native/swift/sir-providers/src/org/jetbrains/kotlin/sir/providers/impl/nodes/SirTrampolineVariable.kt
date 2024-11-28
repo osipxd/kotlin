@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.sir.builder.buildSetterCopy
 import org.jetbrains.kotlin.sir.util.swiftFqName
 
 public class SirTrampolineVariable(
-    public val source: SirVariable
+    public val source: SirVariable,
 ) : SirVariable() {
     override lateinit var parent: SirDeclarationParent
     override val origin: SirOrigin get() = SirOrigin.Trampoline(source)
@@ -22,7 +22,7 @@ public class SirTrampolineVariable(
     override val isOverride: Boolean get() = false
     override val isInstance: Boolean get() = false
     override val modality: SirModality get() = SirModality.UNSPECIFIED
-    override val attributes: MutableList<SirAttribute> get() = source.attributes
+    override val attributes: List<SirAttribute> get() = source.attributes
     override val getter: SirGetter by lazy {
         buildGetterCopy(source.getter) {
             origin = SirOrigin.Trampoline(source.getter)

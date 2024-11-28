@@ -1,7 +1,7 @@
 RAW_FIR:
 FILE: [ResolvedTo(RAW_FIR)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -29,7 +29,7 @@ FILE: [ResolvedTo(RAW_FIR)] propagationToLocalMemberPropertyImplicitBodyScript.k
 IMPORTS:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -57,7 +57,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 COMPILER_REQUIRED_ANNOTATIONS:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -85,7 +85,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 COMPANION_GENERATION:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -113,7 +113,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 SUPER_TYPES:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -141,7 +141,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 TYPES:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -169,7 +169,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 STATUS:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -197,7 +197,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 EXPECT_ACTUAL_MATCHING:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -225,7 +225,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 CONTRACTS:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -253,7 +253,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 IMPLICIT_TYPES_BODY_RESOLVE:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -269,9 +269,9 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
         public? final? const [ResolvedTo(RAW_FIR)] val prop: <implicit> = LAZY_EXPRESSION
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
-        public final [ResolvedTo(CONTRACTS)] var bar: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?| = Null(null)
-            public [ResolvedTo(CONTRACTS)] get(): R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|
-            public [ResolvedTo(CONTRACTS)] set([ResolvedTo(CONTRACTS)] value: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|): R|kotlin/Unit|
+        public final [ResolvedTo(CONTRACTS)] var bar: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?| = Null(null)
+            public [ResolvedTo(CONTRACTS)] get(): R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|
+            public [ResolvedTo(CONTRACTS)] set([ResolvedTo(CONTRACTS)] value: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|): R|kotlin/Unit|
 
         public final [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] fun lambda([ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] action: R|() -> kotlin/Unit|): R|kotlin/Unit| {
             ^lambda R|<local>/action|.R|SubstitutionOverride<kotlin/Function0.invoke: R|kotlin/Unit|>|()
@@ -284,18 +284,18 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
                         super<R|kotlin/Any|>()
                     }
 
-                    public final [ResolvedTo(RAW_FIR)] val doo: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?| {
+                    public final [ResolvedTo(RAW_FIR)] val doo: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?| {
                             ^ this@R|<local>/Local|.R|<local>/foo|
                         }
 
-                    public final [ResolvedTo(RAW_FIR)] var foo: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?| = R|util/bar|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] set([ResolvedTo(RAW_FIR)] value: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|): R|kotlin/Unit|
+                    public final [ResolvedTo(RAW_FIR)] var foo: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?| = R|util/bar|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] set([ResolvedTo(RAW_FIR)] value: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|): R|kotlin/Unit|
 
-                    public final [ResolvedTo(RAW_FIR)] var baz: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?| = this@R|<local>/Local|.R|<local>/foo|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] set([ResolvedTo(RAW_FIR)] value: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|): R|kotlin/Unit|
+                    public final [ResolvedTo(RAW_FIR)] var baz: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?| = this@R|<local>/Local|.R|<local>/foo|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] set([ResolvedTo(RAW_FIR)] value: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|): R|kotlin/Unit|
 
                 }
 
@@ -307,7 +307,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 CONSTANT_EVALUATION:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -323,9 +323,9 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
         public? final? const [ResolvedTo(RAW_FIR)] val prop: <implicit> = LAZY_EXPRESSION
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
-        public final [ResolvedTo(CONTRACTS)] var bar: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?| = Null(null)
-            public [ResolvedTo(CONTRACTS)] get(): R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|
-            public [ResolvedTo(CONTRACTS)] set([ResolvedTo(CONTRACTS)] value: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|): R|kotlin/Unit|
+        public final [ResolvedTo(CONTRACTS)] var bar: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?| = Null(null)
+            public [ResolvedTo(CONTRACTS)] get(): R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|
+            public [ResolvedTo(CONTRACTS)] set([ResolvedTo(CONTRACTS)] value: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|): R|kotlin/Unit|
 
         public final [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] fun lambda([ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] action: R|() -> kotlin/Unit|): R|kotlin/Unit| {
             ^lambda R|<local>/action|.R|SubstitutionOverride<kotlin/Function0.invoke: R|kotlin/Unit|>|()
@@ -338,18 +338,18 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
                         super<R|kotlin/Any|>()
                     }
 
-                    public final [ResolvedTo(RAW_FIR)] val doo: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?| {
+                    public final [ResolvedTo(RAW_FIR)] val doo: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?| {
                             ^ this@R|<local>/Local|.R|<local>/foo|
                         }
 
-                    public final [ResolvedTo(RAW_FIR)] var foo: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?| = R|util/bar|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] set([ResolvedTo(RAW_FIR)] value: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|): R|kotlin/Unit|
+                    public final [ResolvedTo(RAW_FIR)] var foo: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?| = R|util/bar|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] set([ResolvedTo(RAW_FIR)] value: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|): R|kotlin/Unit|
 
-                    public final [ResolvedTo(RAW_FIR)] var baz: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?| = this@R|<local>/Local|.R|<local>/foo|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|
-                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] set([ResolvedTo(RAW_FIR)] value: R|@R|util/Anno|(<strcat>(String(bar ), prop#))  kotlin/collections/List<@R|util/Anno|(<strcat>(String(nested bar ), prop#))  kotlin/collections/Collection<@R|util/Anno|(<strcat>(String(nested nested bar ), prop#))  kotlin/Int>>?|): R|kotlin/Unit|
+                    public final [ResolvedTo(RAW_FIR)] var baz: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?| = this@R|<local>/Local|.R|<local>/foo|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] get(): R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|
+                        public [ResolvedTo(RAW_FIR)] [ContainingClassKey=Local] set([ResolvedTo(RAW_FIR)] value: R|@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|util/Anno|(LAZY_EXPRESSION)  kotlin/Int>>?|): R|kotlin/Unit|
 
                 }
 
@@ -361,7 +361,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 ANNOTATION_ARGUMENTS:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -415,7 +415,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 BODY_RESOLVE:
 FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -469,7 +469,7 @@ FILE: [ResolvedTo(IMPORTS)] propagationToLocalMemberPropertyImplicitBodyScript.k
 FILE RAW TO BODY:
 FILE: [ResolvedTo(BODY_RESOLVE)] propagationToLocalMemberPropertyImplicitBodyScript.kts
     SCRIPT: [ResolvedTo(BODY_RESOLVE)] <script-propagationToLocalMemberPropertyImplicitBodyScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(BODY_RESOLVE)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(BODY_RESOLVE)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](allowedTargets = vararg(Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|)) public final [ResolvedTo(BODY_RESOLVE)] [ContainingScriptKey=FirScriptSymbol util.<script-propagationToLocalMemberPropertyImplicitBodyScript.kts>] annotation class Anno : R|kotlin/Annotation| {

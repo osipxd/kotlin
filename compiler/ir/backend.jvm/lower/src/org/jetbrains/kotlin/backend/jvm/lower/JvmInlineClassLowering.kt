@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.ir.symbols.IrValueSymbol
 import org.jetbrains.kotlin.ir.transformStatement
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.JVM_INLINE_ANNOTATION_FQ_NAME
@@ -40,7 +41,6 @@ import org.jetbrains.kotlin.resolve.JVM_INLINE_ANNOTATION_FQ_NAME
  */
 @PhaseDescription(
     name = "InlineClasses",
-    description = "Lower inline classes",
     // forLoopsPhase may produce UInt and ULong which are inline classes.
     // Standard library replacements are done on the not mangled names for UInt and ULong classes.
     // Collection stubs may require mangling by value class rules.

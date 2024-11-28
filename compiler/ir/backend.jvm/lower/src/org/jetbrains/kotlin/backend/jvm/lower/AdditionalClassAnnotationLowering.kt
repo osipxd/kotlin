@@ -29,9 +29,12 @@ import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 import org.jetbrains.kotlin.name.Name
 import java.lang.annotation.ElementType
 
+/**
+ * Adds [java.lang.annotation.Documented], [java.lang.annotation.Retention], [java.lang.annotation.Target],
+ * [java.lang.annotation.Repeatable] annotations to annotation classes.
+ */
 @PhaseDescription(
     name = "AdditionalClassAnnotation",
-    description = "Add Documented, Retention, Target, Repeatable annotations to annotation classes",
     prerequisite = [/* RepeatedAnnotationLowering::class */]
 )
 internal class AdditionalClassAnnotationLowering(private val context: JvmBackendContext) : ClassLoweringPass {
@@ -135,7 +138,7 @@ internal class AdditionalClassAnnotationLowering(private val context: JvmBackend
     }
 
     private fun IrConstructorCall.getValueArgument(name: Name): IrExpression? {
-        val index = symbol.owner.valueParameters.find { it.name == name }?.index ?: return null
+        val index = symbol.owner.valueParameters.find { it.name == name }?.indexInOldValueParameters ?: return null
         return getValueArgument(index)
     }
 

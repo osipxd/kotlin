@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.gradle.native
 
+import org.gradle.internal.os.OperatingSystem
 import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.testbase.*
 import org.jetbrains.kotlin.gradle.testbase.TestVersions.Kotlin.STABLE_RELEASE
@@ -19,6 +20,7 @@ import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.appendText
 import kotlin.test.assertContains
+import kotlin.test.fail
 
 @OsCondition(supportedOn = [OS.MAC, OS.LINUX], enabledOnCI = [OS.LINUX]) // disabled for Windows because of tmp dir problem: KT-62761
 @DisplayName("This test class contains different scenarios with downloading Kotlin Native Compiler during build.")
@@ -65,7 +67,7 @@ class KotlinNativeCompilerDownloadIT : KGPBaseTest() {
 
     @DisplayName("KT-58303: Kotlin Native must not be downloaded when konan home is overridden")
     @GradleTest
-    fun shouldNotDownloadKotlinNativeWithCustomKonanHome(gradleVersion: GradleVersion, @TempDir konanTemp: Path) {
+    fun shouldNotDownloadKotlinNativeWithCustomKonanHome(gradleVersion: GradleVersion) {
         val kotlinNativeVersion = System.getProperty("kotlinNativeVersion")
         // When a Kotlin Native version has not been passed means that there was not common test directory with a preinstalled kotlin native bundle
         if (kotlinNativeVersion != null) {
@@ -76,9 +78,12 @@ class KotlinNativeCompilerDownloadIT : KGPBaseTest() {
                 gradleVersion,
                 buildOptions = defaultBuildOptions.copy(
                     freeArgs = listOf("-Pkotlin.native.home=$customKonanHome"),
+                    // when both `konan.data.dir` and `kotlin.native.home` properties are set the `konan.data.dir` one has priority,
+                    // that is why we are disabling it `konan.data.dir` here.
+                    konanDataDir = null
                 ),
             ) {
-                build("assemble") {
+                build(":commonizeNativeDistribution") {
                     assertOutputContains("A user-provided Kotlin/Native distribution configured: ${customKonanHome}. Disabling Kotlin Native Toolchain auto-provisioning.")
                     assertOutputDoesNotContain(UNPUCK_KONAN_FINISHED_LOG)
                     assertOutputDoesNotContain("Please wait while Kotlin/Native")
@@ -208,6 +213,32 @@ class KotlinNativeCompilerDownloadIT : KGPBaseTest() {
                     assertContains(it, konanLibsPath.resolve("kotlin-native-compiler-embeddable.jar").absolutePathString())
                     assertContains(it, konanLibsPath.resolve("trove4j.jar").absolutePathString())
                 }
+            }
+        }
+    }
+
+    @DisplayName("KT-71051: Kotlin Native should be download only ones for multi-module project")
+    @GradleTest
+    fun shouldDownloadKotlinNativeOnlyOnes(gradleVersion: GradleVersion, @TempDir konanTemp: Path) {
+        nativeProject(
+            "native-multi-module-project",
+            gradleVersion,
+            buildOptions = defaultBuildOptions.copy(
+                konanDataDir = konanTemp,
+            ),
+            configureSubProjects = true,
+        ) {
+            val os = OperatingSystem.current()
+            val expectedNativeDependencies = when {
+                os.isMacOsX -> listOf("lldb-4-macos", "apple-llvm-20200714-macos-aarch64-essentials", "libffi-3.3-1-macos-arm64")
+                os.isLinux -> listOf("x86_64-unknown-linux-gnu-gcc-8.3.0-glibc-2.19-kernel-4.9-2", "lldb-4-linux", "llvm-11.1.0-linux-x64-essentials", "libffi-3.2.1-2-linux-x86-64")
+                os.isWindows -> listOf("llvm-11.1.0-windows-x64-essentials", "libffi-3.3-windows-x64-1", "lldb-2-windows", "lld-12.0.1-windows-x64", "msys2-mingw-w64-x86_64-2")
+                else -> fail("Unsupported os: ${os.name}")
+            }
+
+            build("assemble") {
+                assertOutputContainsExactlyTimes("Extracting dependency:", expectedNativeDependencies.size)
+                assertOutputContainsExactlyTimes("Downloading dependency https://download.jetbrains.com/kotlin/native/", expectedNativeDependencies.size)
             }
         }
     }

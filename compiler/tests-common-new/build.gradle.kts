@@ -12,6 +12,7 @@ dependencies {
     testImplementation(project(":compiler:ir.tree"))
     testImplementation(project(":compiler:backend.jvm.entrypoint"))
     testImplementation(project(":compiler:backend.jvm.lower"))
+    testImplementation(project(":kotlin-util-klib-abi"))
     testImplementation(intellijCore())
     testImplementation(commonDependency("org.jetbrains.kotlin:kotlin-reflect")) { isTransitive = false }
 
@@ -27,6 +28,7 @@ dependencies {
     testApi(projectTests(":compiler:test-infrastructure-utils"))
     testApi(projectTests(":compiler:tests-compiler-utils"))
     testApi(project(":libraries:tools:abi-comparator"))
+    testApi(project(":compiler:tests-mutes:mutes-junit5"))
 
     /*
      * Actually those dependencies are needed only at runtime, but they
@@ -38,8 +40,7 @@ dependencies {
     testApi(commonDependency("org.jetbrains.intellij.deps.jna:jna"))
     testApi(jpsModel()) { isTransitive = false }
     testApi(jpsModelImpl()) { isTransitive = false }
-    testApi(intellijJavaRt()) // for FileComparisonFailure
-    testApi(libs.junit4) // for ComparisonFailure
+    testApi(libs.junit4)
 
     testApi(toolsJarApi())
     testRuntimeOnly(toolsJar())

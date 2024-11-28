@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // LANGUAGE: -ProperFieldAccessGenerationForFieldAccessShadowedByKotlinProperty
 // ISSUE: KT-56386
 
@@ -14,7 +15,7 @@ package derived
 import base.BaseJava
 
 open class Intermediate : BaseJava() {
-    private val a = "FAIL"
+    private val <!PROPERTY_HIDES_JAVA_FIELD!>a<!> = "FAIL"
 }
 
 class Derived : Intermediate() {

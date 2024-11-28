@@ -82,7 +82,6 @@ public class DefaultErrorMessagesJvm implements DefaultErrorMessages.Extension {
         MAP.put(JVM_PACKAGE_NAME_NOT_SUPPORTED_IN_FILES_WITH_CLASSES, "'@JvmPackageName' annotation is not supported for files with class declarations");
 
         MAP.put(STATE_IN_MULTIFILE_CLASS, "Non-const property with backing field or delegate is not allowed in a multi-file class if -Xmultifile-parts-inherit is enabled");
-        MAP.put(NOT_ALL_MULTIFILE_CLASS_PARTS_ARE_JVM_SYNTHETIC, "All of multi-file class parts should be annotated with @JvmSynthetic if at least one of them is");
 
         MAP.put(NO_REFLECTION_IN_CLASS_PATH, "Call uses reflection API which is not found in compilation classpath. " +
                                              "Make sure you have kotlin-reflect.jar in the classpath");
@@ -167,7 +166,6 @@ public class DefaultErrorMessagesJvm implements DefaultErrorMessages.Extension {
         MAP.put(JVM_DEFAULT_WITH_COMPATIBILITY_IN_DECLARATION, "Usage of '@JvmDefaultWithCompatibility' is only allowed with '-Xjvm-default=all' option");
         MAP.put(JVM_DEFAULT_WITH_COMPATIBILITY_NOT_ON_INTERFACE, "'@JvmDefaultWithCompatibility' annotation is only allowed on interfaces");
         MAP.put(EXPLICIT_METADATA_IS_DISALLOWED, "Explicit @Metadata is disallowed");
-        MAP.put(SUSPENSION_POINT_INSIDE_MONITOR, "A suspension point at {0} is inside a critical section", STRING);
         MAP.put(SUSPENSION_POINT_INSIDE_CRITICAL_SECTION, "The ''{0}'' suspension point is inside a critical section", NAME);
 
         MAP.put(LOCAL_JVM_RECORD, "Local @JvmRecord classes are not allowed");
@@ -204,21 +202,12 @@ public class DefaultErrorMessagesJvm implements DefaultErrorMessages.Extension {
                 "Please refer to KT-39603 for details",
                 COMPACT, SHORT_NAMES_IN_TYPES);
 
-        MAP.put(EXPLICIT_OVERRIDE_REQUIRED_IN_MIXED_MODE,
-                "Explicit override is required for ''{0}'' in the ''-Xjvm-default={2}'' mode. " +
-                "Otherwise, implicit class override ''{1}'' (compiled in the old -Xjvm-default mode) " +
-                "is not fully overridden and would be incorrectly called at runtime",
-                SHORT_NAMES_IN_TYPES, SHORT_NAMES_IN_TYPES, TO_STRING);
-
         MAP.put(DANGEROUS_CHARACTERS, "Name contains characters which can cause problems on Windows: {0}", STRING);
 
         MAP.put(VALUE_CLASS_WITHOUT_JVM_INLINE_ANNOTATION, "Value classes without @JvmInline annotation are not supported yet");
         MAP.put(JVM_INLINE_WITHOUT_VALUE_CLASS, "@JvmInline annotation is only applicable to value classes");
 
         MAP.put(SYNCHRONIZED_ON_SUSPEND, "@Synchronized annotation is not applicable to suspend functions and lambdas");
-
-        MAP.put(TYPEOF_SUSPEND_TYPE, "Suspend functional types are not supported in typeOf");
-        MAP.put(TYPEOF_NON_REIFIED_TYPE_PARAMETER_WITH_RECURSIVE_BOUND, "Non-reified type parameters with recursive bounds are not supported yet: {0}", STRING);
 
         MAP.put(JAVA_SAM_INTERFACE_CONSTRUCTOR_REFERENCE, "Java SAM interface constructor references are prohibited");
         MAP.put(ENUM_DECLARING_CLASS_DEPRECATED, "Enum.declaringClass is deprecated, use declaringJavaClass instead or cast receiver to java.lang.Enum explicitly");

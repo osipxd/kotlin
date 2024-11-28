@@ -1,6 +1,19 @@
 // KIND: STANDALONE
 // FREE_COMPILER_ARGS: -opt-in=kotlin.native.internal.InternalForKotlinNative
 // MODULE: ReferenceTypes(deps)
+// FILE: Enum.kt
+
+enum class Enum(var i: Int, internal val s: String) {
+    a(1, "str") {
+        override fun print(): String = "$i - $s"
+    },
+    b(5, "rts") {
+        override fun print(): String = "$s - $i"
+    };
+
+    abstract fun print(): String
+}
+
 // FILE: Bar.kt
 class Bar(var foo: Foo) {
     fun getAndSetFoo(newFoo: Foo): Foo {
@@ -29,6 +42,9 @@ object Baz {
 
 fun getBaz() = Baz
 
+// FILE: DataClass.kt
+data class DataClass(val i: Int, val s: String)
+
 // FILE: Foo.kt
 class Foo(var x: Int) {
     constructor(f: Float) : this(f.toInt())
@@ -38,13 +54,19 @@ class Foo(var x: Int) {
         x = newX
         return oldX
     }
+
+    fun Int.memberExt(): Int = x + this
 }
 
 fun getX(foo: Foo) = foo.x
 
+fun Foo.extGetX() = x
+
 fun makeFoo(x: Int) = Foo(x)
 
 fun idFoo(foo: Foo) = foo
+
+fun Foo.extId() = this
 
 var globalFoo = Foo(42)
 
@@ -119,6 +141,15 @@ fun identity(obj: Base): Base = obj
 fun getDerived(): Derived = Derived()
 fun getBase(): Base = Base()
 
+abstract class Abstract
+class Impl : Abstract()
+private class PrivateImpl : Abstract()
+
+var abstractPolymorphicObject: Abstract = Impl()
+
+fun getImpl(): Abstract = Impl()
+fun getPrivateImpl(): Abstract = PrivateImpl()
+
 // FILE: dependency_usage.kt
 import dependency.*
 
@@ -148,7 +179,7 @@ class HostDerived : HostBase() {
 // EXPORT_TO_SWIFT
 // FILE: overrides.kt
 
-open class Parent() {
+open class Parent(val value: String) {
     open fun foo(): String = "Parent"
     open var bar: Int = 10
 
@@ -159,7 +190,7 @@ open class Parent() {
     open fun nullable(): Parent? = this
 }
 
-open class Child : Parent() {
+open class Child(value: Int) : Parent("$value") {
     override fun foo(): String = "Child"
     override var bar: Int = 20
 
@@ -170,7 +201,7 @@ open class Child : Parent() {
     override fun nullable(): Parent? = this
 }
 
-class GrandChild : Child() {
+class GrandChild(value: Short) : Child(value.toInt()) {
     final override fun foo(): String = "GrandChild"
     final override var bar: Int
         get() = 42
@@ -187,7 +218,7 @@ class GrandChild : Child() {
 // EXPORT_TO_SWIFT
 // FILE: overrides_across_modules.kt
 
-open class Cousin : Parent() {
+open class Cousin(value: String) : Parent(value) {
     override fun foo(): String = "Cousin"
     override var bar: Int = 21
 
@@ -197,6 +228,22 @@ open class Cousin : Parent() {
     override fun poly(): Parent = this
     override fun nullable(): Parent? = this
 }
+
+abstract class AbstractParent {
+    abstract fun foo(): String
+}
+
+class AbstractParentImpl : AbstractParent() {
+    override fun foo() = "AbstractParentImpl"
+}
+
+fun getAbstractParentImpl(): AbstractParent = AbstractParentImpl()
+
+private class AbstractParentPrivateImpl : AbstractParent() {
+    override fun foo() = "AbstractParentPrivateImpl"
+}
+
+fun getAbstractParentPrivateImpl(): AbstractParent = AbstractParentPrivateImpl()
 
 // MODULE: second_main(deps)
 // FILE: second_main.kt

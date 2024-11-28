@@ -46,6 +46,11 @@ public class RawFirBuilderLazyBodiesByAstTestGenerated extends AbstractRawFirBui
       runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotation.kt");
     }
 
+    @TestMetadata("annotationOnDelegatedInterface.kt")
+    public void testAnnotationOnDelegatedInterface() {
+      runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotationOnDelegatedInterface.kt");
+    }
+
     @TestMetadata("annotationOnField.kt")
     public void testAnnotationOnField() {
       runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotationOnField.kt");
@@ -54,6 +59,11 @@ public class RawFirBuilderLazyBodiesByAstTestGenerated extends AbstractRawFirBui
     @TestMetadata("annotationOnProperty.kt")
     public void testAnnotationOnProperty() {
       runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotationOnProperty.kt");
+    }
+
+    @TestMetadata("annotationOnReceiver.kt")
+    public void testAnnotationOnReceiver() {
+      runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/annotationOnReceiver.kt");
     }
 
     @TestMetadata("annotationOnSuperType.kt")
@@ -119,6 +129,16 @@ public class RawFirBuilderLazyBodiesByAstTestGenerated extends AbstractRawFirBui
     @TestMetadata("constructorWithLocalDeclarations.kt")
     public void testConstructorWithLocalDeclarations() {
       runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/constructorWithLocalDeclarations.kt");
+    }
+
+    @TestMetadata("contextParameterDefaultValue.kt")
+    public void testContextParameterDefaultValue() {
+      runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contextParameterDefaultValue.kt");
+    }
+
+    @TestMetadata("contextParameters.kt")
+    public void testContextParameters() {
+      runTest("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contextParameters.kt");
     }
 
     @TestMetadata("contextReceivers.kt")

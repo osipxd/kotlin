@@ -95,6 +95,7 @@ internal class NativeIrLinkerIssuesIT : KGPBaseTest() {
         }
     }
 
+    @Disabled("Under investigation via KT-72935")
     @DisplayName("KT-41378: declaration that is gone - with cache")
     @GradleTest
     @DisabledOnOs(OS.WINDOWS, disabledReason = "Don't run it on Windows. Caches are not supported there yet.")
@@ -131,6 +132,7 @@ internal class NativeIrLinkerIssuesIT : KGPBaseTest() {
         }
     }
 
+    @Disabled("Under investigation via KT-72935")
     @DisplayName("KT-41378: declaration that is gone - without cache")
     @GradleTest
     fun shouldBuildIrLinkerWithoutCache(
@@ -275,7 +277,11 @@ internal class NativeIrLinkerIssuesIT : KGPBaseTest() {
                     .filterNot { it.matches(KONAN_PLATFORM_LIB_DEPENDENCY_REGEX) || it.contains(" stdlib: ") }
                     .joinToString("\n")
 
-                assertEquals(expectedErrorMessage(), errorMessage)
+                assertEquals(
+                    expectedErrorMessage(),
+                    errorMessage,
+                    message = "Gradle build output:\n${output}\n"
+                )
             }
         }
     }

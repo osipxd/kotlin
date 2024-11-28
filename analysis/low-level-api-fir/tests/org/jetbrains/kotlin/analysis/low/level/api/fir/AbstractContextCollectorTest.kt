@@ -103,13 +103,10 @@ internal object ElementContextRenderer {
 
                     towerDataElement.implicitReceiver?.let { implicitReceiver ->
                         appendBlock("Implicit receiver:") {
-                            appendSymbol(implicitReceiver.boundSymbol).appendLine()
+                            appendSymbol(implicitReceiver.boundSymbol as FirBasedSymbol<*>).appendLine()
 
                             appendBlock {
                                 append("Type: ").appendType(implicitReceiver.type).appendLine()
-                                if (implicitReceiver.isContextReceiver) {
-                                    append("Context receiver index: ").appendLine(implicitReceiver.contextReceiverNumber)
-                                }
                             }
                         }
                     }
@@ -272,16 +269,8 @@ abstract class AbstractContextCollectorSourceTest : AbstractContextCollectorTest
     override val configurator: AnalysisApiTestConfigurator = AnalysisApiFirSourceTestConfigurator(analyseInDependentSession = false)
 }
 
-abstract class AbstractDependentContextCollectorSourceTest : AbstractContextCollectorTest() {
-    override val configurator: AnalysisApiTestConfigurator = AnalysisApiFirSourceTestConfigurator(analyseInDependentSession = true)
-}
-
 abstract class AbstractContextCollectorScriptTest : AbstractContextCollectorTest() {
     override val configurator: AnalysisApiTestConfigurator =
         AnalysisApiFirCustomScriptDefinitionTestConfigurator(analyseInDependentSession = false)
 }
 
-abstract class AbstractDependentContextCollectorScriptTest : AbstractContextCollectorTest() {
-    override val configurator: AnalysisApiTestConfigurator =
-        AnalysisApiFirCustomScriptDefinitionTestConfigurator(analyseInDependentSession = true)
-}

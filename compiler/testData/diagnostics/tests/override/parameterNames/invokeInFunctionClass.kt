@@ -1,3 +1,6 @@
+// FIR_IDENTICAL
+// RUN_PIPELINE_TILL: FRONTEND
+
 class Function1Impl : (String) -> Unit {
     override fun invoke(myParamName: String) {}
 }

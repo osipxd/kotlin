@@ -31,16 +31,13 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.util.OperatorNameConventions
 
-@PhaseDescription(
-    name = "AnnotationImplementation",
-    description = "Create synthetic annotations implementations and use them in annotations constructor calls"
-)
+@PhaseDescription(name = "AnnotationImplementation")
 internal class JvmAnnotationImplementationLowering(context: JvmBackendContext) : AnnotationImplementationLowering(
     { JvmAnnotationImplementationTransformer(context, it) }
 )
 
 class JvmAnnotationImplementationTransformer(private val jvmContext: JvmBackendContext, file: IrFile) :
-    AnnotationImplementationTransformer(jvmContext, file) {
+    AnnotationImplementationTransformer(jvmContext, jvmContext.symbolTable, file) {
     private val publicAnnotationImplementationClasses = mutableSetOf<IrClassSymbol>()
 
     // FIXME: Copied from JvmSingleAbstractMethodLowering

@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.fir.resolve
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationStatus
 import org.jetbrains.kotlin.fir.expressions.FirVariableAssignment
 import org.jetbrains.kotlin.fir.render
+import org.jetbrains.kotlin.fir.resolve.ResolutionMode.ArrayLiteralPosition
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
 
@@ -23,17 +24,20 @@ sealed class ResolutionMode(
         companion object : ReceiverResolution(forCallableReference = false)
     }
 
+    @OptIn(WithExpectedType.ExpectedTypeRefAccess::class)
     class WithExpectedType(
+        @property:ExpectedTypeRefAccess
         val expectedTypeRef: FirResolvedTypeRef,
         val mayBeCoercionToUnitApplied: Boolean = false,
         val expectedTypeMismatchIsReportedInChecker: Boolean = false,
         val fromCast: Boolean = false,
         /**
-         * Expected type for an annotation call argument is used for inferring array literal types.
-         * It does not produce a constraint during completion because it can contain type parameter types which aren't substituted
-         * to type variable types.
+         * Expected type is used for inferring array literal types in places where array literal syntax is supported
+         * Currently, it's an argument of annotation call or a default value of parameter in annotation class constructor
+         * `ArrayLiteralPosition.AnnotationArgument` does not produce a constraint during completion because
+         * it can contain type parameter types which aren't substituted to type variable types.
          */
-        val fromAnnotationCallArgument: Boolean = false,
+        val arrayLiteralPosition: ArrayLiteralPosition? = null,
         /**
          * It might be ok if the types turn out to be incompatible.
          * Consider the following examples with properties and their backing fields:
@@ -51,16 +55,25 @@ sealed class ResolutionMode(
         forceFullCompletion: Boolean = true,
     ) : ResolutionMode(forceFullCompletion) {
 
+        @RequiresOptIn(
+            "Accessing 'expectedTypeRef' is generally not necessary unless the caller needs access to its source. " +
+                    "Prefer using 'expectedType' instead."
+        )
+        annotation class ExpectedTypeRefAccess
+
+        val expectedType: ConeKotlinType get() = expectedTypeRef.coneType
+
         fun copy(
             expectedTypeRef: FirResolvedTypeRef = this.expectedTypeRef,
             mayBeCoercionToUnitApplied: Boolean = this.mayBeCoercionToUnitApplied,
             forceFullCompletion: Boolean = this.forceFullCompletion,
+            shouldBeStrictlyEnforced: Boolean = this.shouldBeStrictlyEnforced,
         ): WithExpectedType = WithExpectedType(
             expectedTypeRef = expectedTypeRef,
             mayBeCoercionToUnitApplied = mayBeCoercionToUnitApplied,
             expectedTypeMismatchIsReportedInChecker = expectedTypeMismatchIsReportedInChecker,
             fromCast = fromCast,
-            fromAnnotationCallArgument = fromAnnotationCallArgument,
+            arrayLiteralPosition = arrayLiteralPosition,
             shouldBeStrictlyEnforced = shouldBeStrictlyEnforced,
             forceFullCompletion = forceFullCompletion
         )
@@ -70,10 +83,15 @@ sealed class ResolutionMode(
                     "mayBeCoercionToUnitApplied=${mayBeCoercionToUnitApplied}, " +
                     "expectedTypeMismatchIsReportedInChecker=${expectedTypeMismatchIsReportedInChecker}, " +
                     "fromCast=${fromCast}, " +
-                    "fromAnnotationCallArgument=${fromAnnotationCallArgument}, " +
+                    "arrayLiteralPosition=${arrayLiteralPosition}, " +
                     "shouldBeStrictlyEnforced=${shouldBeStrictlyEnforced}, " +
                     "forceFullCompletion=${forceFullCompletion}, "
         }
+    }
+
+    enum class ArrayLiteralPosition {
+        AnnotationArgument,
+        AnnotationParameter,
     }
 
     class WithStatus(val status: FirDeclarationStatus) : ResolutionMode(forceFullCompletion = false) {
@@ -112,18 +130,21 @@ sealed class ResolutionMode(
     }
 }
 
-fun ResolutionMode.expectedType(components: BodyResolveComponents): FirTypeRef? = when (this) {
-    is ResolutionMode.WithExpectedType -> expectedTypeRef.takeIf { !this.fromCast }
-    is ResolutionMode.ContextIndependent,
-    is ResolutionMode.AssignmentLValue,
-    is ResolutionMode.ReceiverResolution -> components.noExpectedType
-    else -> null
-}
+val ResolutionMode.expectedType: ConeKotlinType?
+    get() = when (this) {
+        is ResolutionMode.WithExpectedType -> expectedType.takeIf { !this.fromCast }
+        else -> null
+    }
 
-fun withExpectedType(expectedTypeRef: FirTypeRef, expectedTypeMismatchIsReportedInChecker: Boolean = false): ResolutionMode = when {
+fun withExpectedType(
+    expectedTypeRef: FirTypeRef,
+    expectedTypeMismatchIsReportedInChecker: Boolean = false,
+    arrayLiteralPosition: ArrayLiteralPosition? = null,
+): ResolutionMode = when {
     expectedTypeRef is FirResolvedTypeRef -> ResolutionMode.WithExpectedType(
         expectedTypeRef,
-        expectedTypeMismatchIsReportedInChecker = expectedTypeMismatchIsReportedInChecker
+        expectedTypeMismatchIsReportedInChecker = expectedTypeMismatchIsReportedInChecker,
+        arrayLiteralPosition = arrayLiteralPosition,
     )
     else -> ResolutionMode.ContextIndependent
 }

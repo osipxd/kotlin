@@ -16,11 +16,7 @@ import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.expressions.builder.buildNamedArgumentExpression
 import org.jetbrains.kotlin.fir.resolve.*
 import org.jetbrains.kotlin.fir.resolve.calls.*
-import org.jetbrains.kotlin.fir.resolve.calls.candidate.CallInfo
-import org.jetbrains.kotlin.fir.resolve.calls.candidate.Candidate
-import org.jetbrains.kotlin.fir.resolve.calls.candidate.CheckerSink
-import org.jetbrains.kotlin.fir.resolve.calls.candidate.yieldDiagnostic
-import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeUnsupportedCallableReferenceTarget
+import org.jetbrains.kotlin.fir.resolve.calls.candidate.*
 import org.jetbrains.kotlin.fir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.jetbrains.kotlin.fir.scopes.CallableCopyTypeCalculator
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
@@ -39,6 +35,7 @@ import org.jetbrains.kotlin.utils.exceptions.errorWithAttachment
 
 internal object CheckCallableReferenceExpectedType : ResolutionStage() {
     override suspend fun check(candidate: Candidate, callInfo: CallInfo, sink: CheckerSink, context: ResolutionContext) {
+        callInfo as CallableReferenceInfo
         val outerCsBuilder = callInfo.outerCSBuilder ?: return
         val expectedType = callInfo.expectedType
         if (candidate.symbol !is FirCallableSymbol<*>) return
@@ -128,11 +125,12 @@ private fun buildResultingTypeAndAdaptation(
     return when (fir) {
         is FirFunction -> {
             val unboundReferenceTarget = if (receiverType != null) 1 else 0
+            val callInfo = candidate.callInfo as CallableReferenceInfo
             val callableReferenceAdaptation =
                 context.bodyResolveComponents.getCallableReferenceAdaptation(
                     context.session,
                     fir,
-                    candidate.callInfo.expectedType?.lowerBoundIfFlexible(),
+                    callInfo.expectedType?.lowerBoundIfFlexible(),
                     unboundReferenceTarget
                 )
 
@@ -158,7 +156,7 @@ private fun buildResultingTypeAndAdaptation(
                 //     - see testData/diagnostics/tests/callableReference/resolve/withVararg.kt
                 // - coercion to unit is still allowed if a candidate return type is not type parameter based
                 //     - see testData/diagnostics/tests/inference/callableReferences/conversionLastStatementInLambda.kt
-                val hasSyntheticOuterCall = candidate.callInfo.hasSyntheticOuterCall
+                val hasSyntheticOuterCall = callInfo.hasSyntheticOuterCall
                 if (callableReferenceAdaptation.coercionStrategy != CoercionStrategy.COERCION_TO_UNIT ||
                     hasSyntheticOuterCall && returnTypeWithoutCoercion.unwrapToSimpleTypeUsingLowerBound() is ConeTypeParameterType
                 ) {
@@ -177,7 +175,7 @@ private fun buildResultingTypeAndAdaptation(
                 parameters,
                 receiverType = receiverType.takeIf { fir.receiverParameter != null },
                 rawReturnType = returnType,
-                contextReceivers = fir.contextReceivers.map { it.typeRef.coneType }
+                contextReceivers = fir.contextReceivers.map { it.returnTypeRef.coneType }
             ) to callableReferenceAdaptation
         }
         is FirVariable -> {

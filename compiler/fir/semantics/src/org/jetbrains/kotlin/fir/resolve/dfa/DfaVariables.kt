@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.types.SmartcastStability
@@ -52,41 +53,50 @@ private enum class PropertyStability(
 
 class RealVariable(
     val symbol: FirBasedSymbol<*>,
-    val isReceiver: Boolean,
+    val isImplicit: Boolean,
     val dispatchReceiver: RealVariable?,
     val extensionReceiver: RealVariable?,
     val originalType: ConeKotlinType,
 ) : DataFlowVariable() {
     companion object {
         fun local(symbol: FirVariableSymbol<*>): RealVariable =
-            RealVariable(symbol, isReceiver = false, dispatchReceiver = null, extensionReceiver = null, symbol.resolvedReturnType)
+            RealVariable(symbol, isImplicit = false, dispatchReceiver = null, extensionReceiver = null, symbol.resolvedReturnType)
 
-        fun receiver(symbol: FirBasedSymbol<*>, type: ConeKotlinType): RealVariable =
-            RealVariable(symbol, isReceiver = true, dispatchReceiver = null, extensionReceiver = null, type)
+        fun implicit(symbol: FirBasedSymbol<*>, type: ConeKotlinType): RealVariable =
+            RealVariable(symbol, isImplicit = true, dispatchReceiver = null, extensionReceiver = null, type)
     }
 
     // `originalType` cannot be included into equality comparisons because it can be a captured type.
     // Those are normally not equal to each other, but if this variable is stable, then it is in fact the same type.
     override fun equals(other: Any?): Boolean =
-        other is RealVariable && symbol == other.symbol && isReceiver == other.isReceiver &&
+        other is RealVariable && symbol == other.symbol && isImplicit == other.isImplicit &&
                 dispatchReceiver == other.dispatchReceiver && extensionReceiver == other.extensionReceiver
 
     override fun hashCode(): Int =
-        Objects.hash(symbol, isReceiver, dispatchReceiver, extensionReceiver)
+        Objects.hash(symbol, isImplicit, dispatchReceiver, extensionReceiver)
 
-    override fun toString(): String =
-        (if (isReceiver) "this@" else "") + when (symbol) {
-            is FirClassSymbol<*> -> "${symbol.classId}"
-            is FirCallableSymbol<*> -> "${symbol.callableId}"
-            else -> "$symbol"
-        } + when {
-            dispatchReceiver != null && extensionReceiver != null -> "(${dispatchReceiver}, ${extensionReceiver})"
-            dispatchReceiver != null || extensionReceiver != null -> "(${dispatchReceiver ?: extensionReceiver})"
-            else -> ""
+    override fun toString(): String = buildString {
+        if (isImplicit) {
+            append(if (symbol is FirValueParameterSymbol) "context@" else "this@")
         }
 
+        append(
+            when (symbol) {
+                is FirClassSymbol<*> -> symbol.classId
+                is FirCallableSymbol<*> -> symbol.callableId
+                else -> symbol
+            }
+        )
+
+        if (dispatchReceiver != null && extensionReceiver != null) {
+            append("(${dispatchReceiver}, ${extensionReceiver})")
+        } else if (dispatchReceiver != null || extensionReceiver != null) {
+            append("(${dispatchReceiver ?: extensionReceiver})")
+        }
+    }
+
     fun getStability(flow: Flow, session: FirSession): SmartcastStability {
-        if (!isReceiver) {
+        if (!isImplicit) {
             val stability = propertyStability
 
             val isUnstableSmartcastOnDelegatedProperties =
@@ -119,7 +129,7 @@ class RealVariable(
                 else -> PropertyStability.MUTABLE_PROPERTY
             }
             is FirField -> when {
-                fir.isFinal -> PropertyStability.PUBLIC_FINAL_VAL
+                fir.isVal -> PropertyStability.PUBLIC_FINAL_VAL
                 else -> PropertyStability.MUTABLE_PROPERTY
             }
             is FirProperty -> when {

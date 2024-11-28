@@ -1,15 +1,15 @@
 /*
- * Copyright 2010-2023 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package org.jetbrains.kotlin.fir.backend.generators
 
 import org.jetbrains.kotlin.descriptors.*
-import org.jetbrains.kotlin.fir.backend.*
+import org.jetbrains.kotlin.fir.backend.Fir2IrComponents
+import org.jetbrains.kotlin.fir.backend.FirMetadataSource
+import org.jetbrains.kotlin.fir.backend.toIrType
 import org.jetbrains.kotlin.fir.backend.utils.*
-import org.jetbrains.kotlin.fir.backend.utils.convertWithOffsets
-import org.jetbrains.kotlin.fir.backend.utils.declareThisReceiverParameter
 import org.jetbrains.kotlin.fir.containingClassForLocalAttr
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.utils.*
@@ -112,7 +112,7 @@ class Fir2IrClassifiersGenerator(private val c: Fir2IrComponents) : Fir2IrCompon
 
     fun processClassHeader(klass: FirClass, irClass: IrClass = classifierStorage.getIrClass(klass)): IrClass {
         irClass.declareTypeParameters(klass)
-        irClass.setThisReceiver(klass.typeParameters)
+        irClass.setThisReceiver(c, klass.typeParameters)
         irClass.declareSupertypes(klass)
         if (klass is FirRegularClass) {
             irClass.declareValueClassRepresentation(klass)
@@ -129,18 +129,6 @@ class Fir2IrClassifiersGenerator(private val c: Fir2IrComponents) : Fir2IrCompon
             val fieldsForContextReceiversOfCurrentClass = classifierStorage.getFieldsWithContextReceiversForClass(this, klass)
             declarations.addAll(fieldsForContextReceiversOfCurrentClass)
         }
-    }
-
-    private fun IrClass.setThisReceiver(typeParameters: List<FirTypeParameterRef>) {
-        val typeArguments = typeParameters.map {
-            val typeParameter = classifierStorage.getIrTypeParameterSymbol(it.symbol, ConversionTypeOrigin.DEFAULT)
-            IrSimpleTypeImpl(typeParameter, hasQuestionMark = false, emptyList(), emptyList())
-        }
-        thisReceiver = declareThisReceiverParameter(
-            c,
-            thisType = IrSimpleTypeImpl(symbol, hasQuestionMark = false, typeArguments, emptyList()),
-            thisOrigin = IrDeclarationOrigin.INSTANCE_RECEIVER
-        )
     }
 
     private fun IrClass.declareSupertypes(klass: FirClass) {
@@ -308,7 +296,7 @@ class Fir2IrClassifiersGenerator(private val c: Fir2IrComponents) : Fir2IrCompon
     // ------------------------------------ code fragments ------------------------------------
 
     fun createCodeFragmentClass(codeFragment: FirCodeFragment, containingFile: IrFile, symbol: IrClassSymbol): IrClass {
-        val conversionData = codeFragment.conversionData
+        val conversionData = extensions.codeFragmentConversionData(codeFragment)
 
         val irClass = codeFragment.convertWithOffsets { startOffset, endOffset ->
             IrFactoryImpl.createClass(
@@ -333,11 +321,7 @@ class Fir2IrClassifiersGenerator(private val c: Fir2IrComponents) : Fir2IrCompon
                 setParent(containingFile)
                 addDeclarationToParent(this, containingFile)
                 typeParameters = emptyList()
-                thisReceiver = declareThisReceiverParameter(
-                    c,
-                    thisType = IrSimpleTypeImpl(symbol, false, emptyList(), emptyList()),
-                    thisOrigin = IrDeclarationOrigin.INSTANCE_RECEIVER
-                )
+                setThisReceiver(c, emptyList())
                 superTypes = listOf(builtins.anyType)
             }
         }
@@ -429,11 +413,7 @@ class Fir2IrClassifiersGenerator(private val c: Fir2IrComponents) : Fir2IrCompon
             setParent(irParent)
             addDeclarationToParent(this, irParent)
             typeParameters = emptyList()
-            thisReceiver = declareThisReceiverParameter(
-                c,
-                thisType = IrSimpleTypeImpl(symbol, false, emptyList(), emptyList()),
-                thisOrigin = IrDeclarationOrigin.INSTANCE_RECEIVER,
-            )
+            setThisReceiver(c, emptyList())
             superTypes = listOf(builtins.anyType)
         }
     }

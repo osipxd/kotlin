@@ -747,7 +747,10 @@ class CallAndReferenceGenerator(
             irRhs.type = variableAssignment.lValue.resolvedType.toIrType()
         }
 
-        val irRhsWithCast = wrapWithImplicitCastForAssignment(variableAssignment, irRhs)
+        val irRhsWithCast = with(visitor.implicitCastInserter) {
+            wrapWithImplicitCastForAssignment(variableAssignment, irRhs)
+                .insertSpecialCast(variableAssignment.rValue, variableAssignment.rValue.resolvedType, variableAssignment.lValue.resolvedType)
+        }
 
         injectSetValueCall(variableAssignment, calleeReference, irRhsWithCast)?.let { return it }
 
@@ -851,7 +854,7 @@ class CallAndReferenceGenerator(
         }.applyTypeArguments(lValue).applyReceivers(lValue, explicitReceiverExpression)
     }
 
-    /** Wrap an assignment - as needed - with an implicit cast to the left-hard side type. */
+    /** Wrap an assignment - as needed - with an implicit cast to the left-hand side type. */
     private fun wrapWithImplicitCastForAssignment(assignment: FirVariableAssignment, value: IrExpression): IrExpression {
         if (value is IrTypeOperatorCall) return value // Value is already cast.
 
@@ -901,7 +904,7 @@ class CallAndReferenceGenerator(
                 )
             }
         }
-
+        val annotationIsAccessible = coneType.toRegularClassSymbol(session) != null
         val symbol = type.classifierOrNull
         val firConstructorSymbol = (annotation.toResolvedCallableSymbol(session) as? FirConstructorSymbol)
             ?: run {
@@ -916,42 +919,47 @@ class CallAndReferenceGenerator(
                 constructorSymbol
             }
         val irConstructorCall = annotation.convertWithOffsets { startOffset, endOffset ->
-            // This `if` can't be replaced with `when` yet, because smart casts won't work :(
-            if (symbol !is IrClassSymbol) {
-                return@convertWithOffsets IrErrorCallExpressionImpl(
+            when {
+                // In compiler facility (debugger) scenario it's possible that annotation call is resolved in the session
+                //  where this annotation was applied, but invisible in the current session.
+                // In that case we shouldn't generate `IrConstructorCall`, as it will point to non-existing constructor
+                //  of stub IR for not found class
+                symbol !is IrClassSymbol || !annotationIsAccessible -> IrErrorCallExpressionImpl(
                     startOffset, endOffset, type, "Unresolved reference: ${annotation.render()}"
                 )
-            } else if (firConstructorSymbol == null) {
-                return@convertWithOffsets IrErrorCallExpressionImpl(
+
+                firConstructorSymbol == null -> IrErrorCallExpressionImpl(
                     startOffset, endOffset, type, "No annotation constructor found: $symbol"
                 )
+
+                else -> {
+                    // Annotation constructor may come unresolved on partial module compilation (inside the IDE).
+                    // Here it is resolved together with default parameter values, as transformers convert them to constants.
+                    // Also see 'IrConstAnnotationTransformer'.
+                    firConstructorSymbol.lazyResolveToPhase(FirResolvePhase.BODY_RESOLVE)
+
+                    val fullyExpandedConstructorSymbol = firConstructorSymbol.let {
+                        it.fir.originalConstructorIfTypeAlias?.unwrapUseSiteSubstitutionOverrides()?.symbol ?: it
+                    }
+                    val irConstructor = declarationStorage.getIrConstructorSymbol(fullyExpandedConstructorSymbol)
+
+                    IrConstructorCallImplWithShape(
+                        startOffset, endOffset, type, irConstructor,
+                        // Get the number of value arguments from FIR because of a possible cycle where an annotation constructor
+                        // parameter is annotated with the same annotation.
+                        // In this case, the IR value parameters won't be initialized yet, and we will get 0 from
+                        // `irConstructor.owner.valueParameters.size`.
+                        // See KT-58294
+                        valueArgumentsCount = firConstructorSymbol.valueParameterSymbols.size,
+                        contextParameterCount = firConstructorSymbol.resolvedContextReceivers.size,
+                        hasDispatchReceiver = firConstructorSymbol.dispatchReceiverType != null,
+                        hasExtensionReceiver = firConstructorSymbol.isExtension,
+                        typeArgumentsCount = fullyExpandedConstructorSymbol.typeParameterSymbols.size,
+                        constructorTypeArgumentsCount = 0,
+                        source = FirAnnotationSourceElement(annotation),
+                    )
+                }
             }
-
-            // Annotation constructor may come unresolved on partial module compilation (inside the IDE).
-            // Here it is resolved together with default parameter values, as transformers convert them to constants.
-            // Also see 'IrConstAnnotationTransformer'.
-            firConstructorSymbol.lazyResolveToPhase(FirResolvePhase.BODY_RESOLVE)
-
-            val fullyExpandedConstructorSymbol = firConstructorSymbol.let {
-                it.fir.originalConstructorIfTypeAlias?.unwrapUseSiteSubstitutionOverrides()?.symbol ?: it
-            }
-            val irConstructor = declarationStorage.getIrConstructorSymbol(fullyExpandedConstructorSymbol)
-
-            IrConstructorCallImplWithShape(
-                startOffset, endOffset, type, irConstructor,
-                // Get the number of value arguments from FIR because of a possible cycle where an annotation constructor
-                // parameter is annotated with the same annotation.
-                // In this case, the IR value parameters won't be initialized yet, and we will get 0 from
-                // `irConstructor.owner.valueParameters.size`.
-                // See KT-58294
-                valueArgumentsCount = firConstructorSymbol.valueParameterSymbols.size,
-                contextParameterCount = firConstructorSymbol.resolvedContextReceivers.size,
-                hasDispatchReceiver = firConstructorSymbol.dispatchReceiverType != null,
-                hasExtensionReceiver = firConstructorSymbol.isExtension,
-                typeArgumentsCount = fullyExpandedConstructorSymbol.typeParameterSymbols.size,
-                constructorTypeArgumentsCount = 0,
-                source = FirAnnotationSourceElement(annotation),
-            )
         }
         return visitor.withAnnotationMode {
             val annotationCall = annotation.toAnnotationCall()

@@ -55,7 +55,8 @@ object FirNativeErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(INCOMPATIBLE_THROWS_OVERRIDE, "Member overrides different ''@Throws'' filter from ''{0}''.", SYMBOL)
         map.put(INCOMPATIBLE_THROWS_INHERITED, "Member inherits different ''@Throws'' filters from:{0}", SYMBOLS_ON_NEXT_LINES)
         map.put(
-            MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND, "''@Throws'' on suspend declaration must have ''{0}'' (or any of its superclasses) listed.",
+            MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND,
+            "''@Throws'' on suspend declaration must have ''{0}'' (or any of its superclasses) listed.",
             TO_STRING
         )
         map.put(
@@ -85,11 +86,16 @@ object FirNativeErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "'@RefinesInSwift' annotation is only applicable to annotations with targets FUNCTION and/or PROPERTY."
         )
         map.put(INAPPLICABLE_OBJC_NAME, "'@ObjCName' is not applicable to overrides.")
-        map.put(INVALID_OBJC_NAME, "'@ObjCName' should have a name and/or swiftName.")
+        map.put(INVALID_OBJC_NAME, "'@ObjCName' must have a 'name' and/or 'swiftName'.")
         map.put(EMPTY_OBJC_NAME, "Empty '@ObjCName' names aren't supported.")
         map.put(INVALID_OBJC_NAME_CHARS, "''@ObjCName'' contains illegal characters ''{0}''.", TO_STRING)
         map.put(INVALID_OBJC_NAME_FIRST_CHAR, "''@ObjCName'' contains illegal first characters ''{0}''.", TO_STRING)
-        map.put(INCOMPATIBLE_OBJC_NAME_OVERRIDE, "Member ''{0}'' inherits inconsistent ''@ObjCName'' from:{1}", SYMBOL, SYMBOLS_ON_NEXT_LINES)
+        map.put(
+            INCOMPATIBLE_OBJC_NAME_OVERRIDE,
+            "Member ''{0}'' inherits inconsistent ''@ObjCName'' from:{1}",
+            SYMBOL,
+            SYMBOLS_ON_NEXT_LINES
+        )
         map.put(INAPPLICABLE_EXACT_OBJC_NAME, "Exact '@ObjCName' is only applicable to classes, objects, and interfaces.")
         map.put(MISSING_EXACT_OBJC_NAME, "Exact '@ObjCName' is required to have an ObjC name.")
         map.put(NON_LITERAL_OBJC_NAME_ARG, "'@ObjCName' accepts only literal 'String' and 'Boolean' values.")
@@ -98,12 +104,12 @@ object FirNativeErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
         map.put(
             CANNOT_CHECK_FOR_FORWARD_DECLARATION,
-            "Cannot check for forward declaration: ''{0}''",
+            "Cannot check for forward declaration ''{0}''.",
             FirDiagnosticRenderers.RENDER_TYPE
         )
         map.put(
             UNCHECKED_CAST_TO_FORWARD_DECLARATION,
-            "Unchecked cast to forward declaration: ''{0}'' to ''{1}''",
+            "Unchecked cast to forward declaration from ''{0}'' to ''{1}''.",
             FirDiagnosticRenderers.RENDER_TYPE,
             FirDiagnosticRenderers.RENDER_TYPE
         )
@@ -119,7 +125,7 @@ object FirNativeErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(TWO_OR_LESS_PARAMETERS_ARE_SUPPORTED_HERE, "Only 0, 1 or 2 parameters are supported here.")
         map.put(PROPERTY_MUST_BE_VAR, "''@{0}'' property must be var.", TO_STRING)
-        map.put(MUST_NOT_HAVE_EXTENSION_RECEIVER, "''{0}'' must not have extension receiver.", TO_STRING)
+        map.put(MUST_NOT_HAVE_EXTENSION_RECEIVER, "''{0}'' cannot have extension receiver.", TO_STRING)
         map.put(
             MUST_BE_OBJC_OBJECT_TYPE,
             "Unexpected {0}: ''{1}''\nOnly Objective-C object types are supported here.",

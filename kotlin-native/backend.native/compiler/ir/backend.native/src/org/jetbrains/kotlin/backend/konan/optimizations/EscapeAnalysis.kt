@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.backend.konan.optimizations
 
-import org.jetbrains.kotlin.utils.atMostOne
 import org.jetbrains.kotlin.backend.common.peek
 import org.jetbrains.kotlin.backend.common.pop
 import org.jetbrains.kotlin.backend.common.push
@@ -25,6 +24,7 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.util.constructedClass
 import org.jetbrains.kotlin.ir.util.getAllSuperclasses
+import org.jetbrains.kotlin.utils.atMostOne
 
 private val DataFlowIR.Node.ir
     get() = when (this) {
@@ -401,8 +401,9 @@ internal object EscapeAnalysis {
                 escapeAnalysisResults[functionSymbol] = FunctionEscapeAnalysisResult.optimistic()
             }
 
-            for (multiNode in condensation.topologicalOrder.reversed())
+            for (multiNode in condensation.topologicalOrder.reversed()) {
                 analyze(callGraph, multiNode)
+            }
 
             context.logMultiple {
                 with(stats) {
@@ -857,12 +858,32 @@ internal object EscapeAnalysis {
 
                 traverseAndConvert(body.rootScope, Depths.ROOT_SCOPE - 1)
 
+                val dummyParameter = DataFlowIR.Node.Parameter(-1)
+                val parameters = Array(function.symbol.parameters.size) { dummyParameter } // Put dummy in order to not bother with nullability.
+                // Parameters are declared in the root scope
+                for (node in body.rootScope.nodes) {
+                    (node as? DataFlowIR.Node.Parameter)?.let {
+                        require(parameters[it.index] == dummyParameter) {
+                            "Two different parameters with the same index ${it.index} for $functionSymbol"
+                        }
+                        parameters[it.index] = it
+                    }
+                }
+                parameters.forEachIndexed { index, parameter ->
+                    require(parameter != dummyParameter) {
+                        "No parameter with index $index for $functionSymbol"
+                    }
+                }
+
                 val nothing = moduleDFG.symbolTable.mapClassReferenceType(context.ir.symbols.nothing.owner)
                 body.forEachNonScopeNode { node ->
                     when (node) {
                         is DataFlowIR.Node.FieldWrite -> {
-                            if (node.value.node != DataFlowIR.Node.Null) {
-                                val receiver = node.receiver?.let { nodes[it.node]!! }
+                            val receiverNode = node.receiver?.node
+                            // Here and below the receiver node might be null due to unreachable code
+                            // (including the one having appeared after the inlining phase).
+                            if (node.value.node != DataFlowIR.Node.Null && receiverNode != DataFlowIR.Node.Null) {
+                                val receiver = receiverNode?.let { nodes[it]!! }
                                 val value = nodes[node.value.node]!!
                                 if (receiver == null)
                                     escapeOrigins.add(value)
@@ -878,26 +899,40 @@ internal object EscapeAnalysis {
                         }
 
                         is DataFlowIR.Node.FieldRead -> {
-                            val readResult = nodes[node]!!
-                            val receiver = node.receiver?.let { nodes[it.node]!! }
-                            if (receiver == null)
-                                escapeOrigins.add(readResult)
-                            else
-                                readResult.addAssignmentEdge(receiver.getFieldNode(node.field, this))
+                            val receiverNode = node.receiver?.node
+                            if (receiverNode != DataFlowIR.Node.Null) {
+                                val readResult = nodes[node]!!
+                                val receiver = receiverNode?.let { nodes[it]!! }
+                                if (receiver == null)
+                                    escapeOrigins.add(readResult)
+                                else
+                                    readResult.addAssignmentEdge(receiver.getFieldNode(node.field, this))
+                            }
                         }
 
                         is DataFlowIR.Node.ArrayWrite -> {
-                            if (node.value.node != DataFlowIR.Node.Null) {
-                                val array = nodes[node.array.node]!!
-                                val value = nodes[node.value.node]!!
+                            val arrayNode = node.array.node
+                            val valueNode = node.value.node
+                            if (valueNode != DataFlowIR.Node.Null && arrayNode != DataFlowIR.Node.Null) {
+                                val array = nodes[arrayNode]!!
+                                val value = nodes[valueNode]!!
                                 array.getFieldNode(intestinesField, this).addAssignmentEdge(value)
                             }
                         }
 
                         is DataFlowIR.Node.ArrayRead -> {
-                            val array = nodes[node.array.node]!!
-                            val readResult = nodes[node]!!
-                            readResult.addAssignmentEdge(array.getFieldNode(intestinesField, this))
+                            val arrayNode = node.array.node
+                            if (arrayNode != DataFlowIR.Node.Null) {
+                                val array = nodes[arrayNode]!!
+                                val readResult = nodes[node]!!
+                                readResult.addAssignmentEdge(array.getFieldNode(intestinesField, this))
+                            }
+                        }
+
+                        is DataFlowIR.Node.SaveCoroutineState -> {
+                            val thisIntestines = nodes[parameters[0]]!!.getFieldNode(intestinesField, this)
+                            for (variable in node.liveVariables)
+                                thisIntestines.addAssignmentEdge(nodes[variable]!!)
                         }
 
                         is DataFlowIR.Node.Variable -> {
@@ -925,9 +960,6 @@ internal object EscapeAnalysis {
 
                 val escapes = functionSymbol.escapes
                 if (escapes != null) {
-                    // Parameters are declared in the root scope
-                    val parameters = function.body.rootScope.nodes
-                            .filterIsInstance<DataFlowIR.Node.Parameter>()
                     for (parameter in parameters)
                         if (escapes.escapesAt(parameter.index))
                             escapeOrigins += nodes[parameter]!!

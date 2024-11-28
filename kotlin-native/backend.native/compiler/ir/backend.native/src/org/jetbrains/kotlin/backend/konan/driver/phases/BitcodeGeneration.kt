@@ -16,15 +16,14 @@ import org.jetbrains.kotlin.backend.konan.llvm.Lifetime
 import org.jetbrains.kotlin.backend.konan.llvm.RTTIGeneratorVisitor
 import org.jetbrains.kotlin.backend.konan.llvm.createLlvmDeclarations
 import org.jetbrains.kotlin.backend.konan.objcexport.ObjCExport
+import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 
 internal val CreateLLVMDeclarationsPhase = createSimpleNamedCompilerPhase<NativeGenerationState, IrModuleFragment>(
         name = "CreateLLVMDeclarations",
-        description = "Map IR declarations to LLVM",
         preactions = getDefaultIrActions(),
         postactions = getDefaultIrActions(),
         op = { generationState, module ->
@@ -42,7 +41,6 @@ internal data class RTTIInput(
 
 internal val RTTIPhase = createSimpleNamedCompilerPhase<NativeGenerationState, RTTIInput>(
         name = "RTTI",
-        description = "RTTI generation",
         preactions = getDefaultIrActions(),
         postactions = getDefaultIrActions(),
         op = { generationState, input ->
@@ -54,6 +52,7 @@ internal val RTTIPhase = createSimpleNamedCompilerPhase<NativeGenerationState, R
 
 internal data class CodegenInput(
         val irModule: IrModuleFragment,
+        val irBuiltIns: IrBuiltIns,
         val lifetimes: Map<IrElement, Lifetime>
 ) : KotlinBackendIrHolder {
     override val kotlinIr: IrElement
@@ -62,7 +61,6 @@ internal data class CodegenInput(
 
 internal val CodegenPhase = createSimpleNamedCompilerPhase<NativeGenerationState, CodegenInput>(
         name = "Codegen",
-        description = "Code generation",
         preactions = getDefaultIrActions<CodegenInput, NativeGenerationState>() + getDefaultLlvmModuleActions(),
         postactions = getDefaultIrActions<CodegenInput, NativeGenerationState>() + getDefaultLlvmModuleActions(),
         op = { generationState, input ->
@@ -74,7 +72,7 @@ internal val CodegenPhase = createSimpleNamedCompilerPhase<NativeGenerationState
                     context.objCExportCodeSpec
             )
 
-            input.irModule.acceptVoid(CodeGeneratorVisitor(generationState, input.irModule.irBuiltins, input.lifetimes))
+            input.irModule.acceptVoid(CodeGeneratorVisitor(generationState, input.irBuiltIns, input.lifetimes))
 
             if (generationState.hasDebugInfo())
                 DIFinalize(generationState.debugInfo.builder)

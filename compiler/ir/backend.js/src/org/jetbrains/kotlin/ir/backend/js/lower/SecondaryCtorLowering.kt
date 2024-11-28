@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
+import org.jetbrains.kotlin.ir.backend.js.constructorFactory
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.declarations.*
@@ -33,9 +34,13 @@ import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrTransformer
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.utils.addToStdlib.getOrSetIfNull
 import org.jetbrains.kotlin.utils.memoryOptimizedMap
 import org.jetbrains.kotlin.utils.memoryOptimizedPlus
 
+/**
+ * Generates static functions for each secondary constructor.
+ */
 class SecondaryConstructorLowering(val context: JsIrBackendContext) : DeclarationTransformer {
 
     override fun transformFlat(declaration: IrDeclaration): List<IrDeclaration>? {
@@ -230,11 +235,14 @@ private fun JsIrBackendContext.buildConstructorDelegate(constructor: IrConstruct
 }
 
 private fun JsIrBackendContext.buildConstructorFactory(constructor: IrConstructor, klass: IrClass): IrSimpleFunction {
-    return mapping.secondaryConstructorToFactory.getOrPut(constructor) {
+    return constructor::constructorFactory.getOrSetIfNull {
         buildFactoryDeclaration(constructor, klass)
     }
 }
 
+/**
+ * Replaces usages of secondary constructor with the corresponding static functions.
+ */
 class SecondaryFactoryInjectorLowering(val context: JsIrBackendContext) : BodyLoweringPass {
 
     override fun lower(irBody: IrBody, container: IrDeclaration) {

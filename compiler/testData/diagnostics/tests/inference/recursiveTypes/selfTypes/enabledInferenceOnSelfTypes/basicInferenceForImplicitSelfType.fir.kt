@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: BACKEND
 // LANGUAGE: +TypeInferenceOnCallsWithSelfTypes
 
 // FILE: JavaBuilder.java
@@ -43,7 +44,7 @@ fun <K : Builder<K>> testTypeParam(builder: Builder<K>) {
 }
 
 fun testStarJava(builder: JavaBuilder<*>) {
-    <!DEBUG_INFO_EXPRESSION_TYPE("CapturedType(*)..CapturedType(*)?!")!>builder.test()<!>
+    <!DEBUG_INFO_EXPRESSION_TYPE("(CapturedType(*)..CapturedType(*)?)")!>builder.test()<!>
 
     builder
         .test()
@@ -51,7 +52,7 @@ fun testStarJava(builder: JavaBuilder<*>) {
 }
 
 fun <K : JavaBuilder<K>> testTypeParamJava(builder: JavaBuilder<K>) {
-    <!DEBUG_INFO_EXPRESSION_TYPE("K..K?!")!>builder.test()<!>
+    <!DEBUG_INFO_EXPRESSION_TYPE("(K..K?)")!>builder.test()<!>
 
     builder
         .test()

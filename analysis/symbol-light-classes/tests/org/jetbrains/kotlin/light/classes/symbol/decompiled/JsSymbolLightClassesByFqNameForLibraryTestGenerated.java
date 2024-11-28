@@ -139,6 +139,18 @@ public class JsSymbolLightClassesByFqNameForLibraryTestGenerated extends Abstrac
   }
 
   @Test
+  @TestMetadata("constructorWithValueClass.kt")
+  public void testConstructorWithValueClass() {
+    runTest("compiler/testData/asJava/lightClasses/lightClassByFqName/constructorWithValueClass.kt");
+  }
+
+  @Test
+  @TestMetadata("constructorWithValueClassAsProperty.kt")
+  public void testConstructorWithValueClassAsProperty() {
+    runTest("compiler/testData/asJava/lightClasses/lightClassByFqName/constructorWithValueClassAsProperty.kt");
+  }
+
+  @Test
   @TestMetadata("Constructors.kt")
   public void testConstructors() {
     runTest("compiler/testData/asJava/lightClasses/lightClassByFqName/Constructors.kt");

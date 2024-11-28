@@ -17,8 +17,6 @@ import org.jetbrains.kotlin.psi.Call
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.SinceKotlinAccessibility
-import org.jetbrains.kotlin.resolve.calls.checkers.isOperatorMod
-import org.jetbrains.kotlin.resolve.calls.checkers.shouldWarnAboutDeprecatedModFromBuiltIns
 import org.jetbrains.kotlin.resolve.checkSinceKotlinVersionAccessibility
 import org.jetbrains.kotlin.resolve.checkers.OptInUsageChecker
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameOrNull
@@ -247,11 +245,6 @@ class DeprecationResolver(
     }
 
     private fun DeclarationDescriptor.getOwnDeprecations(): List<DescriptorBasedDeprecationInfo> {
-        // The problem is that declaration `mod` in built-ins has @Deprecated annotation but actually it was deprecated only in version 1.1
-        if (isBuiltInOperatorMod && !shouldWarnAboutDeprecatedModFromBuiltIns(languageVersionSettings)) {
-            return emptyList()
-        }
-
         // This is a temporary workaround before @DeprecatedSinceKotlin is introduced, see KT-23575
         if (shouldSkipDeprecationOnKotlinIoReadBytes(this, languageVersionSettings)) {
             return emptyList()
@@ -293,9 +286,6 @@ class DeprecationResolver(
                     this is TypeAliasConstructorDescriptor ->
                         DeprecatedTypealiasByAnnotation(typeAliasDescriptor, deprecatedByAnnotation)
 
-                    isBuiltInOperatorMod ->
-                        DeprecatedOperatorMod(languageVersionSettings, deprecatedByAnnotation)
-
                     else -> deprecatedByAnnotation
                 }
                 result.add(deprecation)
@@ -307,9 +297,6 @@ class DeprecationResolver(
         }
         getDeprecationFromUserData(this)?.let(result::add)
     }
-
-    private val DeclarationDescriptor.isBuiltInOperatorMod: Boolean
-        get() = this is FunctionDescriptor && this.isOperatorMod() && KotlinBuiltIns.isUnderKotlinPackage(this)
 
     private fun shouldSkipDeprecationOnKotlinIoReadBytes(
         descriptor: DeclarationDescriptor, languageVersionSettings: LanguageVersionSettings

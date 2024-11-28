@@ -18,10 +18,12 @@ internal class SirFunctionImpl(
     override val documentation: String?,
     override val attributes: MutableList<SirAttribute>,
     override var body: SirFunctionBody?,
+    override val errorType: SirType,
     override val isOverride: Boolean,
     override val isInstance: Boolean,
     override val modality: SirModality,
     override val name: String,
+    override val extensionReceiverParameter: SirParameter?,
     override val parameters: MutableList<SirParameter>,
     override val returnType: SirType,
 ) : SirFunction() {

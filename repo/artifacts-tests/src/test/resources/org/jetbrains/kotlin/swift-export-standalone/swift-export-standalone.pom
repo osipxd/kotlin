@@ -5,7 +5,7 @@
   <artifactId>swift-export-standalone</artifactId>
   <version>ArtifactsTest.version</version>
   <name>Swift Export Standalone</name>
-  <description>Runner for Swift Export</description>
+  <description>Standalone Runner for Swift Export</description>
   <url>https://kotlinlang.org/</url>
   <licenses>
     <license>

@@ -41,7 +41,7 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
     override val symbol: FirValueParameterSymbol,
     val annotationList: FirJavaAnnotationList,
     var lazyDefaultValue: Lazy<FirExpression>?,
-    override val containingFunctionSymbol: FirFunctionSymbol<*>,
+    override val containingDeclarationSymbol: FirFunctionSymbol<*>,
     override val isVararg: Boolean,
 ) : FirValueParameter() {
     override var defaultValue: FirExpression?
@@ -62,6 +62,9 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
 
     override val isNoinline: Boolean
         get() = false
+
+    override val valueParameterKind: FirValueParameterKind
+        get() = FirValueParameterKind.Regular
 
     override val isVal: Boolean
         get() = true
@@ -107,7 +110,7 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
     override val dispatchReceiverType: ConeSimpleKotlinType?
         get() = null
 
-    override val contextReceivers: List<FirContextReceiver>
+    override val contextReceivers: List<FirValueParameter>
         get() = emptyList()
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {
@@ -128,6 +131,10 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
     }
 
     override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirValueParameter {
+        return this
+    }
+
+    override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirValueParameter {
         return this
     }
 
@@ -200,7 +207,7 @@ class FirJavaValueParameter @FirImplementationDetail constructor(
     override fun replaceSetter(newSetter: FirPropertyAccessor?) {
     }
 
-    override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>) {
+    override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>) {
         error("Body cannot be replaced for FirJavaValueParameter")
     }
 
@@ -218,7 +225,7 @@ class FirJavaValueParameterBuilder {
     lateinit var name: Name
     var annotationList: FirJavaAnnotationList = FirEmptyJavaAnnotationList
     var defaultValue: Lazy<FirExpression>? = null
-    lateinit var containingFunctionSymbol: FirFunctionSymbol<*>
+    lateinit var containingDeclarationSymbol: FirFunctionSymbol<*>
     var isVararg: Boolean by Delegates.notNull()
     var isFromSource: Boolean by Delegates.notNull()
 
@@ -234,7 +241,7 @@ class FirJavaValueParameterBuilder {
             symbol = FirValueParameterSymbol(name),
             annotationList,
             defaultValue,
-            containingFunctionSymbol,
+            containingDeclarationSymbol,
             isVararg,
         )
     }
@@ -258,7 +265,7 @@ inline fun buildJavaValueParameterCopy(original: FirJavaValueParameter, init: Fi
     copyBuilder.name = original.name
     copyBuilder.annotationList = original.annotationList
     copyBuilder.defaultValue = original.lazyDefaultValue
-    copyBuilder.containingFunctionSymbol = original.containingFunctionSymbol
+    copyBuilder.containingDeclarationSymbol = original.containingDeclarationSymbol
     copyBuilder.isVararg = original.isVararg
     return copyBuilder.apply(init).build()
 }

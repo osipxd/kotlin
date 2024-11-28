@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.ir.util.SymbolRemapper
 import org.jetbrains.kotlin.ir.util.isGetter
 import org.jetbrains.kotlin.ir.util.isSetter
 import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.ir.util.resolveFakeOverride
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
@@ -242,7 +243,7 @@ class SpecialFakeOverrideSymbolsActualizedByFieldsTransformer(
         val originalAccessorSymbol = fakeOverrideAccessorSymbol.originalSymbol
         val actualizedClassSymbol = fakeOverrideAccessorSymbol.containingClassSymbol
 
-        val actualFieldSymbol = expectActualMap.propertyAccessorsActualizedByFields[originalAccessorSymbol]?.owner?.backingField?.symbol
+        val actualFieldSymbol = expectActualMap.propertyAccessorsActualizedByFields[originalAccessorSymbol]?.owner?.resolveFakeOverride()?.backingField?.symbol
             ?: error("No override for $originalAccessorSymbol in $actualizedClassSymbol")
 
         return when {
@@ -259,7 +260,7 @@ class SpecialFakeOverrideSymbolsActualizedByFieldsTransformer(
                 expression.startOffset, expression.endOffset,
                 symbol = actualFieldSymbol,
                 receiver = expression.dispatchReceiver,
-                value = expression.getValueArgument(0)!!,
+                value = expression.arguments[originalAccessorSymbol.owner.parameters.indexOfFirst{ it.kind == IrParameterKind.Regular }]!!,
                 type = expression.type,
                 origin = expression.origin,
                 superQualifierSymbol = expression.superQualifierSymbol

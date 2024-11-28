@@ -8,6 +8,9 @@ plugins {
     kotlin("jvm")
     id("jps-compatible")
     alias(libs.plugins.gradle.node)
+    id("d8-configuration")
+    id("binaryen-configuration")
+    id("nodejs-configuration")
 }
 
 node {
@@ -122,9 +125,6 @@ dependencies {
 
 val generationRoot = projectDir.resolve("tests-gen")
 
-useD8Plugin()
-useNodeJsPlugin()
-useBinaryenPlugin()
 optInToExperimentalCompilerApi()
 
 sourceSets {
@@ -278,9 +278,15 @@ fun Project.wasmProjectTest(
         jUnitMode = JUnitMode.JUnit5
     ) {
         workingDir = rootDir
-        setupV8()
-        setupNodeJs()
-        setupBinaryen()
+        with(d8KotlinBuild) {
+            setupV8()
+        }
+        with(nodeJsKotlinBuild) {
+            setupNodeJs()
+        }
+        with(binaryenKotlinBuild) {
+            setupBinaryen()
+        }
         setupSpiderMonkey()
         setupWasmEdge()
         useJUnitPlatform()

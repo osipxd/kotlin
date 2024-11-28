@@ -64,12 +64,6 @@ object FirTree : AbstractFirTreeBuilder() {
         +field("controlFlowGraphReference", controlFlowGraphReference, withReplace = true, nullable = true)
     }
 
-    val contextReceiver: Element by element(Declaration) {
-        +field(typeRef, withReplace = true, withTransform = true)
-        +field("customLabelName", nameType, nullable = true)
-        +field("labelNameFromTypeRef", nameType, nullable = true)
-    }
-
     val elementWithResolveState: Element by element(Other) {
         kind = ImplementationKind.AbstractClass
 
@@ -107,7 +101,7 @@ object FirTree : AbstractFirTreeBuilder() {
         +referencedSymbol(callableSymbolType.withArgs(callableDeclaration))
         +field("containerSource", type<DeserializedContainerSource>(), nullable = true)
         +field("dispatchReceiverType", coneSimpleKotlinTypeType, nullable = true)
-        +listField(contextReceiver, useMutableOrEmpty = true, withReplace = true)
+        +listField(name = "contextReceivers", valueParameter, useMutableOrEmpty = true, withReplace = true, withTransform = true)
     }
 
     val function: Element by sealedElement(Declaration) {
@@ -402,6 +396,7 @@ object FirTree : AbstractFirTreeBuilder() {
     val classLikeDeclaration: Element by sealedElement(Declaration) {
         parent(memberDeclaration)
         parent(statement)
+        parent(typeParameterRefsOwner)
 
         +declaredSymbol(classLikeSymbolType.withArgs(classLikeDeclaration))
         +field("deprecationsProvider", deprecationsProviderType, withReplace = true) {
@@ -412,7 +407,6 @@ object FirTree : AbstractFirTreeBuilder() {
     val klass: Element by sealedElement(Declaration, name = "Class") {
         parent(classLikeDeclaration)
         parent(statement)
-        parent(typeParameterRefsOwner)
         parent(controlFlowGraphOwner)
 
         +declaredSymbol(classSymbolType.withArgs(klass))
@@ -433,7 +427,7 @@ object FirTree : AbstractFirTreeBuilder() {
         +field("hasLazyNestedClassifiers", boolean)
         +referencedSymbol("companionObjectSymbol", regularClassSymbolType, nullable = true, withReplace = true)
         +listField("superTypeRefs", typeRef, withReplace = true)
-        +listField(contextReceiver, useMutableOrEmpty = true)
+        +listField(name = "contextReceivers", valueParameter, useMutableOrEmpty = true, withTransform = true)
     }
 
     val anonymousObject: Element by element(Declaration) {
@@ -450,9 +444,7 @@ object FirTree : AbstractFirTreeBuilder() {
 
     val typeAlias: Element by element(Declaration) {
         parent(classLikeDeclaration)
-        parent(typeParametersOwner)
 
-        +typeParameters
         +FieldSets.name
         +declaredSymbol(typeAliasSymbolType)
         +field("expandedTypeRef", typeRef, withReplace = true, withTransform = true)
@@ -531,7 +523,6 @@ object FirTree : AbstractFirTreeBuilder() {
         parent(typeParametersOwner)
         parent(controlFlowGraphOwner)
 
-        +listField(contextReceiver, useMutableOrEmpty = true, withReplace = true, withTransform = true)
         +declaredSymbol(propertySymbolType)
         +referencedSymbol("delegateFieldSymbol", delegateFieldSymbolType, nullable = true)
         +field("isLocal", boolean)
@@ -638,16 +629,21 @@ object FirTree : AbstractFirTreeBuilder() {
 
         +declaredSymbol(valueParameterSymbolType)
         +field("defaultValue", expression, nullable = true, withReplace = true)
-        +referencedSymbol("containingFunctionSymbol", functionSymbolType.withArgs(TypeRef.Star)) {
+        +referencedSymbol("containingDeclarationSymbol", firBasedSymbolType.withArgs(TypeRef.Star)) {
             withBindThis = false
         }
         generateBooleanFields("crossinline", "noinline", "vararg")
+        +field("valueParameterKind", valueParameterKindType)
     }
 
     val receiverParameter: Element by element(Declaration) {
-        parent(annotationContainer)
+        parent(declaration)
 
+        +declaredSymbol(receiverParameterSymbolType)
         +field(typeRef, withReplace = true, withTransform = true)
+        +referencedSymbol("containingDeclarationSymbol", firBasedSymbolType.withArgs(TypeRef.Star)) {
+            withBindThis = false
+        }
         +annotations
     }
 
@@ -757,6 +753,18 @@ object FirTree : AbstractFirTreeBuilder() {
 
         +declaredSymbol(codeFragmentSymbolType)
         +field(block, withReplace = true, withTransform = true)
+    }
+
+    val replSnippet: Element by element(Declaration) {
+        parent(declaration)
+        parent(controlFlowGraphOwner)
+
+        +FieldSets.name
+        +declaredSymbol(replSnippetSymbolType)
+
+        +listField("receivers", scriptReceiverParameter, useMutableOrEmpty = true, withTransform = true)
+        +field("body", block, nullable = false, withTransform = true, withReplace = true)
+        +field("resultTypeRef", typeRef, withReplace = true, withTransform = true)
     }
 
     val packageDirective: Element by element(Other) {
@@ -957,7 +965,7 @@ object FirTree : AbstractFirTreeBuilder() {
         kDoc = """
                 |[${varargArgumentsExpression.render()}]s are created during body resolution phase for arguments of `vararg` parameters.
                 |
-                |If one or multiple elements are passed to a `vararg` parameter, the will be wrapped with a [${varargArgumentsExpression.render()}]
+                |If one or multiple elements are passed to a `vararg` parameter, they will be wrapped with a [${varargArgumentsExpression.render()}]
                 |and [arguments] will contain the individual elements.
                 |
                 |If a named argument is passed to a `vararg` parameter, [arguments] will contain a single [${spreadArgumentExpression.render()}]
@@ -983,6 +991,7 @@ object FirTree : AbstractFirTreeBuilder() {
         +field("relativeClassFqName", fqNameType, nullable = true)
         +field("classId", classIdType, nullable = true)
         +referencedSymbol("symbol", classLikeSymbolType, nullable = true)
+        +field("explicitParent", resolvedQualifier, nullable = true)
         +field("isNullableLHSForCallableReference", boolean, withReplace = true)
         +field("resolvedToCompanionObject", boolean, withReplace = true)
         +field("canBeValue", boolean, withReplace = true)
@@ -1107,8 +1116,7 @@ object FirTree : AbstractFirTreeBuilder() {
         parent(reference)
 
         +field("labelName", string, nullable = true)
-        +referencedSymbol("boundSymbol", firBasedSymbolType.withArgs(TypeRef.Star), nullable = true, withReplace = true)
-        +field("contextReceiverNumber", int, withReplace = true)
+        +referencedSymbol("boundSymbol", firThisOwnerSymbolType.withArgs(TypeRef.Star), nullable = true, withReplace = true)
         +field("isImplicit", boolean)
         +field("diagnostic", coneDiagnosticType, nullable = true, withReplace = true)
     }
@@ -1262,6 +1270,18 @@ object FirTree : AbstractFirTreeBuilder() {
         parent(contractDescription)
 
         +field("contractCall", functionCall)
+        +field("diagnostic", coneDiagnosticType, nullable = true)
+    }
+
+    val errorContractDescription: Element by element(Contracts) {
+        kDoc = """
+                |Represents a contract description that could not be resolved.
+                |
+                |Contract descriptions where the effects are unresolved are handled by [resolvedContractDescription], this type
+                |is specifically for cases where the resolution fails in its entirety.
+               """.trimMargin()
+        parent(contractDescription)
+
         +field("diagnostic", coneDiagnosticType, nullable = true)
     }
 

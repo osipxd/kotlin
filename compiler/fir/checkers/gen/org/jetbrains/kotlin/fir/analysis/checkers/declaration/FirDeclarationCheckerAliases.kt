@@ -24,7 +24,9 @@ import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.declarations.FirFunction
 import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirPropertyAccessor
+import org.jetbrains.kotlin.fir.declarations.FirReceiverParameter
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+import org.jetbrains.kotlin.fir.declarations.FirReplSnippet
 import org.jetbrains.kotlin.fir.declarations.FirScript
 import org.jetbrains.kotlin.fir.declarations.FirSimpleFunction
 import org.jetbrains.kotlin.fir.declarations.FirTypeAlias
@@ -42,6 +44,7 @@ typealias FirRegularClassChecker = FirDeclarationChecker<FirRegularClass>
 typealias FirConstructorChecker = FirDeclarationChecker<FirConstructor>
 typealias FirFileChecker = FirDeclarationChecker<FirFile>
 typealias FirScriptChecker = FirDeclarationChecker<FirScript>
+typealias FirReplSnippetChecker = FirDeclarationChecker<FirReplSnippet>
 typealias FirTypeParameterChecker = FirDeclarationChecker<FirTypeParameter>
 typealias FirTypeAliasChecker = FirDeclarationChecker<FirTypeAlias>
 typealias FirAnonymousFunctionChecker = FirDeclarationChecker<FirAnonymousFunction>
@@ -51,3 +54,4 @@ typealias FirValueParameterChecker = FirDeclarationChecker<FirValueParameter>
 typealias FirEnumEntryChecker = FirDeclarationChecker<FirEnumEntry>
 typealias FirAnonymousObjectChecker = FirDeclarationChecker<FirAnonymousObject>
 typealias FirAnonymousInitializerChecker = FirDeclarationChecker<FirAnonymousInitializer>
+typealias FirReceiverParameterChecker = FirDeclarationChecker<FirReceiverParameter>

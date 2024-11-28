@@ -206,6 +206,11 @@ object SourceElementPositioningStrategies {
         PositioningStrategies.REFERENCED_NAME_BY_QUALIFIED
     )
 
+    val DEPRECATION = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.DEPRECATION,
+        PositioningStrategies.DEPRECATION
+    )
+
     val WHEN_EXPRESSION = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.WHEN_EXPRESSION,
         PositioningStrategies.WHEN_EXPRESSION
@@ -433,5 +438,10 @@ object SourceElementPositioningStrategies {
     val PACKAGE_DIRECTIVE_NAME_EXPRESSION = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.PACKAGE_DIRECTIVE_NAME_EXPRESSION,
         PositioningStrategies.PACKAGE_DIRECTIVE_NAME_EXPRESSION,
+    )
+
+    val OUTERMOST_PARENTHESES_IN_ASSIGNMENT_LHS = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.OUTERMOST_PARENTHESES_IN_ASSIGNMENT_LHS,
+        PositioningStrategies.OUTERMOST_PARENTHESES_IN_ASSIGNMENT_LHS,
     )
 }

@@ -27,10 +27,10 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.resolve.annotations.JVM_STATIC_ANNOTATION_FQ_NAME
 
-@PhaseDescription(
-    name = "JvmStaticInObject",
-    description = "Make JvmStatic functions in non-companion objects static and replace all call sites in the module"
-)
+/**
+ * Makes `@JvmStatic` functions in non-companion objects static and replaces all call sites in the module.
+ */
+@PhaseDescription(name = "JvmStaticInObject")
 internal class JvmStaticInObjectLowering(val context: JvmBackendContext) : FileLoweringPass {
     override fun lower(irFile: IrFile) =
         irFile.transformChildrenVoid(
@@ -38,10 +38,10 @@ internal class JvmStaticInObjectLowering(val context: JvmBackendContext) : FileL
         )
 }
 
-@PhaseDescription(
-    name = "JvmStaticInCompanion",
-    description = "Synthesize static proxy functions for JvmStatic functions in companion objects"
-)
+/**
+ * Synthesizes static proxy functions for `@JvmStatic` functions in companion objects.
+ */
+@PhaseDescription(name = "JvmStaticInCompanion")
 internal class JvmStaticInCompanionLowering(val context: JvmBackendContext) : FileLoweringPass {
     override fun lower(irFile: IrFile) =
         irFile.transformChildrenVoid(CompanionObjectJvmStaticTransformer(context))
@@ -64,7 +64,7 @@ private fun IrExpression.coerceToUnit(irBuiltIns: IrBuiltIns) =
 
 private fun IrMemberAccessExpression<*>.makeStatic(irBuiltIns: IrBuiltIns, replaceCallee: IrSimpleFunction?): IrExpression {
     val receiver = dispatchReceiver ?: return this
-    dispatchReceiver = null
+    removeDispatchReceiver()
     if (replaceCallee != null) {
         (this as IrCall).symbol = replaceCallee.symbol
     }

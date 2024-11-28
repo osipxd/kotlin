@@ -95,11 +95,11 @@ owner -> FirPropertySymbol /Derived.b
 context -> FirPropertySymbol /Derived.b
 
 @Anno(<strcat>(String(b ), x#))
-owner -> FirRegularClassSymbol Derived
+owner -> FirValueParameterSymbol <local>/b from FirNamedFunctionSymbol /Derived.copy
 context -> FirValueParameterSymbol <local>/b from FirNamedFunctionSymbol /Derived.copy
 
 @Anno(<strcat>(String(param: b ), x#))
-owner -> FirRegularClassSymbol Derived
+owner -> FirValueParameterSymbol <local>/b from FirNamedFunctionSymbol /Derived.copy
 context -> FirValueParameterSymbol <local>/b from FirNamedFunctionSymbol /Derived.copy
 
 @Anno(<strcat>(String(Derived ), x#))

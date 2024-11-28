@@ -12,11 +12,13 @@ fun copyCommonKlibBasedCompilerArguments(from: CommonKlibBasedCompilerArguments,
 
     to.duplicatedUniqueNameStrategy = from.duplicatedUniqueNameStrategy
     to.enableSignatureClashChecks = from.enableSignatureClashChecks
+    to.irInlinerBeforeKlibSerialization = from.irInlinerBeforeKlibSerialization
     to.noDoubleInlining = from.noDoubleInlining
     to.normalizeAbsolutePath = from.normalizeAbsolutePath
     to.partialLinkageLogLevel = from.partialLinkageLogLevel
     to.partialLinkageMode = from.partialLinkageMode
     to.relativePathBases = from.relativePathBases?.copyOf()
+    to.verifyIrVisibilityAfterInlining = from.verifyIrVisibilityAfterInlining
 
     return to
 }

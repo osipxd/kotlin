@@ -14,12 +14,9 @@ import org.jetbrains.kotlin.konan.test.blackbox.support.MutedOption
 import org.jetbrains.kotlin.konan.test.blackbox.support.runner.RunnerWithExecutor
 import org.jetbrains.kotlin.konan.test.blackbox.support.runner.NoopTestRunner
 import org.jetbrains.kotlin.konan.test.blackbox.support.runner.Runner
-import org.jetbrains.kotlin.native.executors.ExecuteRequest
-import org.jetbrains.kotlin.native.executors.RunProcessResult
 import org.jetbrains.kotlin.native.executors.runProcess
 import org.jetbrains.kotlin.test.services.JUnit5Assertions.assertFalse
 import org.jetbrains.kotlin.test.services.JUnit5Assertions.assertTrue
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.net.URLClassLoader
@@ -68,7 +65,7 @@ class KotlinNativeClassLoader(private val lazyClassLoader: Lazy<ClassLoader>) {
 /**
  * New test modes may be added as necessary.
  */
-internal enum class TestMode(private val description: String) {
+enum class TestMode(private val description: String) {
     ONE_STAGE_MULTI_MODULE(
         description = "Compile each test file as one or many modules (depending on MODULE directives declared in the file)." +
                 " Produce a KLIB per each module except the last one." +
@@ -304,6 +301,11 @@ internal enum class TestGroupCreation {
 
 enum class BinaryLibraryKind {
     STATIC, DYNAMIC
+}
+
+enum class KlibIrInlinerMode {
+    OFF,
+    ON,
 }
 
 internal enum class CInterfaceMode(val compilerFlag: String) {

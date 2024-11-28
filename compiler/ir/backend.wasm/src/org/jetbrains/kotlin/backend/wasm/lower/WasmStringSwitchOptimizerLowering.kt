@@ -17,14 +17,17 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.util.toIrConst
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.ir.util.getSimpleFunction
 import org.jetbrains.kotlin.ir.util.isElseBranch
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.Name
 
 private val OPTIMISED_WHEN_SUBJECT by IrDeclarationOriginImpl
 
+/**
+ * Replaces `when` with constant string cases to binary search by string hashcodes.
+ */
 class WasmStringSwitchOptimizerLowering(
     private val context: WasmBackendContext
 ) : FileLoweringPass, IrElementTransformerVoidWithContext() {

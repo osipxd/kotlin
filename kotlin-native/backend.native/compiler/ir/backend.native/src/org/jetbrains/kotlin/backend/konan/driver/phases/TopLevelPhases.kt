@@ -5,18 +5,23 @@
 
 package org.jetbrains.kotlin.backend.konan.driver.phases
 
+import org.jetbrains.kotlin.backend.common.phaser.PhaseEngine
 import org.jetbrains.kotlin.backend.konan.*
 import org.jetbrains.kotlin.backend.konan.driver.PhaseContext
-import org.jetbrains.kotlin.backend.konan.driver.PhaseEngine
 import org.jetbrains.kotlin.backend.konan.driver.utilities.CExportFiles
 import org.jetbrains.kotlin.backend.konan.driver.utilities.createTempFiles
 import org.jetbrains.kotlin.backend.konan.ir.konanLibrary
 import org.jetbrains.kotlin.cli.common.CommonCompilerPerformanceManager
+import org.jetbrains.kotlin.cli.common.config.kotlinSourceRoots
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.KlibConfigurationKeys
-import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.IrBuiltIns
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrDeclaration
+import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
 import org.jetbrains.kotlin.ir.declarations.impl.IrModuleFragmentImpl
+import org.jetbrains.kotlin.ir.declarations.path
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.konan.TempFiles
 import org.jetbrains.kotlin.konan.file.File
@@ -29,6 +34,12 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 internal fun PhaseEngine<PhaseContext>.runFrontend(config: KonanConfig, environment: KotlinCoreEnvironment): FrontendPhaseOutput.Full? {
+    val languageVersion = config.languageVersionSettings.languageVersion
+    val kotlinSourceRoots = environment.configuration.kotlinSourceRoots
+    if (languageVersion.usesK2 && kotlinSourceRoots.isNotEmpty()) {
+        throw Error("Attempt to run K1 from unsupported LV=${languageVersion}")
+    }
+
     val frontendOutput = useContext(FrontendContextImpl(config)) { it.runPhase(FrontendPhase, environment) }
     return frontendOutput as? FrontendPhaseOutput.Full
 }
@@ -49,10 +60,10 @@ internal fun <T> PhaseEngine<PhaseContext>.runPsiToIr(
         val additionalOutput = produceAdditionalOutput(psiToIrEngine)
         val psiToIrInput = PsiToIrInput(frontendOutput.moduleDescriptor, frontendOutput.environment, isProducingLibrary)
         val output = psiToIrEngine.runPhase(PsiToIrPhase, psiToIrInput)
-        psiToIrEngine.runSpecialBackendChecks(output.irModule, output.symbols)
+        psiToIrEngine.runSpecialBackendChecks(output.irModule, output.irBuiltIns, output.symbols)
         output to additionalOutput
     }
-    runPhase(CopyDefaultValuesToActualPhase, psiToIrOutput.irModule)
+    runPhase(CopyDefaultValuesToActualPhase, psiToIrOutput)
     return psiToIrOutput to additionalOutput
 }
 
@@ -62,7 +73,7 @@ internal fun <C : PhaseContext> PhaseEngine<C>.runBackend(backendContext: Contex
     useContext(backendContext) { backendEngine ->
         backendEngine.runPhase(functionsWithoutBoundCheck)
 
-        fun createGenerationStateAndRunLowerings(fragment: BackendJobFragment): NativeGenerationState {
+        fun createGenerationState(fragment: BackendJobFragment): NativeGenerationState {
             val outputPath = config.cacheSupport.tryGetImplicitOutput(fragment.cacheDeserializationStrategy) ?: config.outputPath
             val outputFiles = OutputFiles(outputPath, config.target, config.produce)
             val generationState = NativeGenerationState(context.config, backendContext,
@@ -79,15 +90,90 @@ internal fun <C : PhaseContext> PhaseEngine<C>.runBackend(backendContext: Contex
                     if (context.config.produce == CompilerOutputKind.PROGRAM) {
                         generationStateEngine.runPhase(EntryPointPhase, module)
                     }
-                    rootPerformanceManager.trackIRLowering {
-                        generationStateEngine.lowerModuleWithDependencies(module)
-                    }
                 }
                 return generationState
             } catch (t: Throwable) {
                 generationState.dispose()
                 throw t
             }
+        }
+
+        fun NativeGenerationState.runEngineForLowerings(block: PhaseEngine<NativeGenerationState>.() -> Unit) {
+            try {
+                newEngine(this) { generationStateEngine ->
+                    rootPerformanceManager.trackIRLowering {
+                        generationStateEngine.block()
+                    }
+                }
+            } catch (t: Throwable) {
+                this.dispose()
+                throw t
+            }
+        }
+
+        fun NativeGenerationState.runSpecifiedLowerings(fragment: BackendJobFragment, loweringsToLaunch: LoweringList) {
+            runEngineForLowerings {
+                val module = fragment.irModule
+                partiallyLowerModuleWithDependencies(module, loweringsToLaunch)
+            }
+        }
+
+        fun NativeGenerationState.runSpecifiedLowerings(fragment: BackendJobFragment, moduleLowering: ModuleLowering) {
+            runEngineForLowerings {
+                val module = fragment.irModule
+                partiallyLowerModuleWithDependencies(module, moduleLowering)
+            }
+        }
+
+        fun NativeGenerationState.finalizeLowerings(fragment: BackendJobFragment) {
+            runEngineForLowerings {
+                val module = fragment.irModule
+                val dependenciesToCompile = findDependenciesToCompile()
+                mergeDependencies(module, dependenciesToCompile)
+            }
+        }
+
+        fun List<BackendJobFragment>.runAllLowerings(): List<NativeGenerationState> {
+            val generationStates = this.map { fragment -> createGenerationState(fragment) }
+            val fragmentWithState = this.zip(generationStates)
+
+            // In Kotlin/Native, lowerings are run not over modules, but over individual files.
+            // This means that there is no guarantee that after running a lowering in file A, the same lowering has already been run in file B,
+            // and vice versa.
+            // However, in order to validate IR after inlining, we have to make sure that all the modules being compiled are lowered to the same
+            // stage, because otherwise we may be actually validating a partially lowered IR that may not pass certain checks
+            // (like IR visibility checks).
+            // This is what we call a 'lowering synchronization point'.
+            fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, validateIrBeforeLowering) }
+
+            run {
+                // This is a so-called "KLIB Common Lowerings Prefix".
+                //
+                // Note: All lowerings up to but excluding "InlineAllFunctions" are supposed to modify only the lowered file.
+                // By contrast, "InlineAllFunctions" may mutate multiple files at the same time, and some files can be even
+                // mutated several times by little pieces. Which is a completely different behavior as compared to other lowerings.
+                // "InlineAllFunctions" expects that for an inlined function all preceding lowerings (including generation of
+                // synthetic accessors) have been already applied.
+                // To avoid overcomplicating things and to keep running the preceding lowerings with "modify-only-lowered-file"
+                // invariant, we would like to put a synchronization point immediately before "InlineAllFunctions".
+                fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, state.context.config.getLoweringsUpToAndIncludingSyntheticAccessors()) }
+                if (!context.config.configuration.getBoolean(KlibConfigurationKeys.NO_DOUBLE_INLINING)) {
+                    fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, validateIrAfterInliningOnlyPrivateFunctions) }
+                }
+                fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, listOf(inlineAllFunctionsPhase)) }
+                if (context.config.configuration[KlibConfigurationKeys.SYNTHETIC_ACCESSORS_DUMP_DIR] != null) {
+                    fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, dumpSyntheticAccessorsPhase) }
+                }
+            }
+
+            fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, validateIrAfterInliningAllFunctions) }
+            fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, listOf(constEvaluationPhase)) }
+            fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, state.context.config.getLoweringsAfterInlining()) }
+            fragmentWithState.forEach { (fragment, state) -> state.runSpecifiedLowerings(fragment, validateIrAfterLowering) }
+
+            fragmentWithState.forEach { (fragment, state) -> state.finalizeLowerings(fragment) }
+
+            return generationStates
         }
 
         fun runAfterLowerings(fragment: BackendJobFragment, generationState: NativeGenerationState) {
@@ -114,7 +200,7 @@ internal fun <C : PhaseContext> PhaseEngine<C>.runBackend(backendContext: Contex
                         )
                     } else null
                     // TODO: Make this work if we first compile all the fragments and only after that run the link phases.
-                    generationStateEngine.compileModule(fragment.irModule, bitcodeFile, cExportFiles)
+                    generationStateEngine.compileModule(fragment.irModule, backendContext.irBuiltIns, bitcodeFile, cExportFiles)
                     // Split here
                     val dependenciesTrackingResult = generationState.dependenciesTracker.collectResult()
                     val depsFilePath = config.writeSerializedDependencies
@@ -134,21 +220,20 @@ internal fun <C : PhaseContext> PhaseEngine<C>.runBackend(backendContext: Contex
         val threadsCount = context.config.threadsCount
         if (threadsCount == 1) {
             val fragmentsList = fragments.toList()
-            val generationStates = fragmentsList.map { fragment -> createGenerationStateAndRunLowerings(fragment) }
+            val generationStates = fragmentsList.runAllLowerings()
             fragmentsList.zip(generationStates).forEach { (fragment, generationState) ->
                 runAfterLowerings(fragment, generationState)
             }
         } else {
             val fragmentsList = fragments.toList()
             if (fragmentsList.size == 1) {
-                val fragment = fragmentsList[0]
-                runAfterLowerings(fragment, createGenerationStateAndRunLowerings(fragment))
+                runAfterLowerings(fragmentsList.first(), fragmentsList.runAllLowerings().first())
             } else {
                 // We'd love to run entire pipeline in parallel, but it's difficult (mainly because of the lowerings,
                 // which need cross-file access all the time and it's not easy to overcome this). So, for now,
                 // we split the pipeline into two parts - everything before lowerings (including them)
                 // which is run sequentially, and everything else which is run in parallel.
-                val generationStates = fragmentsList.map { fragment -> createGenerationStateAndRunLowerings(fragment) }
+                val generationStates = fragmentsList.runAllLowerings()
                 val executor = Executors.newFixedThreadPool(threadsCount)
                 val thrownFromThread = AtomicReference<Throwable?>(null)
                 val tasks = fragmentsList.zip(generationStates).map { (fragment, generationState) ->
@@ -216,7 +301,7 @@ private fun PhaseEngine<out Context>.splitIntoFragments(
                     containsStdlib = containsStdlib
             )
             val dependenciesTracker = DependenciesTrackerImpl(llvmModuleSpecification, context.config, context)
-            val fragment = IrModuleFragmentImpl(input.descriptor, input.irBuiltins)
+            val fragment = IrModuleFragmentImpl(input.descriptor)
             fragment.files += file
             if (containsStdlib && cacheDeserializationStrategy.containsKFunctionImpl)
                 fragment.files += files.filter { it.isFunctionInterfaceFile }
@@ -268,8 +353,13 @@ internal data class ModuleCompilationOutput(
  * 4. Optimizes it.
  * 5. Serializes it to a bitcode file.
  */
-internal fun PhaseEngine<NativeGenerationState>.compileModule(module: IrModuleFragment, bitcodeFile: java.io.File, cExportFiles: CExportFiles?) {
-    runBackendCodegen(module, cExportFiles)
+internal fun PhaseEngine<NativeGenerationState>.compileModule(
+        module: IrModuleFragment,
+        irBuiltIns: IrBuiltIns,
+        bitcodeFile: java.io.File,
+        cExportFiles: CExportFiles?
+) {
+    runBackendCodegen(module, irBuiltIns, cExportFiles)
     val checkExternalCalls = context.config.checkStateAtExternalCalls
     if (checkExternalCalls) {
         runPhase(CheckExternalCallsPhase)
@@ -326,48 +416,26 @@ internal fun <C : PhaseContext> PhaseEngine<C>.compileAndLink(
     }
 }
 
-internal fun PhaseEngine<NativeGenerationState>.lowerModuleWithDependencies(module: IrModuleFragment) {
+internal fun PhaseEngine<NativeGenerationState>.partiallyLowerModuleWithDependencies(module: IrModuleFragment, loweringList: LoweringList) {
     val dependenciesToCompile = findDependenciesToCompile()
     // TODO: KonanLibraryResolver.TopologicalLibraryOrder actually returns libraries in the reverse topological order.
     // TODO: Does the order of files really matter with the new MM? (and with lazy top-levels initialization?)
     val allModulesToLower = listOf(module) + dependenciesToCompile.reversed()
 
-    // In Kotlin/Native, lowerings are run not over modules, but over individual files.
-    // This means that there is no guarantee that after running a lowering in file A, the same lowering has already been run in file B,
-    // and vice versa.
-    // However, in order to validate IR after inlining, we have to make sure that all the modules being compiled are lowered to the same
-    // stage, because otherwise we may be actually validating a partially lowered IR that may not pass certain checks
-    // (like IR visibility checks).
-    // This is what we call a 'lowering synchronization point'.
-    runModuleWisePhase(validateIrBeforeLowering, allModulesToLower)
-    run {
-        // This is a so-called "KLIB Common Lowerings Prefix".
-        //
-        // Note: All lowerings up to but excluding "InlineAllFunctions" are supposed to modify only the lowered file.
-        // By contrast, "InlineAllFunctions" may mutate multiple files at the same time, and some files can be even
-        // mutated several times by little pieces. Which is a completely different behavior as compared to other lowerings.
-        // "InlineAllFunctions" expects that for an inlined function all preceding lowerings (including generation of
-        // synthetic accessors) have been already applied.
-        // To avoid overcomplicating things and to keep running the preceding lowerings with "modify-only-lowered-file"
-        // invariant, we would like to put a synchronization point immediately before "InlineAllFunctions".
-        runLowerings(getLoweringsUpToAndIncludingSyntheticAccessors(), allModulesToLower)
-        if (!context.config.configuration.getBoolean(KlibConfigurationKeys.NO_DOUBLE_INLINING)) {
-            runModuleWisePhase(validateIrAfterInliningOnlyPrivateFunctions, allModulesToLower)
-            if (context.config.configuration[KlibConfigurationKeys.SYNTHETIC_ACCESSORS_DUMP_DIR] != null) {
-                runModuleWisePhase(dumpSyntheticAccessorsPhase, allModulesToLower)
-            }
-        }
-        runLowerings(listOf(inlineAllFunctionsPhase), allModulesToLower)
-    }
-    runModuleWisePhase(validateIrAfterInliningAllFunctions, allModulesToLower)
-    runLowerings(getLoweringsAfterInlining(), allModulesToLower)
-    runModuleWisePhase(validateIrAfterLowering, allModulesToLower)
-
-    mergeDependencies(module, dependenciesToCompile)
+    runLowerings(loweringList, allModulesToLower)
 }
 
-internal fun PhaseEngine<NativeGenerationState>.runBackendCodegen(module: IrModuleFragment, cExportFiles: CExportFiles?) {
-    runCodegen(module)
+internal fun PhaseEngine<NativeGenerationState>.partiallyLowerModuleWithDependencies(module: IrModuleFragment, lowering: ModuleLowering) {
+    val dependenciesToCompile = findDependenciesToCompile()
+    // TODO: KonanLibraryResolver.TopologicalLibraryOrder actually returns libraries in the reverse topological order.
+    // TODO: Does the order of files really matter with the new MM? (and with lazy top-levels initialization?)
+    val allModulesToLower = listOf(module) + dependenciesToCompile.reversed()
+
+    runModuleWisePhase(lowering, allModulesToLower)
+}
+
+internal fun PhaseEngine<NativeGenerationState>.runBackendCodegen(module: IrModuleFragment, irBuiltIns: IrBuiltIns, cExportFiles: CExportFiles?) {
+    runCodegen(module, irBuiltIns)
     val generatedBitcodeFiles = if (context.config.produceCInterface) {
         require(cExportFiles != null)
         val input = CExportGenerateApiInput(
@@ -400,31 +468,38 @@ internal fun PhaseEngine<NativeGenerationState>.runBackendCodegen(module: IrModu
  * Compile lowered [module] to object file.
  * @return absolute path to object file.
  */
-private fun PhaseEngine<NativeGenerationState>.runCodegen(module: IrModuleFragment) {
+private fun PhaseEngine<NativeGenerationState>.runCodegen(module: IrModuleFragment, irBuiltIns: IrBuiltIns) {
     val optimize = context.shouldOptimize()
+    val enablePreCodegenInliner = context.config.preCodegenInlineThreshold != 0U && optimize
     module.files.forEach {
         runPhase(ReturnsInsertionPhase, it)
-    }
-    val moduleDFG = runPhase(BuildDFGPhase, module, disable = !optimize)
-    val devirtualizationAnalysisResults = runPhase(DevirtualizationAnalysisPhase, DevirtualizationAnalysisInput(module, moduleDFG), disable = !optimize)
-    val dceResult = runPhase(DCEPhase, DCEInput(module, moduleDFG, devirtualizationAnalysisResults), disable = !optimize)
-    runPhase(RemoveRedundantCallsToStaticInitializersPhase, RedundantCallsInput(moduleDFG, devirtualizationAnalysisResults, module), disable = !optimize)
-    runPhase(DevirtualizationPhase, DevirtualizationInput(module, devirtualizationAnalysisResults), disable = !optimize)
-    // Have to run after link dependencies phase, because fields from dependencies can be changed during lowerings.
-    // Inline accessors only in optimized builds due to separate compilation and possibility to get broken debug information.
-    module.files.forEach {
+        // Have to run after link dependencies phase, because fields from dependencies can be changed during lowerings.
+        // Inline accessors only in optimized builds due to separate compilation and possibility to get broken debug information.
         runPhase(PropertyAccessorInlinePhase, it, disable = !optimize)
         runPhase(InlineClassPropertyAccessorsPhase, it, disable = !optimize)
+    }
+    val moduleDFG = runPhase(BuildDFGPhase, module, disable = !optimize)
+    runPhase(RemoveRedundantCallsToStaticInitializersPhase, RedundantCallsInput(moduleDFG, module), disable = !enablePreCodegenInliner)
+    runPhase(PreCodegenInlinerPhase, PreCodegenInlinerInput(module, moduleDFG), disable = !enablePreCodegenInliner)
+    runPhase(DevirtualizationAnalysisPhase, DevirtualizationAnalysisInput(module, moduleDFG), disable = !optimize)
+    // KT-72336: This is more optimal but contradicts with the pre-codegen inliner.
+    runPhase(RemoveRedundantCallsToStaticInitializersPhase, RedundantCallsInput(moduleDFG, module), disable = enablePreCodegenInliner || !optimize)
+    runPhase(DevirtualizationPhase, DevirtualizationInput(module, moduleDFG), disable = !optimize)
+    module.files.forEach {
         runPhase(RedundantCoercionsCleaningPhase, it)
         // depends on redundantCoercionsCleaningPhase
         runPhase(UnboxInlinePhase, it, disable = !optimize)
-
+    }
+    runPhase(PreCodegenInlinerPhase, PreCodegenInlinerInput(module, moduleDFG), disable = !enablePreCodegenInliner)
+    val dceResult = runPhase(DCEPhase, DCEInput(module, moduleDFG), disable = !optimize)
+    module.files.forEach {
+        runPhase(CoroutinesVarSpillingPhase, it)
     }
     runPhase(CreateLLVMDeclarationsPhase, module)
     runPhase(GHAPhase, module, disable = !optimize)
     runPhase(RTTIPhase, RTTIInput(module, dceResult))
-    val lifetimes = runPhase(EscapeAnalysisPhase, EscapeAnalysisInput(module, moduleDFG, devirtualizationAnalysisResults), disable = !optimize)
-    runPhase(CodegenPhase, CodegenInput(module, lifetimes))
+    val lifetimes = runPhase(EscapeAnalysisPhase, EscapeAnalysisInput(module, moduleDFG), disable = !optimize)
+    runPhase(CodegenPhase, CodegenInput(module, irBuiltIns, lifetimes))
 }
 
 private fun PhaseEngine<NativeGenerationState>.findDependenciesToCompile(): List<IrModuleFragment> {

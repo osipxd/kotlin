@@ -21,10 +21,8 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.allOverridden
-import org.jetbrains.kotlin.ir.util.file
-import org.jetbrains.kotlin.ir.util.isSuspend
-import org.jetbrains.kotlin.ir.util.parentAsClass
+import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmBackendErrors
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Type
@@ -66,12 +64,11 @@ internal fun MethodNode.acceptWithStateMachine(
         },
         lineNumber = lineNumber,
         sourceFile = classCodegen.irClass.file.name, // SuspendLambda.invokeSuspend is not suspend
+        config = context.config,
         needDispatchReceiver = irFunction.isSuspend && (irFunction.dispatchReceiverParameter != null
                 || irFunction.origin == JvmLoweredDeclarationOrigin.SUSPEND_IMPL_STATIC_FUNCTION),
         internalNameForDispatchReceiver = classCodegen.type.internalName,
-        putContinuationParameterToLvt = false,
         initialVarsCountByType = varsCountByType,
-        shouldOptimiseUnusedVariables = !context.config.enableDebugMode
     )
     accept(visitor)
 }

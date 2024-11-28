@@ -5,13 +5,13 @@
 
 package org.jetbrains.kotlin.fir.java.enhancement
 
+import com.intellij.openapi.util.registry.Registry
 import org.jetbrains.kotlin.KtFakeSourceElementKind
 import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.builtins.StandardNames.DEFAULT_VALUE_PARAMETER
 import org.jetbrains.kotlin.config.LanguageVersion
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
-import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fakeElement
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.caches.FirCache
@@ -103,7 +103,7 @@ class FirSignatureEnhancement(
     private val privateKtSuperClass: ConeKotlinType? by lazy {
         owner.symbol.getSuperTypes(session, substituteSuperTypes = false).firstOrNull {
             val fir = it.toSymbol(session)?.fir
-            fir != null && fir.origin !is FirDeclarationOrigin.Java && fir.visibility is Visibilities.Private
+            fir != null && fir.origin !is FirDeclarationOrigin.Java && fir.effectiveVisibility.privateApi
         }
     }
 
@@ -264,7 +264,7 @@ class FirSignatureEnhancement(
     }
 
     private fun FirCallableSymbol<*>.isEnhanceable(): Boolean {
-        return origin is FirDeclarationOrigin.Java || isEnhanceableIntersection()
+        return origin is FirDeclarationOrigin.Java || isEnhanceableIntersection() || privateKtSuperClass != null
     }
 
     /**
@@ -423,6 +423,10 @@ class FirSignatureEnhancement(
                             typeRef = receiverType
                             annotations += firMethod.valueParameters.first().annotations
                             source = receiverType.source?.fakeElement(KtFakeSourceElementKind.ReceiverFromType)
+                            symbol = FirReceiverParameterSymbol()
+                            moduleData = this@FirSignatureEnhancement.moduleData
+                            origin = declarationOrigin
+                            containingDeclarationSymbol = this@apply.symbol
                         }
                     }
                     typeParameters.replaceTypeParameterBounds(typeParameterSubstitutor)
@@ -453,7 +457,7 @@ class FirSignatureEnhancement(
 
                 buildValueParameter {
                     source = valueParameter.source
-                    containingFunctionSymbol = functionSymbol
+                    containingDeclarationSymbol = functionSymbol
                     moduleData = this@FirSignatureEnhancement.moduleData
                     origin = declarationOrigin
                     returnTypeRef = enhancedReturnType.withReplacedConeType(
@@ -1016,7 +1020,7 @@ private class EnhancementSignatureParts(
     override fun FirAnnotation.forceWarning(unenhancedType: KotlinTypeMarker?): Boolean = this is FirJavaExternalAnnotation
 
     override val KotlinTypeMarker.annotations: Iterable<FirAnnotation>
-        get() = (this as ConeKotlinType).customAnnotations
+        get() = (this as ConeKotlinType).typeAnnotations
 
     override val KotlinTypeMarker.fqNameUnsafe: FqNameUnsafe?
         get() = (this as? ConeClassLikeType)?.lookupTag?.classId?.asSingleFqName()?.toUnsafe()
@@ -1056,23 +1060,47 @@ class FirEnhancedSymbolsStorage(private val cachesFactory: FirCachesFactory) : F
     class EnhancementSymbolsCache(cachesFactory: FirCachesFactory) {
         @OptIn(PrivateForInline::class)
         val enhancedFunctions: FirCache<FirFunctionSymbol<*>, FirFunctionSymbol<*>, FunctionEnhancementContext> =
-            cachesFactory.createCacheWithPostCompute(
-                createValue = { original, context ->
-                    context.enhancement.enhance(original, context.name, context.precomputedOverridden) to context.enhancement
-                },
-                postCompute = { _, enhancedVersion, enhancement ->
-                    val enhancedVersionFir = enhancedVersion.fir
-                    (enhancedVersionFir.initialSignatureAttr)?.let {
-                        enhancedVersionFir.initialSignatureAttr = enhancement.enhancedFunction(it, it.name)
+            when {
+                // TODO: Leave only `else` branch if there are no exceptions (KT-71929)
+                // TODO: Also consider removing PerformanceWise as well
+                // `cachesFactory.isThreadSafe` is used just for sake of not calling the registry in the compiler
+                @OptIn(FirCachesFactory.PerformanceWise::class)
+                cachesFactory.isThreadSafe && isRegistryForPostComputeEnhancedJavaFunctionsCache ->
+                    cachesFactory.createCacheWithPostCompute(
+                        createValue = { original, context ->
+                            context.enhancement.enhance(original, context.name, context.precomputedOverridden) to context.enhancement
+                        },
+                        postCompute = { _, enhancedVersion, enhancement ->
+                            val enhancedVersionFir = enhancedVersion.fir
+                            (enhancedVersionFir.initialSignatureAttr)?.let {
+                                enhancedVersionFir.initialSignatureAttr = enhancement.enhancedFunction(it, it.name)
+                            }
+                        }
+                    )
+                else ->
+                    cachesFactory.createCache { original, context ->
+                        context.enhancement.enhance(original, context.name, context.precomputedOverridden).also { enhancedVersion ->
+                            val enhancedVersionFir = enhancedVersion.fir
+                            enhancedVersionFir.initialSignatureAttr?.let {
+                                enhancedVersionFir.initialSignatureAttr =
+                                    context.enhancement.enhancedFunction(it, it.name)
+                            }
+                        }
                     }
-                }
-            )
+            }
+
 
         @OptIn(PrivateForInline::class)
         val enhancedVariables: FirCache<FirVariableSymbol<*>, FirVariableSymbol<*>, Pair<FirSignatureEnhancement, Name>> =
             cachesFactory.createCache { original, (enhancement, name) ->
                 enhancement.enhance(original, name)
             }
+
+        private companion object {
+            private val isRegistryForPostComputeEnhancedJavaFunctionsCache by lazy(LazyThreadSafetyMode.PUBLICATION) {
+                Registry.`is`("kotlin.analysis.postComputeEnhancedJavaFunctionsCache", false)
+            }
+        }
     }
 }
 

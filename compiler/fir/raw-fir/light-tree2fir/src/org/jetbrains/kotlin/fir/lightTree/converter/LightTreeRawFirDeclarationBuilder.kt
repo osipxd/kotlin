@@ -12,11 +12,15 @@ import org.jetbrains.kotlin.*
 import org.jetbrains.kotlin.ElementTypeUtils.isExpression
 import org.jetbrains.kotlin.KtNodeTypes.*
 import org.jetbrains.kotlin.builtins.StandardNames
-import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.descriptors.ClassKind
+import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.Visibilities
+import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget.*
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.analysis.isCallTheFirstStatement
+import org.jetbrains.kotlin.fir.analysis.firstFunctionCallInBlockHasLambdaArgumentWithLabel
 import org.jetbrains.kotlin.fir.builder.*
 import org.jetbrains.kotlin.fir.contracts.FirContractDescription
 import org.jetbrains.kotlin.fir.contracts.builder.buildRawContractDescription
@@ -629,15 +633,16 @@ class LightTreeRawFirDeclarationBuilder(
                             DataClassMembersGenerator(
                                 classNode,
                                 this,
+                                firPrimaryConstructor,
                                 zippedParameters,
                                 context.packageFqName,
                                 context.className,
-                                createClassTypeRefWithSourceKind = { firPrimaryConstructor.returnTypeRef.copyWithNewSourceKind(it) },
-                                createParameterTypeRefWithSourceKind = { property, kind -> property.returnTypeRef.copyWithNewSourceKind(kind) },
                                 addValueParameterAnnotations = { valueParam ->
-                                    valueParam.forEachChildren {
-                                        if (it.tokenType == MODIFIER_LIST) convertAnnotationList(it).filterTo(annotations) {
-                                            it.useSiteTarget.appliesToPrimaryConstructorParameter()
+                                    withContainerSymbol(symbol) {
+                                        valueParam.forEachChildren {
+                                            if (it.tokenType == MODIFIER_LIST) convertAnnotationList(it).filterTo(annotations) {
+                                                it.useSiteTarget.appliesToPrimaryConstructorParameter()
+                                            }
                                         }
                                     }
                                 },
@@ -666,7 +671,7 @@ class LightTreeRawFirDeclarationBuilder(
                         }
                         initCompanionObjectSymbolAttr()
 
-                        contextReceivers.addAll(convertContextReceivers(classNode))
+                        contextReceivers.addContextReceivers(classNode, classSymbol)
                     }.also {
                         it.delegateFieldsMap = delegatedFieldsMap
                     }
@@ -919,8 +924,11 @@ class LightTreeRawFirDeclarationBuilder(
                 DESTRUCTURING_DECLARATION -> container += buildErrorTopLevelDestructuringDeclaration(node.toFirSourceElement())
             }
         }
+
         for (node in modifierLists) {
-            firDeclarations += buildErrorTopLevelDeclarationForDanglingModifierList(node)
+            firDeclarations += buildErrorTopLevelDeclarationForDanglingModifierList(node).apply {
+                containingClassAttr = currentDispatchReceiverType()?.lookupTag
+            }
         }
         return firDeclarations
     }
@@ -1064,7 +1072,7 @@ class LightTreeRawFirDeclarationBuilder(
                 this.valueParameters += valueParameters.map { it.firValueParameter }
                 delegatedConstructor = firDelegatedCall
                 this.body = null
-                this.contextReceivers.addAll(convertContextReceivers(classNode))
+                this.contextReceivers.addContextReceivers(classNode, constructorSymbol)
             }
 
             return PrimaryConstructor(
@@ -1175,7 +1183,10 @@ class LightTreeRawFirDeclarationBuilder(
                 this.body = body
                 contractDescription?.let { this.contractDescription = it }
                 context.firFunctionTargets.removeLast()
-                this.contextReceivers.addAll(convertContextReceivers(secondaryConstructor.getParent()!!.getParent()!!))
+                this.contextReceivers.addContextReceivers(secondaryConstructor.getParent()!!.getParent()!!, constructorSymbol)
+                if (contextParameterEnabled) {
+                    this.contextReceivers.addContextReceivers(secondaryConstructor, constructorSymbol)
+                }
             }.also {
                 it.containingClassForStaticMemberAttr = currentDispatchReceiverType()!!.lookupTag
                 target.bind(it)
@@ -1280,6 +1291,7 @@ class LightTreeRawFirDeclarationBuilder(
                     }
                 }
 
+                val isInner = calculatedModifiers.isInner()
                 buildTypeAlias {
                     source = typeAlias.toFirSourceElement()
                     moduleData = baseModuleData
@@ -1292,12 +1304,17 @@ class LightTreeRawFirDeclarationBuilder(
                     ).apply {
                         isExpect = typeAliasIsExpect
                         isActual = calculatedModifiers.hasActual()
+                        this.isInner = isInner
                     }
 
                     symbol = typeAliasSymbol
                     expandedTypeRef = firType
                     annotations += aliasAnnotations
                     typeParameters += firTypeParameters
+
+                    if (isInner || isLocal) {
+                        context.appendOuterTypeParameters(ignoreLastLevel = false, typeParameters)
+                    }
                 }
             }
         }
@@ -1314,7 +1331,7 @@ class LightTreeRawFirDeclarationBuilder(
         var isReturnType = false
         var delegate: LighterASTNode? = null
         var isVar = false
-        var receiverType: FirTypeRef? = null
+        var receiverTypeNode: LighterASTNode? = null
         var returnType: FirTypeRef = implicitType
         val typeConstraints = mutableListOf<TypeConstraint>()
         val accessors = mutableListOf<LighterASTNode>()
@@ -1344,7 +1361,7 @@ class LightTreeRawFirDeclarationBuilder(
                     }
                     TYPE_PARAMETER_LIST -> typeParameterList = it
                     COLON -> isReturnType = true
-                    TYPE_REFERENCE -> if (isReturnType) returnType = convertType(it) else receiverType = convertType(it)
+                    TYPE_REFERENCE -> if (isReturnType) returnType = convertType(it) else receiverTypeNode = it
                     TYPE_CONSTRAINT_LIST -> typeConstraints += convertTypeConstraints(it)
                     PROPERTY_DELEGATE -> delegate = it
                     VAR_KEYWORD -> isVar = true
@@ -1371,7 +1388,7 @@ class LightTreeRawFirDeclarationBuilder(
                 name = propertyName
                 this.isVar = isVar
 
-                receiverParameter = receiverType?.convertToReceiverParameter()
+                receiverParameter = receiverTypeNode?.let { createReceiverParameter({ convertType(it) }, moduleData, propertySymbol) }
                 initializer = propertyInitializer
 
                 //probably can do this for delegateExpression itself
@@ -1468,7 +1485,9 @@ class LightTreeRawFirDeclarationBuilder(
                                 }
                             } else null
 
-                        status = FirDeclarationStatusImpl(propertyVisibility, calculatedModifiers.getModality(isClassOrObject = false)).apply {
+                        status = FirDeclarationStatusImpl(
+                            propertyVisibility, calculatedModifiers.getModality(isClassOrObject = false)
+                        ).apply {
                             isExpect = calculatedModifiers.hasExpect() || context.containerIsExpect
                             isActual = calculatedModifiers.hasActual()
                             isOverride = calculatedModifiers.hasOverride()
@@ -1482,7 +1501,7 @@ class LightTreeRawFirDeclarationBuilder(
                             baseModuleData,
                             classWrapper?.classBuilder?.ownerRegularOrAnonymousObjectSymbol,
                             context,
-                            isExtension = receiverType != null,
+                            isExtension = receiverTypeNode != null,
                         )
                     }
                 }
@@ -1491,7 +1510,7 @@ class LightTreeRawFirDeclarationBuilder(
                     else -> propertyAnnotations.filterStandalonePropertyRelevantAnnotations(isVar)
                 }
 
-                contextReceivers.addAll(convertContextReceivers(property))
+                contextReceivers.addContextReceivers(property, propertySymbol)
             }.also {
                 if (!isLocal) {
                     fillDanglingConstraintsTo(firTypeParameters, typeConstraints, it)
@@ -1581,7 +1600,7 @@ class LightTreeRawFirDeclarationBuilder(
         val accessorSymbol = FirPropertyAccessorSymbol()
         var firValueParameters: FirValueParameter = buildDefaultSetterValueParameter {
             moduleData = baseModuleData
-            containingFunctionSymbol = accessorSymbol
+            containingDeclarationSymbol = accessorSymbol
             origin = FirDeclarationOrigin.Source
             returnTypeRef = propertyTypeRefToUse
             symbol = FirValueParameterSymbol(StandardNames.DEFAULT_VALUE_PARAMETER)
@@ -1600,9 +1619,14 @@ class LightTreeRawFirDeclarationBuilder(
                     accessorAnnotations += convertAnnotationList(it)
                 }
                 TYPE_REFERENCE -> returnType = convertType(it)
-                VALUE_PARAMETER_LIST -> firValueParameters = convertSetterParameter(
-                    it, accessorSymbol, propertyTypeRefToUse, propertyAnnotations.filterUseSiteTarget(SETTER_PARAMETER)
-                )
+                VALUE_PARAMETER_LIST -> {
+                    // getter can have an empty value parameter list
+                    if (!isGetter) {
+                        firValueParameters = convertSetterParameter(
+                            it, accessorSymbol, propertyTypeRefToUse, propertyAnnotations.filterUseSiteTarget(SETTER_PARAMETER)
+                        )
+                    }
+                }
                 CONTRACT_EFFECT_LIST -> outerContractDescription = obtainContractDescription(it)
                 BLOCK -> block = it
                 else -> if (it.isExpression()) expression = it
@@ -1805,7 +1829,7 @@ class LightTreeRawFirDeclarationBuilder(
         val calculatedModifiers = modifiers ?: Modifier()
         return buildValueParameter {
             source = firValueParameter.source
-            containingFunctionSymbol = functionSymbol
+            containingDeclarationSymbol = functionSymbol
             moduleData = baseModuleData
             origin = FirDeclarationOrigin.Source
             returnTypeRef = if (firValueParameter.returnTypeRef == implicitType) propertyTypeRef else firValueParameter.returnTypeRef
@@ -1829,7 +1853,7 @@ class LightTreeRawFirDeclarationBuilder(
         var identifier: String? = null
         var valueParametersList: LighterASTNode? = null
         var isReturnType = false
-        var receiverType: FirTypeRef? = null
+        var receiverTypeNode: LighterASTNode? = null
         var returnType: FirTypeRef? = null
         val typeConstraints = mutableListOf<TypeConstraint>()
         var block: LighterASTNode? = null
@@ -1863,7 +1887,7 @@ class LightTreeRawFirDeclarationBuilder(
                     TYPE_PARAMETER_LIST -> typeParameterList = it
                     VALUE_PARAMETER_LIST -> valueParametersList = it //must convert later, because it can contains "return"
                     COLON -> isReturnType = true
-                    TYPE_REFERENCE -> if (isReturnType) returnType = convertType(it) else receiverType = convertType(it)
+                    TYPE_REFERENCE -> if (isReturnType) returnType = convertType(it) else receiverTypeNode = it
                     TYPE_CONSTRAINT_LIST -> typeConstraints += convertTypeConstraints(it)
                     CONTRACT_EFFECT_LIST -> outerContractDescription = obtainContractDescription(it)
                     BLOCK -> block = it
@@ -1880,10 +1904,11 @@ class LightTreeRawFirDeclarationBuilder(
                     else implicitType
             }
 
+            val receiverTypeCalculator = receiverTypeNode?.let { { convertType(it)} }
             val functionBuilder = if (isAnonymousFunction) {
                 FirAnonymousFunctionBuilder().apply {
                     source = functionSource
-                    receiverParameter = receiverType?.convertToReceiverParameter()
+                    receiverParameter = receiverTypeCalculator?.let { createReceiverParameter(it, baseModuleData, functionSymbol) }
                     symbol = functionSymbol as FirAnonymousFunctionSymbol
                     isLambda = false
                     hasExplicitParameterList = true
@@ -1900,7 +1925,7 @@ class LightTreeRawFirDeclarationBuilder(
                 target = FirFunctionTarget(labelName, isLambda = false)
                 FirSimpleFunctionBuilder().apply {
                     source = functionSource
-                    receiverParameter = receiverType?.convertToReceiverParameter()
+                    receiverParameter = receiverTypeCalculator?.let { createReceiverParameter(it, baseModuleData, functionSymbol) }
                     name = functionName
                     status = FirDeclarationStatusImpl(
                         if (isLocal) Visibilities.Local else calculatedModifiers.getVisibility(),
@@ -1919,7 +1944,7 @@ class LightTreeRawFirDeclarationBuilder(
 
                     symbol = functionSymbol as FirNamedFunctionSymbol
                     dispatchReceiverType = runIf(!isLocal) { currentDispatchReceiverType() }
-                    contextReceivers.addAll(convertContextReceivers(functionDeclaration))
+                    contextReceivers.addContextReceivers(functionDeclaration, functionSymbol)
                 }
             }
 
@@ -1999,6 +2024,7 @@ class LightTreeRawFirDeclarationBuilder(
                     val blockSource = block.source
                     val diagnostic = when {
                         blockSource == null || !isCallTheFirstStatement(blockSource) -> ConeContractShouldBeFirstStatement
+                        functionCallHasLabel(blockSource) -> ConeContractMayNotHaveLabel
                         else -> null
                     }
                     processLegacyContractDescription(block, diagnostic)
@@ -2014,6 +2040,9 @@ class LightTreeRawFirDeclarationBuilder(
 
     private fun isCallTheFirstStatement(sourceElement: KtSourceElement): Boolean =
         isCallTheFirstStatement(sourceElement.lighterASTNode, { it.elementType }, { it.getChildren(sourceElement.treeStructure) })
+
+    private fun functionCallHasLabel(sourceElement: KtSourceElement): Boolean =
+        firstFunctionCallInBlockHasLambdaArgumentWithLabel(sourceElement.lighterASTNode, { it.elementType }, { it.getChildren(sourceElement.treeStructure) })
 
     /**
      * @see org.jetbrains.kotlin.parsing.KotlinParsing.parseBlock
@@ -2101,17 +2130,13 @@ class LightTreeRawFirDeclarationBuilder(
         index: Int
     ): FirTypeRef {
         lateinit var firTypeRef: FirTypeRef
-        var firExpression: FirExpression? = null
+        var expressionNode: LighterASTNode? = null
         explicitDelegation.forEachChildren {
             when (it.tokenType) {
                 TYPE_REFERENCE -> firTypeRef = convertType(it)
-                else -> if (it.isExpression()) firExpression = expressionConverter.getAsFirExpression(it, "Should have delegate")
+                else -> if (it.isExpression()) expressionNode = it
             }
         }
-
-        val calculatedFirExpression = firExpression ?: buildErrorExpression(
-            explicitDelegation.toFirSourceElement(), ConeSyntaxDiagnostic("Should have delegate")
-        )
 
         delegateFieldsMap.put(
             index,
@@ -2120,11 +2145,17 @@ class LightTreeRawFirDeclarationBuilder(
                 moduleData = baseModuleData
                 origin = FirDeclarationOrigin.Synthetic.DelegateField
                 name = NameUtils.delegateFieldName(delegateFieldsMap.size)
-                returnTypeRef = firTypeRef
                 symbol = FirFieldSymbol(CallableId(context.currentClassId, name))
+                returnTypeRef = firTypeRef
+                withContainerSymbol(symbol) {
+                    val errorReason = "Should have delegate"
+                    initializer = expressionNode?.let {
+                        expressionConverter.getAsFirExpression(it, errorReason)
+                    } ?: buildErrorExpression(explicitDelegation.toFirSourceElement(), ConeSyntaxDiagnostic(errorReason))
+                }
+
                 isVar = false
                 status = FirDeclarationStatusImpl(Visibilities.Private, Modality.FINAL)
-                initializer = calculatedFirExpression
                 dispatchReceiverType = currentDispatchReceiverType()
             }.symbol
         )
@@ -2535,7 +2566,7 @@ class LightTreeRawFirDeclarationBuilder(
      */
     fun convertValueParameter(
         valueParameter: LighterASTNode,
-        functionSymbol: FirFunctionSymbol<*>?,
+        containingDeclarationSymbol: FirBasedSymbol<*>?,
         valueParameterDeclaration: ValueParameterDeclaration,
         additionalAnnotations: List<FirAnnotation> = emptyList()
     ): ValueParameter {
@@ -2585,10 +2616,11 @@ class LightTreeRawFirDeclarationBuilder(
             source = valueParameterSource,
             moduleData = baseModuleData,
             isFromPrimaryConstructor = valueParameterDeclaration == ValueParameterDeclaration.PRIMARY_CONSTRUCTOR,
+            isContextParameter = valueParameterDeclaration == ValueParameterDeclaration.CONTEXT_PARAMETER,
             additionalAnnotations = additionalAnnotations,
             name = name,
             defaultValue = firExpression,
-            containingFunctionSymbol = functionSymbol,
+            containingDeclarationSymbol = containingDeclarationSymbol,
             destructuringDeclaration = destructuringDeclaration
         )
     }
@@ -2613,12 +2645,28 @@ class LightTreeRawFirDeclarationBuilder(
         }
     }
 
-    private fun convertContextReceivers(container: LighterASTNode): List<FirContextReceiver> {
-        val receivers = container.getChildNodeByType(CONTEXT_RECEIVER_LIST)?.getChildNodesByType(CONTEXT_RECEIVER) ?: emptyList()
-        return receivers.map { contextReceiverElement ->
-            buildContextReceiver {
+    private fun MutableList<FirValueParameter>.addContextReceivers(
+        container: LighterASTNode,
+        containingDeclarationSymbol: FirBasedSymbol<*>,
+    ) {
+        val contextList = container.getChildNodeByType(CONTEXT_RECEIVER_LIST) ?: return
+
+        contextList.getChildNodesByType(VALUE_PARAMETER).mapTo(this) { contextParameterElement ->
+            convertValueParameter(
+                valueParameter = contextParameterElement,
+                containingDeclarationSymbol = containingDeclarationSymbol,
+                valueParameterDeclaration = ValueParameterDeclaration.CONTEXT_PARAMETER
+            ).firValueParameter
+        }
+
+        // Legacy context receivers
+        contextList.getChildNodesByType(CONTEXT_RECEIVER).mapTo(this) { contextReceiverElement ->
+            buildValueParameter {
                 this.source = contextReceiverElement.toFirSourceElement()
-                this.customLabelName =
+                this.moduleData = baseModuleData
+                this.origin = FirDeclarationOrigin.Source
+
+                val customLabelName =
                     contextReceiverElement
                         .getChildNodeByType(LABEL_QUALIFIER)
                         ?.getChildNodeByType(LABEL)
@@ -2627,13 +2675,21 @@ class LightTreeRawFirDeclarationBuilder(
 
                 val typeReference = contextReceiverElement.getChildNodeByType(TYPE_REFERENCE)
 
-                this.labelNameFromTypeRef = typeReference?.getChildNodeByType(USER_TYPE)
+                val labelNameFromTypeRef = typeReference?.getChildNodeByType(USER_TYPE)
                     ?.getChildNodeByType(REFERENCE_EXPRESSION)
                     ?.getReferencedNameAsName()
 
-                typeReference?.let {
-                    this.typeRef = convertType(it)
+                // We're abusing the value parameter name for the label/type name of legacy context receivers.
+                // Luckily, legacy context receivers are getting removed soon.
+                this.name = customLabelName ?: labelNameFromTypeRef ?: SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
+
+                this.symbol = FirValueParameterSymbol(name)
+                withContainerSymbol(this.symbol) {
+                    this.returnTypeRef = typeReference?.let { convertType(it) }
+                        ?: buildErrorTypeRef { diagnostic = ConeSimpleDiagnostic("Type missing") }
                 }
+                this.containingDeclarationSymbol = containingDeclarationSymbol
+                this.valueParameterKind = FirValueParameterKind.LegacyContextReceiver
             }
         }
     }

@@ -16,12 +16,14 @@ abstract class SirFunction : SirElementBase(), SirCallable, SirClassMemberDeclar
     abstract override val visibility: SirVisibility
     abstract override val documentation: String?
     abstract override var parent: SirDeclarationParent
-    abstract override val attributes: MutableList<SirAttribute>
+    abstract override val attributes: List<SirAttribute>
     abstract override var body: SirFunctionBody?
+    abstract override val errorType: SirType
     abstract override val isOverride: Boolean
     abstract override val isInstance: Boolean
     abstract override val modality: SirModality
     abstract val name: String
+    abstract val extensionReceiverParameter: SirParameter?
     abstract val parameters: List<SirParameter>
     abstract val returnType: SirType
 }

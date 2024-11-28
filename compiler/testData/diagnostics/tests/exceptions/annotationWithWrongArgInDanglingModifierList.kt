@@ -1,4 +1,6 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // ISSUE: KT-63508
+// IGNORE_PHASE_VERIFICATION: invalid code inside annotations
 
 annotation class Ann(val x: String)
 

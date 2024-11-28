@@ -25,7 +25,6 @@ import org.jetbrains.kotlin.ir.symbols.impl.IrVariableSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classifierOrNull
 import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.util.OperatorNameConventions
@@ -82,7 +81,7 @@ abstract class DataClassMembersGenerator(
         }
 
         private fun irOther(): IrExpression {
-            val irFirstParameter = irFunction.valueParameters[0]
+            val irFirstParameter = irFunction.parameters[1]
             return IrGetValueImpl(
                 startOffset, endOffset,
                 irFirstParameter.type,
@@ -99,7 +98,7 @@ abstract class DataClassMembersGenerator(
                 irGetField(receiver, backingField)
             } else {
                 irCall(property.getter!!).apply {
-                    dispatchReceiver = receiver
+                    arguments[0] = receiver
                 }
             }
         }
@@ -118,17 +117,18 @@ abstract class DataClassMembersGenerator(
                     for ((i, typeParameterType) in constructorSymbol.typesOfTypeParameters().withIndex()) {
                         putTypeArgument(i, typeParameterType)
                     }
-                    for ((i, valueParameter) in irFunction.valueParameters.withIndex()) {
-                        putValueArgument(i, irGet(valueParameter.type, valueParameter.symbol))
+                    for (param in irFunction.nonDispatchParameters) {
+                        arguments[param.indexInParameters - 1] = irGet(param.type, param.symbol)
                     }
                 }
             )
         }
 
-        private fun IrSimpleFunction.isTypedEqualsInValueClass() = name == OperatorNameConventions.EQUALS &&
-                returnType == context.irBuiltIns.booleanType && irClass.isValue
-                && valueParameters.size == 1 && valueParameters[0].type.classifierOrNull == irClass.symbol
-                && contextReceiverParametersCount == 0 && extensionReceiverParameter == null
+        private fun IrSimpleFunction.isTypedEqualsInValueClass() =
+            name == OperatorNameConventions.EQUALS
+                    && irClass.isValue
+                    && hasShape(dispatchReceiver = true, regularParameters = 1)
+                    && parameters[1].type.classifierOrNull == irClass.symbol
 
         fun generateEqualsMethodBody(properties: List<IrProperty>) {
             val irType = irClass.defaultType
@@ -138,8 +138,8 @@ abstract class DataClassMembersGenerator(
                 +irIfThenReturnFalse(irNotIs(irOther(), irType))
                 val otherCasted = irImplicitCast(irOther(), irType)
                 +irReturn(irCall(typedEqualsFunction).apply {
-                    putArgument(typedEqualsFunction.dispatchReceiverParameter!!, irThis())
-                    putValueArgument(0, otherCasted)
+                    arguments[0] = irThis()
+                    arguments[1] = otherCasted
                 })
                 return
             }
@@ -165,7 +165,7 @@ abstract class DataClassMembersGenerator(
                         hasExtensionReceiver = false,
                         origin = IrStatementOrigin.EXCLEQ,
                     ).apply<IrCallImpl> {
-                        dispatchReceiver = this@MemberFunctionBuilder.irEquals(arg1, arg2, origin = IrStatementOrigin.EXCLEQ)
+                        arguments[0] = this@MemberFunctionBuilder.irEquals(arg1, arg2, origin = IrStatementOrigin.EXCLEQ)
                     }
                 )
             }
@@ -208,8 +208,8 @@ abstract class DataClassMembersGenerator(
                     hasDispatchReceiver = true,
                     hasExtensionReceiver = false,
                 ).apply {
-                    dispatchReceiver = shiftedResult
-                    putValueArgument(0, getHashCodeOfProperty(property))
+                    arguments[0] = shiftedResult
+                    arguments[1] = getHashCodeOfProperty(property)
                 }
                 +irSet(irResultVar.symbol, irRhs)
             }
@@ -250,7 +250,7 @@ abstract class DataClassMembersGenerator(
                 val irPropertyStringValue =
                     if (classifier.isArrayOrPrimitiveArray)
                         irCall(context.irBuiltIns.dataClassArrayMemberToStringSymbol, context.irBuiltIns.stringType).apply {
-                            putValueArgument(0, irPropertyValue)
+                            arguments[0] = irPropertyValue
                         }
                     else
                         irPropertyValue
@@ -275,8 +275,8 @@ abstract class DataClassMembersGenerator(
             hasDispatchReceiver = true,
             hasExtensionReceiver = false,
         ).apply {
-            dispatchReceiver = irGet(irResultVar)
-            putValueArgument(0, irInt(31))
+            arguments[0] = irGet(irResultVar)
+            arguments[1] = irInt(31)
         }
 
     protected open fun getHashCodeOf(builder: IrBuilderWithScope, property: IrProperty, irValue: IrExpression): IrExpression {
@@ -297,11 +297,7 @@ abstract class DataClassMembersGenerator(
             hasExtensionReceiver = false,
             typeArgumentsCount = 0,
         ).apply {
-            if (hasDispatchReceiver) {
-                dispatchReceiver = irValue
-            } else {
-                putValueArgument(0, irValue)
-            }
+            arguments[0] = irValue
             hashCodeFunctionInfo.commitSubstituted(this)
         }
     }
@@ -352,9 +348,11 @@ abstract class IrBasedDataClassMembersGenerator(
 
     fun generateCopyFunction(irFunction: IrFunction, constructorSymbol: IrConstructorSymbol) {
         buildMember(irFunction) {
-            irFunction.valueParameters.forEach { irValueParameter ->
-                irValueParameter.defaultValue = irExprBody(irGetProperty(irThis(), getProperty(irValueParameter)))
-            }
+            irFunction.parameters
+                .filter { it.kind == IrParameterKind.Regular }
+                .forEach { irValueParameter ->
+                    irValueParameter.defaultValue = irExprBody(irGetProperty(irThis(), getProperty(irValueParameter)))
+                }
             generateCopyFunction(constructorSymbol)
         }
     }

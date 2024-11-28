@@ -1,3 +1,4 @@
+@file:kotlin.Suppress("DEPRECATION_ERROR")
 @file:kotlin.native.internal.objc.BindClassToObjCName(namespace.Foo::class, "22ExportedKotlinPackages9namespaceO4mainE3FooC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(namespace.Foo.INSIDE_CLASS::class, "22ExportedKotlinPackages9namespaceO4mainE3FooC12INSIDE_CLASSC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(namespace.NAMESPACED_CLASS::class, "22ExportedKotlinPackages9namespaceO4mainE16NAMESPACED_CLASSC")
@@ -12,8 +13,14 @@
 @file:kotlin.native.internal.objc.BindClassToObjCName(namespace.deeper.OBJECT_WITH_PACKAGE.Foo::class, "22ExportedKotlinPackages9namespaceO6deeperO4mainE19OBJECT_WITH_PACKAGEC3FooC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(namespace.deeper.OBJECT_WITH_PACKAGE.OBJECT_INSIDE_OBJECT::class, "22ExportedKotlinPackages9namespaceO6deeperO4mainE19OBJECT_WITH_PACKAGEC20OBJECT_INSIDE_OBJECTC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(why_we_need_module_names.CLASS_WITH_SAME_NAME::class, "22ExportedKotlinPackages24why_we_need_module_namesO4mainE20CLASS_WITH_SAME_NAMEC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(ABSTRACT_CLASS::class, "4main14ABSTRACT_CLASSC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(CLASS_WITH_SAME_NAME::class, "4main20CLASS_WITH_SAME_NAMEC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(ClassWithNonPublicConstructor::class, "4main29ClassWithNonPublicConstructorC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(DATA_CLASS::class, "4main10DATA_CLASSC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(DATA_CLASS_WITH_MANY_FIELDS::class, "4main27DATA_CLASS_WITH_MANY_FIELDSC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(DATA_CLASS_WITH_REF::class, "4main19DATA_CLASS_WITH_REFC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(ENUM::class, "4main4ENUMC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(ENUM.INSIDE_ENUM::class, "4main4ENUMC11INSIDE_ENUMC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(Foo::class, "4main3FooC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(Foo.Companion::class, "4main3FooC9CompanionC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(Foo.INSIDE_CLASS::class, "4main3FooC12INSIDE_CLASSC")
@@ -23,6 +30,9 @@
 @file:kotlin.native.internal.objc.BindClassToObjCName(OBJECT_NO_PACKAGE.Bar.NamedCompanion::class, "4main17OBJECT_NO_PACKAGEC3BarC14NamedCompanionC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(OBJECT_NO_PACKAGE.Foo::class, "4main17OBJECT_NO_PACKAGEC3FooC")
 @file:kotlin.native.internal.objc.BindClassToObjCName(OBJECT_NO_PACKAGE.OBJECT_INSIDE_OBJECT::class, "4main17OBJECT_NO_PACKAGEC20OBJECT_INSIDE_OBJECTC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(SEALED::class, "4main6SEALEDC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(SEALED.C::class, "4main6SEALEDC1CC")
+@file:kotlin.native.internal.objc.BindClassToObjCName(SEALED.O::class, "4main6SEALEDC1OC")
 
 import kotlin.native.internal.ExportedBridge
 import kotlinx.cinterop.*
@@ -39,6 +49,166 @@ public fun ClassWithNonPublicConstructor_a_get(self: kotlin.native.internal.Nati
     val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as ClassWithNonPublicConstructor
     val _result = __self.a
     return _result
+}
+
+@ExportedBridge("DATA_CLASS_WITH_MANY_FIELDS_a_get")
+public fun DATA_CLASS_WITH_MANY_FIELDS_a_get(self: kotlin.native.internal.NativePtr): Int {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_MANY_FIELDS
+    val _result = __self.a
+    return _result
+}
+
+@ExportedBridge("DATA_CLASS_WITH_MANY_FIELDS_b_get")
+public fun DATA_CLASS_WITH_MANY_FIELDS_b_get(self: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_MANY_FIELDS
+    val _result = __self.b
+    return _result.objcPtr()
+}
+
+@ExportedBridge("DATA_CLASS_WITH_MANY_FIELDS_c_get")
+public fun DATA_CLASS_WITH_MANY_FIELDS_c_get(self: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_MANY_FIELDS
+    val _result = __self.c
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("DATA_CLASS_WITH_MANY_FIELDS_copy__TypesOfArguments__Swift_Int32_Swift_String_KotlinRuntime_KotlinBase__")
+public fun DATA_CLASS_WITH_MANY_FIELDS_copy__TypesOfArguments__Swift_Int32_Swift_String_KotlinRuntime_KotlinBase__(self: kotlin.native.internal.NativePtr, a: Int, b: kotlin.native.internal.NativePtr, c: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_MANY_FIELDS
+    val __a = a
+    val __b = interpretObjCPointer<kotlin.String>(b)
+    val __c = kotlin.native.internal.ref.dereferenceExternalRCRef(c) as kotlin.Any
+    val _result = __self.copy(__a, __b, __c)
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("DATA_CLASS_WITH_MANY_FIELDS_d_get")
+public fun DATA_CLASS_WITH_MANY_FIELDS_d_get(self: kotlin.native.internal.NativePtr): Double {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_MANY_FIELDS
+    val _result = __self.d
+    return _result
+}
+
+@ExportedBridge("DATA_CLASS_WITH_MANY_FIELDS_e_get")
+public fun DATA_CLASS_WITH_MANY_FIELDS_e_get(self: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_MANY_FIELDS
+    val _result = __self.e
+    return _result.objcPtr()
+}
+
+@ExportedBridge("DATA_CLASS_WITH_MANY_FIELDS_hashCode")
+public fun DATA_CLASS_WITH_MANY_FIELDS_hashCode(self: kotlin.native.internal.NativePtr): Int {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_MANY_FIELDS
+    val _result = __self.hashCode()
+    return _result
+}
+
+@ExportedBridge("DATA_CLASS_WITH_MANY_FIELDS_toString")
+public fun DATA_CLASS_WITH_MANY_FIELDS_toString(self: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_MANY_FIELDS
+    val _result = __self.toString()
+    return _result.objcPtr()
+}
+
+@ExportedBridge("DATA_CLASS_WITH_REF_copy__TypesOfArguments__KotlinRuntime_KotlinBase__")
+public fun DATA_CLASS_WITH_REF_copy__TypesOfArguments__KotlinRuntime_KotlinBase__(self: kotlin.native.internal.NativePtr, o: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_REF
+    val __o = kotlin.native.internal.ref.dereferenceExternalRCRef(o) as kotlin.Any
+    val _result = __self.copy(__o)
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("DATA_CLASS_WITH_REF_hashCode")
+public fun DATA_CLASS_WITH_REF_hashCode(self: kotlin.native.internal.NativePtr): Int {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_REF
+    val _result = __self.hashCode()
+    return _result
+}
+
+@ExportedBridge("DATA_CLASS_WITH_REF_o_get")
+public fun DATA_CLASS_WITH_REF_o_get(self: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_REF
+    val _result = __self.o
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("DATA_CLASS_WITH_REF_toString")
+public fun DATA_CLASS_WITH_REF_toString(self: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS_WITH_REF
+    val _result = __self.toString()
+    return _result.objcPtr()
+}
+
+@ExportedBridge("DATA_CLASS_a_get")
+public fun DATA_CLASS_a_get(self: kotlin.native.internal.NativePtr): Int {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS
+    val _result = __self.a
+    return _result
+}
+
+@ExportedBridge("DATA_CLASS_copy__TypesOfArguments__Swift_Int32__")
+public fun DATA_CLASS_copy__TypesOfArguments__Swift_Int32__(self: kotlin.native.internal.NativePtr, a: Int): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS
+    val __a = a
+    val _result = __self.copy(__a)
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("DATA_CLASS_hashCode")
+public fun DATA_CLASS_hashCode(self: kotlin.native.internal.NativePtr): Int {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS
+    val _result = __self.hashCode()
+    return _result
+}
+
+@ExportedBridge("DATA_CLASS_toString")
+public fun DATA_CLASS_toString(self: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __self = kotlin.native.internal.ref.dereferenceExternalRCRef(self) as DATA_CLASS
+    val _result = __self.toString()
+    return _result.objcPtr()
+}
+
+@ExportedBridge("ENUM_A_get")
+public fun ENUM_A_get(): kotlin.native.internal.NativePtr {
+    val _result = ENUM.A
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("ENUM_B_get")
+public fun ENUM_B_get(): kotlin.native.internal.NativePtr {
+    val _result = ENUM.B
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("ENUM_C_get")
+public fun ENUM_C_get(): kotlin.native.internal.NativePtr {
+    val _result = ENUM.C
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("ENUM_INSIDE_ENUM_init_allocate")
+public fun ENUM_INSIDE_ENUM_init_allocate(): kotlin.native.internal.NativePtr {
+    val _result = kotlin.native.internal.createUninitializedInstance<ENUM.INSIDE_ENUM>()
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("ENUM_INSIDE_ENUM_init_initialize__TypesOfArguments__Swift_UInt__")
+public fun ENUM_INSIDE_ENUM_init_initialize__TypesOfArguments__Swift_UInt__(__kt: kotlin.native.internal.NativePtr): Unit {
+    val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
+    kotlin.native.internal.initInstance(____kt, ENUM.INSIDE_ENUM())
+}
+
+@ExportedBridge("ENUM_entries_get")
+public fun ENUM_entries_get(): kotlin.native.internal.NativePtr {
+    val _result = ENUM.entries
+    return _result.objcPtr()
+}
+
+@ExportedBridge("ENUM_valueOf__TypesOfArguments__Swift_String__")
+public fun ENUM_valueOf__TypesOfArguments__Swift_String__(value: kotlin.native.internal.NativePtr): kotlin.native.internal.NativePtr {
+    val __value = interpretObjCPointer<kotlin.String>(value)
+    val _result = ENUM.valueOf(__value)
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
 }
 
 @ExportedBridge("Foo_Companion_get")
@@ -241,6 +411,24 @@ public fun OBJECT_NO_PACKAGE_variable_set__TypesOfArguments__Swift_Int32__(self:
     __self.variable = __newValue
 }
 
+@ExportedBridge("SEALED_C_init_allocate")
+public fun SEALED_C_init_allocate(): kotlin.native.internal.NativePtr {
+    val _result = kotlin.native.internal.createUninitializedInstance<SEALED.C>()
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("SEALED_C_init_initialize__TypesOfArguments__Swift_UInt__")
+public fun SEALED_C_init_initialize__TypesOfArguments__Swift_UInt__(__kt: kotlin.native.internal.NativePtr): Unit {
+    val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
+    kotlin.native.internal.initInstance(____kt, SEALED.C())
+}
+
+@ExportedBridge("SEALED_O_get")
+public fun SEALED_O_get(): kotlin.native.internal.NativePtr {
+    val _result = SEALED.O
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
 @ExportedBridge("__root___CLASS_WITH_SAME_NAME_init_allocate")
 public fun __root___CLASS_WITH_SAME_NAME_init_allocate(): kotlin.native.internal.NativePtr {
     val _result = kotlin.native.internal.createUninitializedInstance<CLASS_WITH_SAME_NAME>()
@@ -251,6 +439,47 @@ public fun __root___CLASS_WITH_SAME_NAME_init_allocate(): kotlin.native.internal
 public fun __root___CLASS_WITH_SAME_NAME_init_initialize__TypesOfArguments__Swift_UInt__(__kt: kotlin.native.internal.NativePtr): Unit {
     val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
     kotlin.native.internal.initInstance(____kt, CLASS_WITH_SAME_NAME())
+}
+
+@ExportedBridge("__root___DATA_CLASS_WITH_MANY_FIELDS_init_allocate")
+public fun __root___DATA_CLASS_WITH_MANY_FIELDS_init_allocate(): kotlin.native.internal.NativePtr {
+    val _result = kotlin.native.internal.createUninitializedInstance<DATA_CLASS_WITH_MANY_FIELDS>()
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("__root___DATA_CLASS_WITH_MANY_FIELDS_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32_Swift_String_KotlinRuntime_KotlinBase__")
+public fun __root___DATA_CLASS_WITH_MANY_FIELDS_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32_Swift_String_KotlinRuntime_KotlinBase__(__kt: kotlin.native.internal.NativePtr, a: Int, b: kotlin.native.internal.NativePtr, c: kotlin.native.internal.NativePtr): Unit {
+    val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
+    val __a = a
+    val __b = interpretObjCPointer<kotlin.String>(b)
+    val __c = kotlin.native.internal.ref.dereferenceExternalRCRef(c) as kotlin.Any
+    kotlin.native.internal.initInstance(____kt, DATA_CLASS_WITH_MANY_FIELDS(__a, __b, __c))
+}
+
+@ExportedBridge("__root___DATA_CLASS_WITH_REF_init_allocate")
+public fun __root___DATA_CLASS_WITH_REF_init_allocate(): kotlin.native.internal.NativePtr {
+    val _result = kotlin.native.internal.createUninitializedInstance<DATA_CLASS_WITH_REF>()
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("__root___DATA_CLASS_WITH_REF_init_initialize__TypesOfArguments__Swift_UInt_KotlinRuntime_KotlinBase__")
+public fun __root___DATA_CLASS_WITH_REF_init_initialize__TypesOfArguments__Swift_UInt_KotlinRuntime_KotlinBase__(__kt: kotlin.native.internal.NativePtr, o: kotlin.native.internal.NativePtr): Unit {
+    val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
+    val __o = kotlin.native.internal.ref.dereferenceExternalRCRef(o) as kotlin.Any
+    kotlin.native.internal.initInstance(____kt, DATA_CLASS_WITH_REF(__o))
+}
+
+@ExportedBridge("__root___DATA_CLASS_init_allocate")
+public fun __root___DATA_CLASS_init_allocate(): kotlin.native.internal.NativePtr {
+    val _result = kotlin.native.internal.createUninitializedInstance<DATA_CLASS>()
+    return kotlin.native.internal.ref.createRetainedExternalRCRef(_result)
+}
+
+@ExportedBridge("__root___DATA_CLASS_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__")
+public fun __root___DATA_CLASS_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(__kt: kotlin.native.internal.NativePtr, a: Int): Unit {
+    val ____kt = kotlin.native.internal.ref.dereferenceExternalRCRef(__kt)
+    val __a = a
+    kotlin.native.internal.initInstance(____kt, DATA_CLASS(__a))
 }
 
 @ExportedBridge("__root___Foo_init_allocate")

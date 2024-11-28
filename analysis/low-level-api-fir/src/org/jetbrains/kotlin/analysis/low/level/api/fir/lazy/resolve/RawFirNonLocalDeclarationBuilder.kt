@@ -18,7 +18,6 @@ import org.jetbrains.kotlin.fir.builder.BodyBuildingMode
 import org.jetbrains.kotlin.fir.builder.PsiRawFirBuilder
 import org.jetbrains.kotlin.fir.builder.buildDestructuringVariable
 import org.jetbrains.kotlin.fir.declarations.*
-import org.jetbrains.kotlin.fir.declarations.utils.isExpect
 import org.jetbrains.kotlin.fir.declarations.utils.isInner
 import org.jetbrains.kotlin.fir.expressions.FirMultiDelegatedConstructorCall
 import org.jetbrains.kotlin.fir.references.FirSuperReference
@@ -29,6 +28,7 @@ import org.jetbrains.kotlin.fir.utils.exceptions.withFirEntry
 import org.jetbrains.kotlin.name.NameUtils
 import org.jetbrains.kotlin.psi
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.hasExpectModifier
 import org.jetbrains.kotlin.util.PrivateForInline
 import org.jetbrains.kotlin.utils.exceptions.errorWithAttachment
@@ -42,6 +42,9 @@ internal class RawFirNonLocalDeclarationBuilder private constructor(
     private val declarationToBuild: KtElement,
     private val functionsToRebind: Set<FirFunction>,
 ) : PsiRawFirBuilder(session, baseScopeProvider, bodyBuildingMode = BodyBuildingMode.NORMAL) {
+    override val KtProperty.sourceForDelegatedPropertyAccessors: KtSourceElement?
+        get() = this.toFirSourceElement()
+
     companion object {
         fun buildWithFunctionSymbolRebind(
             session: FirSession,
@@ -179,11 +182,7 @@ internal class RawFirNonLocalDeclarationBuilder private constructor(
         override fun visitSecondaryConstructor(constructor: KtSecondaryConstructor, data: FirElement?): FirElement {
             val classOrObject = constructor.getContainingClassOrObject()
             val params = extractContructorConversionParams(classOrObject, constructor)
-            val delegatedTypeRef = (originalDeclaration as FirConstructor).delegatedConstructor?.constructedTypeRef
-                ?: if (containingClass?.isExpect == true) params.selfType
-                else errorWithAttachment("Non-expect secondary constructor without delegated call") {
-                    withPsiEntry("constructor", constructor, baseSession.llFirModuleData.ktModule)
-                }
+            val delegatedTypeRef = (originalDeclaration as FirConstructor).delegatedConstructor?.constructedTypeRef ?: params.selfType
             return constructor.toFirConstructor(
                 delegatedTypeRef,
                 params.selfType,
@@ -235,7 +234,10 @@ internal class RawFirNonLocalDeclarationBuilder private constructor(
         override fun visitEnumEntry(enumEntry: KtEnumEntry, data: FirElement?): FirElement {
             val owner = containingClass ?: errorWithAttachment("Enum entry outside of class") {
                 withPsiEntry("enumEntry", enumEntry, baseSession.llFirModuleData.ktModule)
+                withPsiEntry("containingClassPsi", enumEntry.containingClassOrObject)
+                withFirEntry("originalDeclaration", originalDeclaration)
             }
+
             val classOrObject = owner.psi as KtClassOrObject
             val primaryConstructor = classOrObject.primaryConstructor
             val ownerClassHasDefaultConstructor =
@@ -254,7 +256,7 @@ internal class RawFirNonLocalDeclarationBuilder private constructor(
                 if (superTypeListEntry is KtDelegatedSuperTypeEntry) {
                     val expectedName = NameUtils.delegateFieldName(index)
                     if (originalDeclaration.name == expectedName) {
-                        return buildFieldForSupertypeDelegate(superTypeListEntry, type = null, index)
+                        return buildFieldForSupertypeDelegate(superTypeListEntry, originalDeclaration.returnTypeRef, index)
                     }
 
                     index++

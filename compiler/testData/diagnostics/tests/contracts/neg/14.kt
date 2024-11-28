@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // DIAGNOSTICS: -UNUSED_VARIABLE
 // OPT_IN: kotlin.contracts.ExperimentalContracts
 
@@ -20,4 +21,11 @@ inline fun case_8(block: () -> Unit) {
     <!CONTRACT_NOT_ALLOWED!>contract<!> {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
+}
+
+fun builder(): ContractBuilder.() -> Unit = {}
+
+// TESTCASE NUMBER: 9
+inline fun case_9(block: () -> Unit) {
+    (<!CONTRACT_NOT_ALLOWED!>contract<!>(builder()))
 }

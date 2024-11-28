@@ -11,8 +11,7 @@ import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.Visibility
 
 
-public abstract class KaClassInitializerSymbol : KaDeclarationSymbol,
-    @Suppress("DEPRECATION") org.jetbrains.kotlin.analysis.api.symbols.markers.KaSymbolWithKind {
+public abstract class KaClassInitializerSymbol : KaDeclarationSymbol {
     final override val modality: KaSymbolModality get() = withValidityAssertion { KaSymbolModality.FINAL }
     final override val isActual: Boolean get() = withValidityAssertion { false }
     final override val isExpect: Boolean get() = withValidityAssertion { false }
@@ -21,6 +20,3 @@ public abstract class KaClassInitializerSymbol : KaDeclarationSymbol,
     @KaExperimentalApi
     final override val compilerVisibility: Visibility get() = withValidityAssertion { Visibilities.Local }
 }
-
-@Deprecated("Use 'KaClassInitializerSymbol'", ReplaceWith("KaClassInitializerSymbol"))
-public typealias KtClassInitializerSymbol = KaClassInitializerSymbol

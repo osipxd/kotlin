@@ -3,6 +3,8 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
+@file:OptIn(SuspiciousFakeSourceCheck::class)
+
 package org.jetbrains.kotlin
 
 import com.intellij.lang.LighterASTNode
@@ -48,6 +50,11 @@ sealed class KtFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
      * for errors on smartcast types then the type is brought in by an implicit this receiver expression
      */
     object ImplicitThisReceiverExpression : KtFakeSourceElementKind()
+
+    /**
+     * for implicit context parameter arguments of calls.
+     */
+    object ImplicitContextParameterArgument : KtFakeSourceElementKind()
 
     /**
      * for type arguments that were inferred as opposed to specified
@@ -251,6 +258,11 @@ sealed class KtFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
     object DataClassGeneratedMembers : KtFakeSourceElementKind(shouldSkipErrorTypeReporting = true)
 
     /**
+     * For synthetic overrides implemented by delegation
+     */
+    object MembersImplementedByDelegation : KtFakeSourceElementKind()
+
+    /**
      * `(vararg x: Int)` --> `(x: Array<out Int>)` where array type ref has a fake source kind
      */
     object ArrayTypeFromVarargParameter : KtFakeSourceElementKind()
@@ -338,6 +350,12 @@ sealed class KtFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
      * where `it` parameter declaration has fake source
      */
     object ItLambdaParameter : KtFakeSourceElementKind()
+
+    /**
+     * For function type `context(Foo) () -> Unit`,
+     * the context parameter with type `Foo` of the anonymous function.
+     */
+    object LambdaContextParameter : KtFakeSourceElementKind()
 
     /**
      * While it doesn't have an explicit source, it still has a type that might be a ConeErrorType
@@ -432,6 +450,12 @@ sealed class KtFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
     object AssignmentLValueError : KtFakeSourceElementKind()
 
     /**
+     * For when the LHS of a desugared assignment has a null source.
+     * In this case, the psi of [KtFakePsiSourceElement] should be set to the psi of the assignment
+     */
+    object DesugaredAssignmentLValueSourceIsNull : KtFakeSourceElementKind()
+
+    /**
      * for return type of value parameters in lambdas
      */
     object ImplicitReturnTypeOfLambdaValueParameter : KtFakeSourceElementKind()
@@ -457,6 +481,11 @@ sealed class KtFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
     object ScriptParameter : KtFakeSourceElementKind()
 
     /**
+     * For script base class
+     */
+    object ScriptBaseClass : KtFakeSourceElementKind(shouldSkipErrorTypeReporting = true)
+
+    /**
      * When a lambda is converted to a SAM type, the expression is wrapped in an extra node
      */
     object SamConversion : KtFakeSourceElementKind()
@@ -465,6 +494,11 @@ sealed class KtFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
      * For it.functionFromAny() calls on a stub type
      */
     object CastToAnyForStubTypes : KtFakeSourceElementKind()
+
+    /**
+     * We use the whole context parameter as the fake source for default values.
+     */
+    object ContextParameterDefaultValue : KtFakeSourceElementKind()
 
     /**
      * For plugin-generated things
@@ -657,7 +691,16 @@ class KtRealPsiSourceElement(psi: PsiElement) : KtPsiSourceElement(psi) {
     override val kind: KtSourceElementKind get() = KtRealSourceElementKind
 }
 
-open class KtFakeSourceElement(
+/**
+ * Checking for [KtFakePsiSourceElement] only works for PSI sources.
+ *
+ * To check for a fake source regardless of source type, check if [KtSourceElement.kind] is a [KtFakeSourceElementKind].
+ */
+@RequiresOptIn
+annotation class SuspiciousFakeSourceCheck
+
+@SuspiciousFakeSourceCheck
+open class KtFakePsiSourceElement(
     psi: PsiElement,
     override val kind: KtFakeSourceElementKind,
 ) : KtPsiSourceElement(psi) {
@@ -666,7 +709,7 @@ open class KtFakeSourceElement(
         if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
 
-        other as KtFakeSourceElement
+        other as KtFakePsiSourceElement
 
         if (kind != other.kind) return false
 
@@ -680,15 +723,15 @@ open class KtFakeSourceElement(
     }
 }
 
-private class KtFakeSourceElementWithOffsets(
+private class KtFakePsiSourceElementWithOffsets(
     psi: PsiElement,
     kind: KtFakeSourceElementKind,
     override val startOffset: Int,
     override val endOffset: Int,
-) : KtFakeSourceElement(psi, kind) {
+) : KtFakePsiSourceElement(psi, kind) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is KtFakeSourceElementWithOffsets) return false
+        if (other !is KtFakePsiSourceElementWithOffsets) return false
         if (!super.equals(other)) return false
 
         if (kind != other.kind) return false
@@ -720,8 +763,8 @@ fun KtSourceElement.fakeElement(
             newKind
         )
         is KtPsiSourceElement -> when {
-            startOffset != -1 && endOffset != -1 -> KtFakeSourceElementWithOffsets(psi, newKind, startOffset, endOffset)
-            else -> KtFakeSourceElement(psi, newKind)
+            startOffset != -1 && endOffset != -1 -> KtFakePsiSourceElementWithOffsets(psi, newKind, startOffset, endOffset)
+            else -> KtFakePsiSourceElement(psi, newKind)
         }
     }
 }
@@ -797,7 +840,7 @@ val KtSourceElement?.text: CharSequence?
 @Suppress("NOTHING_TO_INLINE")
 inline fun PsiElement.toKtPsiSourceElement(kind: KtSourceElementKind = KtRealSourceElementKind): KtPsiSourceElement = when (kind) {
     is KtRealSourceElementKind -> KtRealPsiSourceElement(this)
-    is KtFakeSourceElementKind -> KtFakeSourceElement(this, kind)
+    is KtFakeSourceElementKind -> KtFakePsiSourceElement(this, kind)
 }
 
 @Suppress("NOTHING_TO_INLINE")

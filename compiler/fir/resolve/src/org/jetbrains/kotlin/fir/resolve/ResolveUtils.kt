@@ -226,7 +226,7 @@ fun FirFunction.constructFunctionType(kind: FunctionTypeKind? = null): ConeLooku
 
     return createFunctionType(
         kind ?: FunctionTypeKind.Function, parameters, receiverTypeRef?.coneType, rawReturnType,
-        contextReceivers = contextReceivers.map { it.typeRef.coneType }
+        contextReceivers = contextReceivers.map { it.returnTypeRef.coneType }
     )
 }
 
@@ -329,7 +329,8 @@ fun BodyResolveComponents.buildResolvedQualifierForClass(
         typeArgumentsForQualifier,
         diagnostic,
         nonFatalDiagnostics,
-        annotations
+        annotations,
+        explicitParent = null,
     )
 }
 
@@ -342,11 +343,21 @@ fun BodyResolveComponents.buildResolvedQualifierForClass(
     diagnostic: ConeDiagnostic?,
     nonFatalDiagnostics: List<ConeDiagnostic>?,
     annotations: List<FirAnnotation>,
+    explicitParent: FirResolvedQualifier?
 ): FirResolvedQualifier {
     val builder: FirAbstractResolvedQualifierBuilder = if (diagnostic == null) {
         FirResolvedQualifierBuilder()
     } else {
         FirErrorResolvedQualifierBuilder().apply { this.diagnostic = diagnostic }
+    }
+
+    // If we resolve to some qualifier, the parent can't have implicitly resolved to the companion object.
+    // In a case like
+    // class Foo { companion object { class Bar } }
+    // Foo.Bar will be unresolved.
+    if (explicitParent?.resolvedToCompanionObject == true) {
+        explicitParent.replaceResolvedToCompanionObject(false)
+        explicitParent.resultType = session.builtinTypes.unitType.coneType
     }
 
     return builder.apply {
@@ -357,6 +368,7 @@ fun BodyResolveComponents.buildResolvedQualifierForClass(
         this.symbol = symbol
         nonFatalDiagnostics?.let(this.nonFatalDiagnostics::addAll)
         this.annotations.addAll(annotations)
+        this.explicitParent = explicitParent
     }.build().apply {
         if (symbol?.classId?.isLocal == true) {
             resultType = typeForQualifierByDeclaration(symbol.fir, session, element = this@apply, file)
@@ -466,7 +478,7 @@ fun BodyResolveComponents.typeFromCallee(access: FirElement, calleeReference: Fi
         }
         is FirThisReference -> {
             val labelName = calleeReference.labelName
-            val possibleImplicitReceivers = implicitReceiverStack[labelName]
+            val possibleImplicitReceivers = implicitValueStorage[labelName]
             buildResolvedTypeRef {
                 source = null
                 coneType = when {
@@ -765,3 +777,16 @@ fun ConeClassLikeLookupTag.isRealOwnerOf(declarationSymbol: FirCallableSymbol<*>
     this == declarationSymbol.dispatchReceiverClassLookupTagOrNull()
 
 val FirUserTypeRef.shortName: Name get() = qualifier.last().name
+
+val FirThisReference.referencedMemberSymbol: FirBasedSymbol<*>?
+    get() = when (val boundSymbol = boundSymbol) {
+        is FirReceiverParameterSymbol -> boundSymbol.containingDeclarationSymbol
+        is FirValueParameterSymbol -> boundSymbol.containingDeclarationSymbol
+        is FirClassSymbol -> boundSymbol
+        null -> null
+        is FirTypeParameterSymbol, is FirTypeAliasSymbol -> errorWithAttachment(
+            message = "Unexpected FirThisOwnerSymbol ${boundSymbol::class.simpleName}"
+        ) {
+            withFirEntry("FIR", fir = boundSymbol.fir)
+        }
+    }

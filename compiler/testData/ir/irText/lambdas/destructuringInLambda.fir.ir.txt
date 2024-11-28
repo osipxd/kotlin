@@ -6,7 +6,7 @@ FILE fqName:<root> fileName:/destructuringInLambda.kt
           FUN LOCAL_FUNCTION_FOR_LAMBDA name:<anonymous> visibility:local modality:FINAL <> (<destruct>:<root>.A) returnType:kotlin.Int
             VALUE_PARAMETER DESTRUCTURED_OBJECT_PARAMETER name:<destruct> index:0 type:<root>.A
             BLOCK_BODY
-              VAR name:y type:kotlin.Int [val]
+              VAR IR_DESTRUCTURED_PARAMETER_VARIABLE name:y type:kotlin.Int [val]
                 CALL 'public final fun component2 (): kotlin.Int declared in <root>.A' type=kotlin.Int origin=COMPONENT_N(index=2)
                   $this: GET_VAR '<destruct>: <root>.A declared in <root>.fn.<anonymous>' type=<root>.A origin=null
               RETURN type=kotlin.Nothing from='local final fun <anonymous> (<destruct>: <root>.A): kotlin.Int declared in <root>.fn'
@@ -53,7 +53,7 @@ FILE fqName:<root> fileName:/destructuringInLambda.kt
       VALUE_PARAMETER name:y index:1 type:kotlin.Int
       BLOCK_BODY
         DELEGATING_CONSTRUCTOR_CALL 'public constructor <init> () declared in kotlin.Any'
-        INSTANCE_INITIALIZER_CALL classDescriptor='CLASS CLASS name:A modality:FINAL visibility:public [data] superTypes:[kotlin.Any]'
+        INSTANCE_INITIALIZER_CALL classDescriptor='CLASS CLASS name:A modality:FINAL visibility:public [data] superTypes:[kotlin.Any]' type=kotlin.Unit
     FUN GENERATED_DATA_CLASS_MEMBER name:component1 visibility:public modality:FINAL <> ($this:<root>.A) returnType:kotlin.Int [operator]
       $this: VALUE_PARAMETER name:<this> type:<root>.A
       BLOCK_BODY

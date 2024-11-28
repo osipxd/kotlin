@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.build.report.metrics.GradleBuildPerformanceMetric
 import org.jetbrains.kotlin.build.report.metrics.GradleBuildTime
 import org.jetbrains.kotlin.build.report.metrics.endMeasureGc
 import org.jetbrains.kotlin.build.report.metrics.startMeasureGc
+import org.jetbrains.kotlin.buildtools.api.SourcesChanges
 import org.jetbrains.kotlin.cli.common.*
 import org.jetbrains.kotlin.cli.common.arguments.*
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
@@ -93,7 +94,7 @@ abstract class CompileServiceImplBase(
     val compilerId: CompilerId,
     val port: Int,
     val timer: Timer,
-) {
+) : CompileService {
     protected val log by lazy { Logger.getLogger("compiler") }
 
     init {
@@ -525,6 +526,7 @@ abstract class CompileServiceImplBase(
     }
 
     fun configurePeriodicActivities() {
+        log.info("Periodic liveness check activities configured")
         timer.schedule(delay = DAEMON_PERIODIC_CHECK_INTERVAL_MS, period = DAEMON_PERIODIC_CHECK_INTERVAL_MS) {
             exceptionLoggingTimerThread { periodicAndAfterSessionCheck() }
         }
@@ -580,12 +582,6 @@ abstract class CompileServiceImplBase(
         @Suppress("DEPRECATION") // TODO: get rid of that parsing KT-62759
         val allKotlinFiles = extractKotlinSourcesFromFreeCompilerArguments(args, setOf("kt"))
 
-        val changedFiles = if (incrementalCompilationOptions.areFileChangesKnown) {
-            ChangedFiles.Known(incrementalCompilationOptions.modifiedFiles!!, incrementalCompilationOptions.deletedFiles!!)
-        } else {
-            ChangedFiles.Unknown()
-        }
-
         val workingDir = incrementalCompilationOptions.workingDir
         val modulesApiHistory = incrementalCompilationOptions.multiModuleICSettings?.run {
             val modulesInfo = incrementalCompilationOptions.modulesInfo
@@ -604,11 +600,17 @@ abstract class CompileServiceImplBase(
             icFeatures = incrementalCompilationOptions.icFeatures,
         )
         return try {
-            compiler.compile(allKotlinFiles, args, compilerMessageCollector, changedFiles)
+            compiler.compile(allKotlinFiles, args, compilerMessageCollector, incrementalCompilationOptions.sourceChanges.toChangedFiles())
         } finally {
             reporter.endMeasureGc()
             reporter.flush()
         }
+    }
+
+    private fun SourcesChanges.toChangedFiles(): ChangedFiles = when (this) {
+        is SourcesChanges.Unknown -> ChangedFiles.Unknown
+        is SourcesChanges.ToBeCalculated -> ChangedFiles.DeterminableFiles.ToBeComputed
+        is SourcesChanges.Known -> ChangedFiles.DeterminableFiles.Known(modifiedFiles, removedFiles)
     }
 
     protected fun execIncrementalCompiler(
@@ -623,12 +625,6 @@ abstract class CompileServiceImplBase(
 
         @Suppress("DEPRECATION") // TODO: get rid of that parsing KT-62759
         val allKotlinFiles = extractKotlinSourcesFromFreeCompilerArguments(k2jvmArgs, allKotlinExtensions)
-
-        val changedFiles = if (incrementalCompilationOptions.areFileChangesKnown) {
-            ChangedFiles.Known(incrementalCompilationOptions.modifiedFiles!!, incrementalCompilationOptions.deletedFiles!!)
-        } else {
-            ChangedFiles.Unknown()
-        }
 
         val workingDir = incrementalCompilationOptions.workingDir
 
@@ -671,7 +667,7 @@ abstract class CompileServiceImplBase(
         )
         return try {
             compiler.compile(
-                allKotlinFiles, k2jvmArgs, compilerMessageCollector, changedFiles,
+                allKotlinFiles, k2jvmArgs, compilerMessageCollector, incrementalCompilationOptions.sourceChanges.toChangedFiles(),
                 fileLocations = if (rootProjectDir != null && buildDir != null) {
                     FileLocations(rootProjectDir, buildDir)
                 } else null
@@ -690,7 +686,6 @@ abstract class CompileServiceImplBase(
             @Suppress("UNCHECKED_CAST")
             (session?.data as? KotlinJvmReplServiceT?)?.body() ?: CompileService.CallResult.Error("Not a REPL session $sessionId")
         }
-
 }
 
 class CompileServiceImpl(
@@ -851,7 +846,7 @@ class CompileServiceImpl(
             builder.register(EnumWhenTracker::class.java, RemoteEnumWhenTracker(facade, rpcProfiler))
         }
         if (facade.hasIncrementalResultsConsumer()) {
-            builder.register(IncrementalResultsConsumer::class.java, RemoteIncrementalResultsConsumer(facade, eventManager, rpcProfiler))
+            builder.register(IncrementalResultsConsumer::class.java, RemoteIncrementalResultsConsumer(facade, rpcProfiler))
         }
         if (facade.hasIncrementalDataProvider()) {
             builder.register(IncrementalDataProvider::class.java, RemoteIncrementalDataProvider(facade, rpcProfiler))

@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrEnumEntrySymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 import org.jetbrains.kotlin.load.kotlin.TypeMappingMode
 import org.jetbrains.kotlin.name.FqName
@@ -180,7 +181,7 @@ abstract class AnnotationCodegen(private val classCodegen: ClassCodegen) {
     private fun genAnnotationArguments(annotation: IrConstructorCall, annotationVisitor: AnnotationVisitor) {
         val annotationClass = annotation.annotationClass
         for (param in annotation.symbol.owner.valueParameters) {
-            val value = annotation.getValueArgument(param.index)
+            val value = annotation.getValueArgument(param.indexInOldValueParameters)
             if (value != null)
                 genCompileTimeValue(getAnnotationArgumentJvmName(annotationClass, param.name), value, annotationVisitor)
             else if (param.defaultValue != null)

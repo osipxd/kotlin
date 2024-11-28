@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.fir.backend.generators
 
+import org.jetbrains.kotlin.builtins.functions.FunctionTypeKind
 import org.jetbrains.kotlin.builtins.functions.isSuspendOrKSuspendFunction
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
@@ -487,9 +488,8 @@ internal class AdapterGenerator(
             val newArguments = Array(arguments.size) { i ->
                 val argument = arguments[i]
                 val parameter = parameters.getOrNull(i) ?: return null
-
                 when {
-                    argument.kind == ProjectionKind.IN -> {
+                    argument.kind == ProjectionKind.IN && c.configuration.carefulApproximationOfContravariantProjectionForSam -> {
                         // Just erasing `in` from the type projection would lead to an incorrect type for the SAM adapter,
                         // and error at runtime on JVM if invokedynamic + LambdaMetafactory is used, see KT-51868.
                         // So we do it "carefully". If we have a class `A<T>` and a method that takes e.g. `A<in String>`, we check
@@ -584,10 +584,12 @@ internal class AdapterGenerator(
             }
         }
 
-        val invokeSymbol = findInvokeSymbol(expectedFunctionalType, argument) ?: return this
+        val functionalArgumentType = calculateFunctionalArgumentType(argument)
+        val invokeSymbol = findInvokeSymbol(expectedFunctionalType, functionalArgumentType) ?: return this
         val suspendConvertedType = parameterType.toIrType(c) as IrSimpleType
         return argument.convertWithOffsets { startOffset, endOffset ->
-            val irAdapterFunction = createAdapterFunctionForArgument(startOffset, endOffset, suspendConvertedType, type, invokeSymbol)
+            val argumentType = functionalArgumentType.toIrType(c)
+            val irAdapterFunction = createAdapterFunctionForArgument(startOffset, endOffset, suspendConvertedType, argumentType, invokeSymbol)
             val irAdapterRef = IrFunctionReferenceImpl(
                 startOffset, endOffset, suspendConvertedType, irAdapterFunction.symbol, irAdapterFunction.typeParameters.size,
                 null, IrStatementOrigin.SUSPEND_CONVERSION
@@ -599,11 +601,22 @@ internal class AdapterGenerator(
         }
     }
 
+    private fun calculateFunctionalArgumentType(argument: FirExpression): ConeKotlinType {
+        var argumentType = ((argument as? FirSamConversionExpression)?.expression ?: argument).resolvedType.fullyExpandedType(session)
+        if (argumentType.isKProperty(session) || argumentType.isKMutableProperty(session)) {
+            val functionClassId = FunctionTypeKind.Function.numberedClassId(argumentType.typeArguments.size - 1)
+            argumentType = functionClassId.toLookupTag().constructClassType(typeArguments = argumentType.typeArguments)
+        }
+        return argumentType
+    }
+
+    /**
+     * Returns the proper `invoke` symbol of a FunctionN type and the expected FunctionN argument type
+     */
     private fun findInvokeSymbol(
         expectedFunctionalType: ConeClassLikeType,
-        argument: FirExpression
+        argumentType: ConeKotlinType
     ): IrSimpleFunctionSymbol? {
-        val argumentType = ((argument as? FirSamConversionExpression)?.expression ?: argument).resolvedType.fullyExpandedType(session)
         val argumentTypeWithInvoke = argumentType.findSubtypeOfBasicFunctionType(session, expectedFunctionalType) ?: return null
 
         return if (argumentTypeWithInvoke.isSomeFunctionType(session)) {
@@ -683,7 +696,7 @@ internal class AdapterGenerator(
         )
         irCall.dispatchReceiver = adapterFunction.extensionReceiverParameter!!.toIrGetValue(startOffset, endOffset)
         for (irAdapterParameter in adapterFunction.valueParameters) {
-            irCall.putValueArgument(irAdapterParameter.index, irAdapterParameter.toIrGetValue(startOffset, endOffset))
+            irCall.putValueArgument(irAdapterParameter.indexInOldValueParameters, irAdapterParameter.toIrGetValue(startOffset, endOffset))
         }
         return irCall
     }

@@ -22,7 +22,6 @@ import org.jetbrains.kotlin.fir.declarations.builder.buildConstructedClassTypePa
 import org.jetbrains.kotlin.fir.declarations.builder.buildEnumEntry
 import org.jetbrains.kotlin.fir.declarations.builder.buildOuterClassTypeParameterRef
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
-import org.jetbrains.kotlin.fir.declarations.utils.modality
 import org.jetbrains.kotlin.fir.declarations.utils.sourceElement
 import org.jetbrains.kotlin.fir.declarations.utils.visibility
 import org.jetbrains.kotlin.fir.java.declarations.*
@@ -36,7 +35,7 @@ import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
 import org.jetbrains.kotlin.load.java.JavaClassFinder
 import org.jetbrains.kotlin.load.java.structure.*
 import org.jetbrains.kotlin.load.java.structure.impl.JavaElementImpl
-import org.jetbrains.kotlin.load.java.structure.impl.classFiles.BinaryJavaClass
+import org.jetbrains.kotlin.load.java.structure.impl.VirtualFileBoundJavaClass
 import org.jetbrains.kotlin.name.*
 
 class FirJavaFacadeForSource(
@@ -69,8 +68,8 @@ abstract class FirJavaFacade(session: FirSession, private val classFinder: JavaC
     fun findClass(classId: ClassId, knownContent: ByteArray? = null): JavaClass? =
         classFinder.findClass(JavaClassFinder.Request(classId, knownContent))?.takeUnless(JavaClass::hasMetadataAnnotation)
 
-    fun getPackage(fqName: FqName): FqName? =
-        packageCache.getValue(fqName)?.fqName
+    fun hasPackage(fqName: FqName): Boolean =
+        packageCache.getValue(fqName) != null
 
     fun hasTopLevelClassOf(classId: ClassId): Boolean {
         val knownNames = knownClassNamesInPackage(classId.packageFqName) ?: return true
@@ -207,8 +206,10 @@ abstract class FirJavaFacade(session: FirSession, private val classFinder: JavaC
                 this.isJavaRecord = true
             }
 
-            if (javaClass is BinaryJavaClass) {
-                sourceElement = JavaBinarySourceElement(javaClass)
+            if (javaClass is VirtualFileBoundJavaClass) {
+                javaClass.virtualFile?.let {
+                    sourceElement = VirtualFileBasedSourceElement(it)
+                }
             }
         }
     }
@@ -389,6 +390,7 @@ private fun JavaTypeParameter.toFirTypeParameter(
     origin = javaOrigin(isFromSource)
     name = this@toFirTypeParameter.name
     symbol = FirTypeParameterSymbol()
+    this.source = this@toFirTypeParameter.toSourceElement()
     this.containingDeclarationSymbol = containingDeclarationSymbol
     for (upperBound in this@toFirTypeParameter.upperBounds) {
         bounds += upperBound.toFirJavaTypeRef(session, source)
@@ -473,7 +475,7 @@ private fun createDeclarationsForJavaRecord(
 
             javaClass.recordComponents.mapTo(valueParameters) { component ->
                 buildJavaValueParameter {
-                    containingFunctionSymbol = this@buildJavaConstructor.symbol
+                    containingDeclarationSymbol = this@buildJavaConstructor.symbol
                     source = component.toSourceElement(KtFakeSourceElementKind.ImplicitRecordConstructorParameter)
                     this.moduleData = moduleData
                     isFromSource = component.isFromSource
@@ -623,7 +625,7 @@ private fun convertJavaAnnotationMethodToValueParameter(
         this.moduleData = moduleData
         isFromSource = javaMethod.isFromSource
         returnTypeRef = firJavaMethod.returnTypeRef
-        containingFunctionSymbol = firJavaMethod.symbol
+        containingDeclarationSymbol = firJavaMethod.symbol
         name = javaMethod.name
         isVararg = javaMethod.returnType is JavaArrayType && javaMethod.name == FirJavaFacade.VALUE_METHOD_NAME
     }

@@ -3,6 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
+#include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -27,7 +28,7 @@
 namespace {
 
 #if KONAN_LINUX || KONAN_WINDOWS
-void throwReadingRandomBytesFailed(const char* format, ...) {
+RUNTIME_NORETURN __attribute__((format(printf, 1, 2))) void throwReadingRandomBytesFailed(const char* format, ...) {
     va_list args;
     va_start(args, format);
     std::array<char, 128> buffer;
@@ -36,7 +37,7 @@ void throwReadingRandomBytesFailed(const char* format, ...) {
     va_end(args);
 
     ObjHolder holder;
-    StringFromUtf8Buffer(buffer.data(), buffer.size() - span.size(), holder.slot());
+    CreateStringFromUtf8(buffer.data(), buffer.size() - span.size(), holder.slot());
     ThrowIllegalStateExceptionWithMessage(holder.obj());
 }
 #endif
@@ -61,7 +62,7 @@ void Kotlin_Uuid_getRandomBytes(KRef byteArray, KInt size) {
         if (ret >= 0) {
             count += ret;
         } else if (errno != EINTR) { // repeat if interrupted
-            throwReadingRandomBytesFailed("getrandom returned a negative value: %ld, errno: %d", ret, errno);
+            throwReadingRandomBytesFailed("getrandom returned a negative value: %ld, error: %s", ret, strerror(errno));
         }
     }
 #elif KONAN_WINDOWS

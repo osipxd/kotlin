@@ -12,9 +12,11 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.tasks.Exec
 import org.gradle.language.base.plugins.LifecycleBasePlugin
+import org.jetbrains.kotlin.gradle.internal.attributes.setAttributeTo
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.PropertiesProvider
 import org.jetbrains.kotlin.gradle.plugin.PropertiesProvider.Companion.kotlinPropertiesProvider
+import org.jetbrains.kotlin.gradle.plugin.attributes.KlibPackaging
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.plugin.statistics.NativeLinkTaskMetrics
 import org.jetbrains.kotlin.gradle.targets.KotlinTargetSideEffect
@@ -91,6 +93,9 @@ private fun KotlinNativeCompilation.resolvableApiConfiguration(): Configuration 
             extendsFrom(apiConfiguration)
             val compileConfiguration = compilation.internal.configurations.compileDependencyConfiguration
             compileConfiguration.copyAttributesTo(project.providers, this)
+            if (project.kotlinPropertiesProvider.useNonPackedKlibs) {
+                KlibPackaging.setAttributeTo(project, attributes, false)
+            }
         }
 }
 
@@ -110,11 +115,12 @@ private fun Project.createLinkTask(binary: NativeBinary) {
         task.description = "Links ${binary.outputKind.description} '${binary.name}' for a target '${target.name}'."
         task.dependsOn(compilation.compileTaskProvider)
 
-        task.enabled = binary.konanTarget.enabledOnCurrentHostForBinariesCompilation()
+        val enabledOnCurrentHost = binary.konanTarget.enabledOnCurrentHostForBinariesCompilation()
+        task.enabled = enabledOnCurrentHost
         task.toolOptions.freeCompilerArgs.value(compilationCompilerOptions.options.freeCompilerArgs)
         task.toolOptions.freeCompilerArgs.addAll(providers.provider { PropertiesProvider(project).nativeLinkArgs })
         task.runViaBuildToolsApi.value(false).disallowChanges() // K/N is not yet supported
-        task.kotlinNativeProvider.set(task.chooseKotlinNativeProvider(project, task.konanTarget))
+        task.kotlinNativeProvider.set(task.chooseKotlinNativeProvider(enabledOnCurrentHost, task.konanTarget))
 
         // Frameworks actively uses symlinks.
         // Gradle build cache transforms symlinks into regular files https://guides.gradle.org/using-build-cache/#symbolic_links

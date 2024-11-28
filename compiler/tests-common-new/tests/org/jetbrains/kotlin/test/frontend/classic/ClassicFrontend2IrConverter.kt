@@ -18,12 +18,12 @@ import org.jetbrains.kotlin.diagnostics.DiagnosticReporterFactory
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.backend.js.KlibMetadataIncrementalSerializer
 import org.jetbrains.kotlin.ir.backend.js.getSerializedData
-import org.jetbrains.kotlin.ir.backend.js.incrementalDataProvider
 import org.jetbrains.kotlin.ir.backend.js.lower.serialization.ir.JsManglerIr
 import org.jetbrains.kotlin.ir.backend.js.sortDependencies
 import org.jetbrains.kotlin.ir.backend.jvm.serialization.JvmIrMangler
 import org.jetbrains.kotlin.ir.declarations.impl.IrFactoryImpl
 import org.jetbrains.kotlin.ir.util.SymbolTable
+import org.jetbrains.kotlin.js.config.incrementalDataProvider
 import org.jetbrains.kotlin.test.TargetBackend
 import org.jetbrains.kotlin.test.backend.ir.IrBackendInput
 import org.jetbrains.kotlin.test.directives.CodegenTestDirectives
@@ -67,8 +67,7 @@ class ClassicFrontend2IrConverter(
         val state = GenerationState.Builder(
             project, ClassBuilderFactories.TEST, analysisResult.moduleDescriptor, analysisResult.bindingContext,
             configuration
-        ).isIrBackend(true)
-            .ignoreErrors(CodegenTestDirectives.IGNORE_ERRORS in module.directives)
+        ).ignoreErrors(CodegenTestDirectives.IGNORE_ERRORS in module.directives)
             .diagnosticReporter(DiagnosticReporterFactory.createReporter(messageCollector))
             .build()
 

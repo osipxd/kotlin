@@ -83,14 +83,6 @@ abstract class FirTransformer<in D> : FirVisitor<FirElement, D>() {
         return transformControlFlowGraphOwner(controlFlowGraphOwner, data)
     }
 
-    open fun transformContextReceiver(contextReceiver: FirContextReceiver, data: D): FirContextReceiver {
-        return transformElement(contextReceiver, data)
-    }
-
-    final override fun visitContextReceiver(contextReceiver: FirContextReceiver, data: D): FirContextReceiver {
-        return transformContextReceiver(contextReceiver, data)
-    }
-
     open fun transformElementWithResolveState(elementWithResolveState: FirElementWithResolveState, data: D): FirElementWithResolveState {
         return transformElement(elementWithResolveState, data)
     }
@@ -723,6 +715,14 @@ abstract class FirTransformer<in D> : FirVisitor<FirElement, D>() {
         return transformCodeFragment(codeFragment, data)
     }
 
+    open fun transformReplSnippet(replSnippet: FirReplSnippet, data: D): FirReplSnippet {
+        return transformElement(replSnippet, data)
+    }
+
+    final override fun visitReplSnippet(replSnippet: FirReplSnippet, data: D): FirReplSnippet {
+        return transformReplSnippet(replSnippet, data)
+    }
+
     open fun transformPackageDirective(packageDirective: FirPackageDirective, data: D): FirPackageDirective {
         return transformElement(packageDirective, data)
     }
@@ -1249,5 +1249,13 @@ abstract class FirTransformer<in D> : FirVisitor<FirElement, D>() {
 
     final override fun visitLegacyRawContractDescription(legacyRawContractDescription: FirLegacyRawContractDescription, data: D): FirContractDescription {
         return transformLegacyRawContractDescription(legacyRawContractDescription, data)
+    }
+
+    open fun transformErrorContractDescription(errorContractDescription: FirErrorContractDescription, data: D): FirContractDescription {
+        return transformElement(errorContractDescription, data)
+    }
+
+    final override fun visitErrorContractDescription(errorContractDescription: FirErrorContractDescription, data: D): FirContractDescription {
+        return transformErrorContractDescription(errorContractDescription, data)
     }
 }

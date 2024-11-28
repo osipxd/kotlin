@@ -36,8 +36,8 @@ import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.util.*
-import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
+import org.jetbrains.kotlin.ir.visitors.IrTransformer
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
@@ -49,10 +49,7 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.jetbrains.kotlin.utils.topologicalSort
 
-@PhaseDescription(
-    name = "ScriptsToClasses",
-    description = "Put script declarations into classes",
-)
+@PhaseDescription(name = "ScriptsToClasses")
 internal class ScriptsToClassesLowering(val context: JvmBackendContext) : ModuleLoweringPass {
     override fun lower(irModule: IrModuleFragment) {
         val scripts = mutableListOf<IrScript>()
@@ -363,7 +360,7 @@ internal class ScriptsToClassesLowering(val context: JvmBackendContext) : Module
             modality = Modality.FINAL
         }.apply {
             parent = scriptingJvmPackage
-            createImplicitParameterDeclarationWithWrappedDescriptor()
+            createThisReceiverParameter()
             addFunction("runCompiledScript", context.irBuiltIns.unitType, isStatic = true).apply {
                 addValueParameter("scriptClass", javaLangClass.starProjectedType)
                 addValueParameter {
@@ -542,9 +539,10 @@ private fun makeImplicitReceiversFieldsWithParameters(irScriptClass: IrClass, ty
             add(createField(name, type) to param)
         }
         irScript.implicitReceiversParameters.forEach { param ->
+            val typeName = param.type.classFqName?.shortName()?.identifierOrNullIfSpecial
             add(
                 createField(
-                    Name.identifier("\$\$implicitReceiver_${param.type.classFqName?.shortName()?.asString()!!}"),
+                    Name.identifier("\$\$implicitReceiver_${typeName ?: param.indexInOldValueParameters.toString()}"),
                     param.type
                 ) to param
             )
@@ -606,7 +604,7 @@ private class ScriptToClassTransformer(
     val capturingClasses: Set<IrClassImpl>,
     val earlierScriptsField: IrField?,
     val implicitReceiversFieldsWithParameters: Collection<Pair<IrField, IrValueParameter>>
-) : IrElementTransformer<ScriptToClassTransformerContext> {
+) : IrTransformer<ScriptToClassTransformerContext>() {
 
     private fun IrType.remapType() = typeRemapper.remapType(this)
 
@@ -647,7 +645,7 @@ private class ScriptToClassTransformer(
             transformAnnotations(data)
             typeRemapper.withinScope(this) {
                 val newDispatchReceiverParameter = dispatchReceiverParameter?.transform(data) ?: run {
-                    if (this.isCurrentScriptTopLevelDeclaration(data)) {
+                    if (this is IrSimpleFunction && this.isCurrentScriptTopLevelDeclaration(data)) {
                         createThisReceiverParameter(context, IrDeclarationOrigin.SCRIPT_THIS_RECEIVER, scriptClassReceiver.type)
                     } else null
                 }
@@ -797,7 +795,7 @@ private class ScriptToClassTransformer(
                 is IrProperty -> callee.getter?.dispatchReceiverParameter?.type
                 else -> null
             }
-            expression.dispatchReceiver =
+            val dispatchReceiver =
                 if (memberAccessTargetReceiverType != null && memberAccessTargetReceiverType != scriptClassReceiver.type)
                     getAccessCallForImplicitReceiver(
                         data, expression, memberAccessTargetReceiverType, expression.origin, originalReceiverParameter = null
@@ -806,6 +804,7 @@ private class ScriptToClassTransformer(
                     getAccessCallForScriptInstance(
                         data, expression.startOffset, expression.endOffset, expression.origin, originalReceiverParameter = null
                     )
+            expression.insertDispatchReceiver(dispatchReceiver)
         }
         return super.visitMemberAccess(expression, data) as IrExpression
     }
@@ -829,7 +828,7 @@ private class ScriptToClassTransformer(
                 ?: if (capturingClassesConstructors.keys.any { it.symbol == expression.symbol }) scriptClassReceiver.type else null
             if (ctorDispatchReceiverType != null) {
                 getDispatchReceiverExpression(data, expression, ctorDispatchReceiverType, expression.origin, null)?.let {
-                    expression.dispatchReceiver = it
+                    expression.insertDispatchReceiver(it)
                 }
             }
         }
@@ -1017,7 +1016,7 @@ private class ScriptToClassTransformer(
         }?.origin == IrDeclarationOrigin.SCRIPT_THIS_RECEIVER
 }
 
-private class ScriptFixLambdasTransformer(val irScriptClass: IrClass) : IrElementTransformer<ScriptFixLambdasTransformerContext> {
+private class ScriptFixLambdasTransformer(val irScriptClass: IrClass) : IrTransformer<ScriptFixLambdasTransformerContext>() {
 
     private fun unexpectedElement(element: IrElement): Nothing =
         throw IllegalArgumentException("Unsupported element type: $element")
@@ -1110,6 +1109,7 @@ private fun IrDeclarationParent.createThisReceiverParameter(
         startOffset = startOffset,
         endOffset = endOffset,
         origin = origin,
+        kind = IrParameterKind.DispatchReceiver,
         name = SpecialNames.THIS,
         type = type,
         isAssignable = false,

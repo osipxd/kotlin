@@ -213,7 +213,7 @@ FILE: [ResolvedTo(IMPORTS)] localDelegatedPropertyWithPropagatedTypeUnavailable.
 
     }
     public final [ResolvedTo(CONTRACTS)] fun resolveMe(): R|kotlin/Unit| {
-        [ResolvedTo(RAW_FIR)] lval localProperty: <implicit>by lazy#(<L> = [ResolvedTo(RAW_FIR)] lazy@fun <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
+        [ResolvedTo(RAW_FIR)] lval localProperty: <implicit>by lazy#(<L> = [ResolvedTo(RAW_FIR)] lazy@fun [ResolvedTo(RAW_FIR)] <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
             Obj#.explicitType#()
         }
         )
@@ -242,7 +242,7 @@ FILE: [ResolvedTo(IMPORTS)] localDelegatedPropertyWithPropagatedTypeUnavailable.
 
     }
     public final [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] fun resolveMe(): R|kotlin/Unit| {
-        [ResolvedTo(RAW_FIR)] lval localProperty: <implicit>by lazy#(<L> = [ResolvedTo(RAW_FIR)] lazy@fun <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
+        [ResolvedTo(RAW_FIR)] lval localProperty: <implicit>by lazy#(<L> = [ResolvedTo(RAW_FIR)] lazy@fun [ResolvedTo(RAW_FIR)] <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
             Obj#.explicitType#()
         }
         )
@@ -271,7 +271,7 @@ FILE: [ResolvedTo(IMPORTS)] localDelegatedPropertyWithPropagatedTypeUnavailable.
 
     }
     public final [ResolvedTo(CONSTANT_EVALUATION)] fun resolveMe(): R|kotlin/Unit| {
-        [ResolvedTo(RAW_FIR)] lval localProperty: <implicit>by lazy#(<L> = [ResolvedTo(RAW_FIR)] lazy@fun <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
+        [ResolvedTo(RAW_FIR)] lval localProperty: <implicit>by lazy#(<L> = [ResolvedTo(RAW_FIR)] lazy@fun [ResolvedTo(RAW_FIR)] <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
             Obj#.explicitType#()
         }
         )
@@ -300,7 +300,7 @@ FILE: [ResolvedTo(IMPORTS)] localDelegatedPropertyWithPropagatedTypeUnavailable.
 
     }
     public final [ResolvedTo(ANNOTATION_ARGUMENTS)] fun resolveMe(): R|kotlin/Unit| {
-        [ResolvedTo(RAW_FIR)] lval localProperty: <implicit>by lazy#(<L> = [ResolvedTo(RAW_FIR)] lazy@fun <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
+        [ResolvedTo(RAW_FIR)] lval localProperty: <implicit>by lazy#(<L> = [ResolvedTo(RAW_FIR)] lazy@fun [ResolvedTo(RAW_FIR)] <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
             Obj#.explicitType#()
         }
         )
@@ -325,13 +325,13 @@ FILE: [ResolvedTo(IMPORTS)] localDelegatedPropertyWithPropagatedTypeUnavailable.
         private final const [ResolvedTo(STATUS)] val constant: <implicit> = LAZY_EXPRESSION
             private [ResolvedTo(STATUS)] [ContainingClassKey=Obj] get(): <implicit>
 
-        public final [ResolvedTo(CONTRACTS)] fun explicitType(): R|@R|foo/Anno|(<strcat>(String(return type: ), constant#))  kotlin/collections/List<@R|foo/Anno|(<strcat>(String(nested return type: ), constant#))  kotlin/collections/Collection<@R|foo/Anno|(<strcat>(String(nested nested return type: ), constant#))  kotlin/String>>| {
+        public final [ResolvedTo(CONTRACTS)] fun explicitType(): R|@R|foo/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|foo/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|foo/Anno|(LAZY_EXPRESSION)  kotlin/String>>| {
             ^explicitType IntegerLiteral(0)
         }
 
     }
     public final [ResolvedTo(BODY_RESOLVE)] fun resolveMe(): R|kotlin/Unit| {
-        [ResolvedTo(BODY_RESOLVE)] lval localProperty: <ERROR TYPE REF: Unresolved name: getValue>by <Unresolved name: lazy>#(<L> = [ResolvedTo(BODY_RESOLVE)] lazy@fun <anonymous>(): R|@R|foo/Anno|(<strcat>(String(return type: ), constant#))  kotlin/collections/List<@R|foo/Anno|(<strcat>(String(nested return type: ), constant#))  kotlin/collections/Collection<@R|foo/Anno|(<strcat>(String(nested nested return type: ), constant#))  kotlin/String>>| <inline=Unknown>  {
+        [ResolvedTo(BODY_RESOLVE)] lval localProperty: <ERROR TYPE REF: Unresolved name: getValue>by <Unresolved name: lazy>#(<L> = [ResolvedTo(BODY_RESOLVE)] lazy@fun <anonymous>(): R|@R|foo/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|foo/Anno|(LAZY_EXPRESSION)  kotlin/collections/Collection<@R|foo/Anno|(LAZY_EXPRESSION)  kotlin/String>>| <inline=Unknown>  {
             ^ Q|foo/Obj|.R|foo/Obj.explicitType|()
         }
         )

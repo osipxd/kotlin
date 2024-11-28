@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.generators.tests.analysis.api
 
+import org.jetbrains.kotlin.analysis.api.fir.test.cases.imports.AbstractKaDefaultImportsProviderTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.annotations.*
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.compileTimeConstantProvider.AbstractCompileTimeConstantEvaluatorTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.compilerFacility.AbstractCompilerFacilityTest
@@ -48,12 +49,14 @@ import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.symbolD
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.symbolDeclarationRenderer.AbstractRendererTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.symbolDeclarationRenderer.AbstractSymbolRenderingByReferenceTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.symbolInfoProvider.AbstractAnnotationApplicableTargetsTest
+import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.symbolInfoProvider.AbstractSamClassBySamConstructor
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeCreator.AbstractBuildClassTypeTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeCreator.AbstractTypeParameterTypeTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeInfoProvider.AbstractDoubleColonReceiverTypeTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeInfoProvider.AbstractFunctionClassKindTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeInfoProvider.AbstractIsDenotableTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeProvider.AbstractAnalysisApiGetSuperTypesTest
+import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeProvider.AbstractDefaultTypeTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeProvider.AbstractHasCommonSubtypeTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeProvider.AbstractTypeReferenceTest
 import org.jetbrains.kotlin.analysis.api.impl.base.test.cases.components.typeRelationChecker.*
@@ -335,6 +338,16 @@ private fun AnalysisApiTestGroup.generateAnalysisApiNonComponentsTests() {
             model("sessionInvalidation")
         }
     }
+    group("imports") {
+        test<AbstractKaDefaultImportsProviderTest>(
+            filter = analysisSessionModeIs(AnalysisSessionMode.Normal)
+                    and testModuleKindIs(TestModuleKind.Source)
+                    and frontendIs(FrontendKind.Fir),
+        ) {
+            model("defaultImportProvider")
+        }
+    }
+
 }
 
 private fun AnalysisApiTestGroup.generateAnalysisApiComponentsTests() {
@@ -507,6 +520,10 @@ private fun AnalysisApiTestGroup.generateAnalysisApiComponentsTests() {
         test<AbstractAnnotationApplicableTargetsTest> {
             model(it, "annotationApplicableTargets")
         }
+
+        test<AbstractSamClassBySamConstructor> {
+            model(it, "samClassBySamConstructor")
+        }
     }
 
     component("typeCreator") {
@@ -540,8 +557,13 @@ private fun AnalysisApiTestGroup.generateAnalysisApiComponentsTests() {
                 model(it, "haveCommonSubtype")
             }
         }
+
         test<AbstractTypeReferenceTest> {
             model(it, "typeReference")
+        }
+
+        test<AbstractDefaultTypeTest> {
+            model(it, "defaultType")
         }
     }
 

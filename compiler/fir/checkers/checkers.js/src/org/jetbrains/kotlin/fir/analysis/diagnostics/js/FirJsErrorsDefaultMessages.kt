@@ -64,8 +64,14 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.js.FirJsErrors.WRONG_OPERAT
 @Suppress("unused")
 object FirJsErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
     override val MAP: KtDiagnosticFactoryToRendererMap = KtDiagnosticFactoryToRendererMap("FIR").also { map ->
-        map.put(JS_MODULE_PROHIBITED_ON_VAR, "'@JsModule' and '@JsNonModule' annotations are prohibited for 'var' declarations. Use 'val' instead.")
-        map.put(JS_MODULE_PROHIBITED_ON_NON_NATIVE, "'@JsModule' and '@JsNonModule' annotations are prohibited for non-external declarations.")
+        map.put(
+            JS_MODULE_PROHIBITED_ON_VAR,
+            "'@JsModule' and '@JsNonModule' annotations are prohibited for 'var' declarations. Use 'val' instead."
+        )
+        map.put(
+            JS_MODULE_PROHIBITED_ON_NON_NATIVE,
+            "'@JsModule' and '@JsNonModule' annotations are prohibited for non-external declarations."
+        )
         map.put(
             NESTED_JS_MODULE_PROHIBITED,
             "'@JsModule' and '@JsNonModule' cannot appear here since the file is already marked by either '@JsModule' or '@JsNonModule'."
@@ -76,11 +82,11 @@ object FirJsErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(
             CALL_TO_JS_MODULE_WITHOUT_MODULE_SYSTEM,
-            "Can''t access ''{0}'' marked with @JsModule annotation from non-modular project.", FirDiagnosticRenderers.SYMBOL
+            "Cannot access ''{0}'' marked with @JsModule annotation from non-modular project.", FirDiagnosticRenderers.SYMBOL
         )
         map.put(
             CALL_TO_JS_NON_MODULE_WITH_MODULE_SYSTEM,
-            "Can''t access ''{0}'' marked with @JsNonModule annotation from modular project.", FirDiagnosticRenderers.SYMBOL
+            "Cannot access ''{0}'' marked with @JsNonModule annotation from modular project.", FirDiagnosticRenderers.SYMBOL
         )
         map.put(
             WRONG_MULTIPLE_INHERITANCE,
@@ -102,7 +108,7 @@ object FirJsErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(RUNTIME_ANNOTATION_ON_EXTERNAL_DECLARATION, "Runtime annotation cannot be put on external declaration.")
         map.put(
             RUNTIME_ANNOTATION_NOT_SUPPORTED,
-            "Reflection is not supported in JavaScript target; therefore, you won't be able to read this annotation at runtime."
+            "Reflection is not supported in JavaScript target; therefore, annotations cannot be read at runtime."
         )
         map.put(EXTERNAL_ENUM_ENTRY_WITH_BODY, "Entry of external enum class cannot have a body.")
         map.put(EXTERNAL_TYPE_EXTENDS_NON_EXTERNAL_TYPE, "External type extends non-external type.")
@@ -126,14 +132,14 @@ object FirJsErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(
             NATIVE_INDEXER_KEY_SHOULD_BE_STRING_OR_NUMBER,
-            "Native {0}''s first parameter type should be ''kotlin.String'' or a subtype of ''kotlin.Number''.",
+            "Native {0}''s first parameter type must be ''kotlin.String'' or a subtype of ''kotlin.Number''.",
             CommonRenderers.STRING
         )
         map.put(NATIVE_INDEXER_CAN_NOT_HAVE_DEFAULT_ARGUMENTS, "Native {0}''s parameter cannot have default value.", CommonRenderers.STRING)
-        map.put(NATIVE_GETTER_RETURN_TYPE_SHOULD_BE_NULLABLE, "Native getter's return type should be nullable.")
+        map.put(NATIVE_GETTER_RETURN_TYPE_SHOULD_BE_NULLABLE, "Native getter's return type must be nullable.")
         map.put(
             NATIVE_SETTER_WRONG_RETURN_TYPE,
-            "Native setter's return type should be 'Unit' or a supertype of the second parameter's type."
+            "Native setter's return type must be 'Unit' or a supertype of the second parameter's type."
         )
         map.put(
             NATIVE_INDEXER_WRONG_PARAMETER_COUNT, "Expected {0} parameters for native {1}.",
@@ -177,7 +183,7 @@ object FirJsErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             FirDiagnosticRenderers.SYMBOLS_ON_NEXT_LINES
         )
 
-        map.put(JS_NAME_IS_NOT_ON_ALL_ACCESSORS, "'@JsName' should be on all the property accessors.")
+        map.put(JS_NAME_IS_NOT_ON_ALL_ACCESSORS, "All property accessors must be annotated with '@JsName'.")
         map.put(JS_NAME_PROHIBITED_FOR_NAMED_NATIVE, "'@JsName' is prohibited for external declaration with explicit name.")
         map.put(JS_NAME_PROHIBITED_FOR_OVERRIDE, "'@JsName' is prohibited for overridden members.")
         map.put(JS_NAME_ON_PRIMARY_CONSTRUCTOR_PROHIBITED, "'@JsName' annotation is prohibited for primary constructors.")
@@ -185,7 +191,7 @@ object FirJsErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(WRONG_EXPORTED_DECLARATION, "Declaration of such kind ({0}) cannot be exported to JavaScript.", CommonRenderers.STRING)
         map.put(
             NON_EXPORTABLE_TYPE,
-            "Exported declaration uses non-exportable {0} type: ''{1}''",
+            "Exported declaration uses non-exportable {0} type ''{1}''.",
             CommonRenderers.STRING,
             FirDiagnosticRenderers.RENDER_TYPE,
         )
@@ -195,9 +201,9 @@ object FirJsErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             CommonRenderers.STRING,
         )
         map.put(NAMED_COMPANION_IN_EXPORTED_INTERFACE, "Named companions are not allowed inside exported interfaces.")
-        map.put(JS_STATIC_NOT_IN_CLASS_COMPANION, "Only members of class companion objects can be annotated with '@JsStatic'.");
-        map.put(JS_STATIC_ON_NON_PUBLIC_MEMBER, "Only public members of class companion objects can be annotated with '@JsStatic'.");
-        map.put(JS_STATIC_ON_CONST, "'@JsStatic' annotation is useless for const.");
+        map.put(JS_STATIC_NOT_IN_CLASS_COMPANION, "Only members of class companion objects can be annotated with '@JsStatic'.")
+        map.put(JS_STATIC_ON_NON_PUBLIC_MEMBER, "Only public members of class companion objects can be annotated with '@JsStatic'.")
+        map.put(JS_STATIC_ON_CONST, "'@JsStatic' annotation is useless for const.")
         map.put(JS_STATIC_ON_OVERRIDE, "Override member of a companion object cannot be '@JsStatic'.")
     }
 }

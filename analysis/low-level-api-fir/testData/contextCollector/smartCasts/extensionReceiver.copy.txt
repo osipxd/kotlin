@@ -15,14 +15,14 @@ Tower Data Context:
         Scope: FirLocalScope
     Element 7
         Implicit receiver:
-            FirNamedFunctionSymbol public final fun R|kotlin/Any|.test(): R|kotlin/Unit|
+            FirReceiverParameterSymbol <explicit receiver parameter>: R|kotlin/Any|
                 Type: Foo
     Element 8
         Scope: FirLocalScope
     Element 9
         Scope: FirLocalScope
 Smart Casts:
-    FirNamedFunctionSymbol public final fun R|kotlin/Any|.test(): R|kotlin/Unit|
+    FirReceiverParameterSymbol <explicit receiver parameter>: R|kotlin/Any|
     Types:
         Foo
         kotlin.Any
@@ -30,7 +30,7 @@ Smart Casts:
 FILE: [ResolvedTo(IMPORTS)] extensionReceiver.kt
     public final? [ResolvedTo(RAW_FIR)] interface Foo : R|kotlin/Any| {
     }
-    public final [ResolvedTo(BODY_RESOLVE)] fun R|kotlin/Any|.test(): R|kotlin/Unit| {
+    public final [ResolvedTo(BODY_RESOLVE)] fun [ResolvedTo(BODY_RESOLVE)] R|kotlin/Any|.test(): R|kotlin/Unit| {
         when () {
             (this@R|/test| is R|Foo|) ->  {
                 R|/consume|(this@R|/test|)

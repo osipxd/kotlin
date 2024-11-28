@@ -5,16 +5,16 @@
 
 package org.jetbrains.kotlin.gradle.plugin
 
-import com.android.build.gradle.BaseExtension
-import org.gradle.api.Named
-import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
-import org.gradle.api.file.SourceDirectorySet
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.plugin.internal.ConfigurationCacheStartParameterAccessor
 import org.jetbrains.kotlin.gradle.plugin.internal.ConfigurationCacheStartParameterAccessorG82
+import org.jetbrains.kotlin.gradle.plugin.internal.MavenPublicationComponentAccessor
+import org.jetbrains.kotlin.gradle.plugin.internal.MavenPublicationComponentAccessorG82
 import org.jetbrains.kotlin.gradle.plugin.internal.ProjectIsolationStartParameterAccessor
 import org.jetbrains.kotlin.gradle.plugin.internal.ProjectIsolationStartParameterAccessorG82
+import org.jetbrains.kotlin.gradle.plugin.mpp.resources.gradleVersion
 import javax.inject.Inject
 
 private const val PLUGIN_VARIANT_NAME = "gradle82"
@@ -88,46 +88,6 @@ open class KotlinJsPluginWrapper : AbstractKotlinJsPluginWrapper() {
     }
 }
 
-open class KotlinPlatformJvmPlugin : KotlinPlatformImplementationPluginBase("jvm") {
-    override fun apply(project: Project) {
-        project.applyPlugin<KotlinPluginWrapper>()
-        super.apply(project)
-    }
-}
-
-open class KotlinPlatformJsPlugin : KotlinPlatformImplementationPluginBase("js") {
-    override fun apply(project: Project) {
-        @Suppress("DEPRECATION_ERROR")
-        project.applyPlugin<Kotlin2JsPluginWrapper>()
-        super.apply(project)
-    }
-}
-
-open class KotlinPlatformAndroidPlugin : KotlinPlatformImplementationPluginBase("android") {
-    override fun apply(project: Project) {
-        project.applyPlugin<KotlinAndroidPluginWrapper>()
-        super.apply(project)
-    }
-
-    override fun namedSourceSetsContainer(project: Project): NamedDomainObjectContainer<*> =
-        (project.extensions.getByName("android") as BaseExtension).sourceSets
-
-    override fun addCommonSourceSetToPlatformSourceSet(commonSourceSet: Named, platformProject: Project) {
-        val androidExtension = platformProject.extensions.getByName("android") as BaseExtension
-        val androidSourceSet = androidExtension.sourceSets.findByName(commonSourceSet.name) ?: return
-        val kotlinSourceSet = androidSourceSet.getExtension<SourceDirectorySet>(KOTLIN_DSL_NAME)
-            ?: return
-        kotlinSourceSet.source(getKotlinSourceDirectorySetSafe(commonSourceSet)!!)
-    }
-}
-
-open class KotlinPlatformCommonPlugin : KotlinPlatformPluginBase("common") {
-    override fun apply(project: Project) {
-        project.applyPlugin<KotlinCommonPluginWrapper>()
-        warnAboutKotlin12xMppDeprecation(project)
-    }
-}
-
 open class KotlinApiPlugin : KotlinBaseApiPlugin() {
     override fun apply(project: Project) {
         project.registerVariantImplementations()
@@ -141,4 +101,8 @@ private fun Project.registerVariantImplementations() {
         ConfigurationCacheStartParameterAccessorG82.Factory()
     factories[ProjectIsolationStartParameterAccessor.Factory::class] =
         ProjectIsolationStartParameterAccessorG82.Factory()
+    if (gradleVersion < GradleVersion.version("8.3")) { // for versions higher than 8.3 use common implementation
+        factories[MavenPublicationComponentAccessor.Factory::class] =
+            MavenPublicationComponentAccessorG82.Factory()
+    }
 }

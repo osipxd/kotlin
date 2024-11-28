@@ -30,6 +30,9 @@ interface InnerClassesSupport {
     fun getInnerClassOriginalPrimaryConstructorOrNull(innerClass: IrClass): IrConstructor?
 }
 
+/**
+ * Adds 'outer this' fields to inner classes.
+ */
 open class InnerClassesLowering(val context: CommonBackendContext) : DeclarationTransformer {
     private val innerClassesSupport = context.innerClassesSupport
 
@@ -128,7 +131,9 @@ private fun InnerClassesSupport.primaryConstructorParameterMap(originalConstruct
     return oldConstructorParameterToNew
 }
 
-
+/**
+ * Replaces `this` with 'outer this' field references.
+ */
 open class InnerClassesMemberBodyLowering(val context: CommonBackendContext) : BodyLoweringPass {
     private val innerClassesSupport = context.innerClassesSupport
 
@@ -139,7 +144,7 @@ open class InnerClassesMemberBodyLowering(val context: CommonBackendContext) : B
     private val IrValueSymbol.classForImplicitThis: IrClass?
         // TODO: is this the correct way to get the class?
         get() =
-            if (this is IrValueParameterSymbol && owner.index == -1 &&
+            if (this is IrValueParameterSymbol && owner.indexInOldValueParameters == -1 &&
                 (owner == (owner.parent as? IrFunction)?.dispatchReceiverParameter ||
                         owner == (owner.parent as? IrClass)?.thisReceiver)
             ) {

@@ -18,8 +18,7 @@ import org.jetbrains.kotlin.descriptors.Visibility
  * - `val (a, _) = Pair(1, 2)` leads to `KaDestructuringDeclarationSymbol(entries = [a, _])`
  * - `Pair(1, _).let { (a, b) -> }` leads to `KaDestructuringDeclarationSymbol(entries = [a, _])`
  */
-public abstract class KaDestructuringDeclarationSymbol : KaDeclarationSymbol,
-    @Suppress("DEPRECATION") org.jetbrains.kotlin.analysis.api.symbols.markers.KaSymbolWithKind {
+public abstract class KaDestructuringDeclarationSymbol : KaDeclarationSymbol {
     final override val location: KaSymbolLocation get() = withValidityAssertion { KaSymbolLocation.LOCAL }
 
     @KaExperimentalApi
@@ -53,6 +52,3 @@ public abstract class KaDestructuringDeclarationSymbol : KaDeclarationSymbol,
 
     abstract override fun createPointer(): KaSymbolPointer<KaDestructuringDeclarationSymbol>
 }
-
-@Deprecated("Use 'KaDestructuringDeclarationSymbol' instead", ReplaceWith("KaDestructuringDeclarationSymbol"))
-public typealias KtDestructuringDeclarationSymbol = KaDestructuringDeclarationSymbol

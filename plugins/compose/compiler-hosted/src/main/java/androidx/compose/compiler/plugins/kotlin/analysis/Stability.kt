@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 
 sealed class Stability {
     // class Foo(val bar: Int)
@@ -365,12 +366,14 @@ class StabilityInferencer(
                     type.isString() -> Stability.Stable
 
             type.isTypeParameter() -> {
-                val arg = substitutions[type.classifierOrNull as IrTypeParameterSymbol]
-                if (arg != null) {
-                    stabilityOf(arg, substitutions, currentlyAnalyzing)
+                val classifier = type.classifierOrFail
+                val arg = substitutions[classifier]
+                val symbol = SymbolForAnalysis(classifier, emptyList())
+                if (arg != null && symbol !in currentlyAnalyzing) {
+                    stabilityOf(arg, substitutions, currentlyAnalyzing + symbol)
                 } else {
                     Stability.Parameter(
-                        type.classifierOrFail.owner as IrTypeParameter
+                        classifier.owner as IrTypeParameter
                     )
                 }
             }

@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // ISSUE: KT-58310
 // LANGUAGE: +CheckLambdaAgainstTypeVariableContradictionInResolution
 
@@ -152,7 +153,7 @@ fun testSam() {
 fun <T> noOverloads(box: Inv<T>, value: T) {}
 
 fun testError(box: Inv<String>) {
-    noOverloads(box) <!ARGUMENT_TYPE_MISMATCH("T; kotlin.Function0<kotlin.String>")!>{ "hello" }<!>
+    noOverloads(box) <!ARGUMENT_TYPE_MISMATCH("T (of fun <T> noOverloads); kotlin.Function0<kotlin.String>")!>{ "hello" }<!>
 }
 
 fun testOk(box1: Inv<Any>, box2: Inv<() -> Any?>) {

@@ -11,11 +11,17 @@ import org.jetbrains.kotlin.analysis.low.level.api.fir.lazy.resolve.FirLazyBodie
 import org.jetbrains.kotlin.analysis.low.level.api.fir.lazy.resolve.NonLocalAnnotationVisitor
 import org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.llFirSession
 import org.jetbrains.kotlin.analysis.low.level.api.fir.util.checkAnnotationsAreResolved
-import org.jetbrains.kotlin.fir.*
+import org.jetbrains.kotlin.fir.FirAnnotationContainer
+import org.jetbrains.kotlin.fir.FirElementWithResolveState
+import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
-import org.jetbrains.kotlin.fir.expressions.*
+import org.jetbrains.kotlin.fir.expressions.FirAnnotation
+import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
+import org.jetbrains.kotlin.fir.expressions.FirEmptyArgumentList
+import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildArgumentList
 import org.jetbrains.kotlin.fir.expressions.impl.FirResolvedArgumentList
+import org.jetbrains.kotlin.fir.isCopyCreatedInScope
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.references.isError
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
@@ -29,21 +35,13 @@ internal object LLFirAnnotationArgumentsLazyResolver : LLFirLazyResolver(FirReso
     override fun createTargetResolver(target: LLFirResolveTarget): LLFirTargetResolver = LLFirAnnotationArgumentsTargetResolver(target)
 
     override fun phaseSpecificCheckIsResolved(target: FirElementWithResolveState) {
-        if (target !is FirAnnotationContainer) return
-        checkAnnotationsAreResolved(target)
+        if (target is FirAnnotationContainer) {
+            checkAnnotationsAreResolved(target)
+        }
 
         when (target) {
-            is FirCallableDeclaration -> {
-                checkAnnotationsAreResolved(target, target.returnTypeRef)
-                val receiverParameter = target.receiverParameter
-                if (receiverParameter != null) {
-                    checkAnnotationsAreResolved(receiverParameter)
-                    checkAnnotationsAreResolved(target, receiverParameter.typeRef)
-                }
-
-                checkAnnotationsAreResolved(target.contextReceivers, target)
-            }
-
+            is FirCallableDeclaration -> checkAnnotationsAreResolved(target, target.returnTypeRef)
+            is FirReceiverParameter -> checkAnnotationsAreResolved(target, target.typeRef)
             is FirTypeParameter -> {
                 for (bound in target.bounds) {
                     checkAnnotationsAreResolved(target, bound)
@@ -54,13 +52,6 @@ internal object LLFirAnnotationArgumentsLazyResolver : LLFirLazyResolver(FirReso
                 for (typeRef in target.superTypeRefs) {
                     checkAnnotationsAreResolved(target, typeRef)
                 }
-
-                checkAnnotationsAreResolved(target.contextReceivers, target)
-            }
-
-            is FirScript -> for (receiver in target.receivers) {
-                checkAnnotationsAreResolved(receiver)
-                checkAnnotationsAreResolved(target, receiver.typeRef)
             }
 
             is FirTypeAlias -> checkAnnotationsAreResolved(target, target.expandedTypeRef)
@@ -185,6 +176,7 @@ private class LLFirAnnotationArgumentsTargetResolver(resolveTarget: LLFirResolve
                     target.transformAnnotations(declarationTransformer, ResolutionMode.ContextIndependent)
                     target.transformTypeParameters(declarationTransformer, ResolutionMode.ContextIndependent)
                     target.transformSuperTypeRefs(declarationTransformer, ResolutionMode.ContextIndependent)
+                    target.contextReceivers.forEach { it.transformSingle(declarationTransformer, ResolutionMode.ContextIndependent) }
                 }
             }
 
@@ -206,29 +198,29 @@ internal val FirElementWithResolveState.isRegularDeclarationWithAnnotation: Bool
         is FirAnonymousInitializer,
         is FirDanglingModifierList,
         is FirTypeAlias,
-        -> true
+            -> true
         else -> false
     }
 
 internal object AnnotationArgumentsStateKeepers {
-    private val ANNOTATION: StateKeeper<FirAnnotation, FirSession> = stateKeeper { _, session ->
-        add(ANNOTATION_BASE, session)
-        add(FirAnnotation::argumentMapping, FirAnnotation::replaceArgumentMapping)
-        add(FirAnnotation::typeArgumentsCopied, FirAnnotation::replaceTypeArguments)
+    private val ANNOTATION: StateKeeper<FirAnnotation, FirSession> = stateKeeper { builder, _, session ->
+        builder.add(ANNOTATION_BASE, session)
+        builder.add(FirAnnotation::argumentMapping, FirAnnotation::replaceArgumentMapping)
+        builder.add(FirAnnotation::typeArgumentsCopied, FirAnnotation::replaceTypeArguments)
     }
 
-    private val ANNOTATION_BASE: StateKeeper<FirAnnotation, FirSession> = stateKeeper { annotation, session ->
+    private val ANNOTATION_BASE: StateKeeper<FirAnnotation, FirSession> = stateKeeper { builder, annotation, session ->
         if (annotation is FirAnnotationCall) {
-            entity(annotation, ANNOTATION_CALL, session)
+            builder.entity(annotation, ANNOTATION_CALL, session)
         }
     }
 
-    private val ANNOTATION_CALL: StateKeeper<FirAnnotationCall, FirSession> = stateKeeper { annotationCall, session ->
-        add(FirAnnotationCall::calleeReference, FirAnnotationCall::replaceCalleeReference)
+    private val ANNOTATION_CALL: StateKeeper<FirAnnotationCall, FirSession> = stateKeeper { builder, annotationCall, session ->
+        builder.add(FirAnnotationCall::calleeReference, FirAnnotationCall::replaceCalleeReference)
 
         val argumentList = annotationCall.argumentList
         if (argumentList !is FirResolvedArgumentList && argumentList !is FirEmptyArgumentList) {
-            add(FirAnnotationCall::argumentList, FirAnnotationCall::replaceArgumentList) { oldList ->
+            builder.add(FirAnnotationCall::argumentList, FirAnnotationCall::replaceArgumentList) { oldList ->
                 val newArguments = FirLazyBodiesCalculator.createArgumentsForAnnotation(annotationCall, session).arguments
                 buildArgumentList {
                     source = oldList.source
@@ -245,10 +237,10 @@ internal object AnnotationArgumentsStateKeepers {
         }
     }
 
-    val DECLARATION: StateKeeper<FirElementWithResolveState, FirSession> = stateKeeper { target, session ->
+    val DECLARATION: StateKeeper<FirElementWithResolveState, FirSession> = stateKeeper { builder, target, session ->
         val visitor = object : NonLocalAnnotationVisitor<Unit>() {
             override fun processAnnotation(annotation: FirAnnotation, data: Unit) {
-                entity(annotation, ANNOTATION, session)
+                builder.entity(annotation, ANNOTATION, session)
             }
         }
 

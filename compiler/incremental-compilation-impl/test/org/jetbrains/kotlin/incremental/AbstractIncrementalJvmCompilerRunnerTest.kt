@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.build.report.metrics.DoNothingBuildMetricsReporter
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.cli.common.messages.MessageCollectorImpl
 import org.jetbrains.kotlin.config.LanguageVersion
 import org.jetbrains.kotlin.incremental.multiproject.EmptyModulesApiHistory
 import org.jetbrains.kotlin.incremental.utils.*
@@ -32,7 +33,7 @@ import javax.tools.ToolProvider
 abstract class AbstractIncrementalJvmCompilerRunnerTest : AbstractIncrementalCompilerRunnerTestBase<K2JVMCompilerArguments>() {
     override fun make(cacheDir: File, outDir: File, sourceRoots: Iterable<File>, args: K2JVMCompilerArguments): TestCompilationResult {
         val reporter = TestICReporter()
-        val messageCollector = TestMessageCollector()
+        val messageCollector = MessageCollectorImpl()
         val testLookupTracker = TestLookupTracker(lookupsDuringTest)
 
         makeIncrementallyForTests(
@@ -103,7 +104,7 @@ abstract class AbstractIncrementalJvmCompilerRunnerTest : AbstractIncrementalCom
                     )
                 }
             //TODO by @Ilya.Chernikov: set properly
-            compiler.compile(sourceFiles, args, messageCollector, changedFiles = null)
+            compiler.compile(sourceFiles, args, messageCollector, changedFiles = ChangedFiles.DeterminableFiles.ToBeComputed)
         }
     }
 
@@ -123,8 +124,8 @@ abstract class AbstractIncrementalJvmCompilerRunnerTest : AbstractIncrementalCom
         }
         val args = arrayOf(
             "-cp", javaClasspath,
-            "-d", javaDestinationDir.canonicalPath,
-            *javaSources.map { it.canonicalPath }.toTypedArray()
+            "-d", javaDestinationDir.absolutePath,
+            *javaSources.map { it.absolutePath }.toTypedArray()
         )
 
         val err = ByteArrayOutputStream()
@@ -147,5 +148,5 @@ abstract class AbstractIncrementalJvmCompilerRunnerTest : AbstractIncrementalCom
         listOf(
             kotlinStdlibJvm,
             KtTestUtil.getAnnotationsJar()
-        ).joinToString(File.pathSeparator) { it.canonicalPath }
+        ).joinToString(File.pathSeparator) { it.absolutePath }
 }

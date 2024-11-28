@@ -44,9 +44,6 @@ abstract class FirVisitor<out R, in D> {
     open fun visitControlFlowGraphOwner(controlFlowGraphOwner: FirControlFlowGraphOwner, data: D): R =
         visitElement(controlFlowGraphOwner, data)
 
-    open fun visitContextReceiver(contextReceiver: FirContextReceiver, data: D): R =
-        visitElement(contextReceiver, data)
-
     open fun visitElementWithResolveState(elementWithResolveState: FirElementWithResolveState, data: D): R =
         visitElement(elementWithResolveState, data)
 
@@ -284,6 +281,9 @@ abstract class FirVisitor<out R, in D> {
     open fun visitCodeFragment(codeFragment: FirCodeFragment, data: D): R =
         visitElement(codeFragment, data)
 
+    open fun visitReplSnippet(replSnippet: FirReplSnippet, data: D): R =
+        visitElement(replSnippet, data)
+
     open fun visitPackageDirective(packageDirective: FirPackageDirective, data: D): R =
         visitElement(packageDirective, data)
 
@@ -481,4 +481,7 @@ abstract class FirVisitor<out R, in D> {
 
     open fun visitLegacyRawContractDescription(legacyRawContractDescription: FirLegacyRawContractDescription, data: D): R =
         visitElement(legacyRawContractDescription, data)
+
+    open fun visitErrorContractDescription(errorContractDescription: FirErrorContractDescription, data: D): R =
+        visitElement(errorContractDescription, data)
 }

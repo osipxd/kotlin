@@ -34,6 +34,7 @@ import org.jetbrains.kotlin.incremental.js.IncrementalDataProvider
 import org.jetbrains.kotlin.ir.backend.js.*
 import org.jetbrains.kotlin.ir.backend.js.lower.serialization.ir.JsManglerIr
 import org.jetbrains.kotlin.ir.types.IrTypeSystemContextImpl
+import org.jetbrains.kotlin.js.config.incrementalDataProvider
 import org.jetbrains.kotlin.library.KotlinAbiVersion
 import org.jetbrains.kotlin.library.impl.BuiltInsPlatform
 import org.jetbrains.kotlin.library.unresolvedDependencies
@@ -274,6 +275,7 @@ fun serializeFirKlib(
         klibPath = outputKlibPath,
         moduleStructure.allDependencies,
         fir2IrActualizedResult.irModuleFragment,
+        fir2IrActualizedResult.irBuiltIns,
         cleanFiles = icData ?: emptyList(),
         nopack = nopack,
         perFile = false,

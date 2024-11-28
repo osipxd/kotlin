@@ -93,6 +93,7 @@ KaConstructorSymbol:
         isDelegatedProperty: false
         isExpect: false
         isExtension: false
+        isExternal: false
         isFromPrimaryConstructor: true
         isLateInit: false
         isOverride: false
@@ -219,6 +220,7 @@ KaConstructorSymbol:
         isDelegatedProperty: false
         isExpect: false
         isExtension: false
+        isExternal: false
         isFromPrimaryConstructor: true
         isLateInit: false
         isOverride: false
@@ -390,5 +392,6 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: KaFileSymbol(destructuringDeclaration.kt)
   getContainingJvmClassName: DestructuringDeclarationKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null

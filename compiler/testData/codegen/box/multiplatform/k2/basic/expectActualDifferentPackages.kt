@@ -1,7 +1,6 @@
 // LANGUAGE: +MultiPlatformProjects
-// MODULE: common
-// TARGET_PLATFORM: Common
 
+// MODULE: common
 // FILE: p1.kt
 
 package p1

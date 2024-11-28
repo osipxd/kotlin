@@ -93,7 +93,7 @@ class KotlinWasmGradlePluginIT : KGPBaseTest() {
     @GradleTest
     fun wasiRun(gradleVersion: GradleVersion) {
         project("new-mpp-wasm-wasi-test", gradleVersion) {
-            build(":wasmWasiNodeRun") {
+            build(":wasmWasiNodeDevelopmentRun") {
                 assertOutputContains("Hello from Wasi")
             }
         }
@@ -347,6 +347,27 @@ class KotlinWasmGradlePluginIT : KGPBaseTest() {
                 val kotlinxDatetimePackageJson = moduleDir.resolve("package.json")
 
                 assertFileExists(kotlinxDatetimePackageJson)
+            }
+        }
+    }
+
+    @DisplayName("Browser case works correctly with custom formatters")
+    @GradleTest
+    fun testWasmCustomFormattersUsage(gradleVersion: GradleVersion) {
+        project("wasm-browser-simple-project", gradleVersion) {
+            buildGradleKts.append(
+                //language=Kotlin
+                """
+                |
+                | tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJsCompile>().configureEach {
+                |    compilerOptions.freeCompilerArgs.add("-Xwasm-debugger-custom-formatters")
+                | }
+                """.trimMargin()
+            )
+
+            build("wasmJsBrowserDistribution") {
+                assertTasksExecuted(":compileKotlinWasmJs")
+                assertTasksExecuted(":compileProductionExecutableKotlinWasmJs")
             }
         }
     }

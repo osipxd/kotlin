@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.backend.common.serialization
 
 import org.jetbrains.kotlin.backend.common.linkage.issues.IrDisallowedErrorNode
 import org.jetbrains.kotlin.backend.common.linkage.issues.IrSymbolTypeMismatchException
+import org.jetbrains.kotlin.backend.common.serialization.IrDeserializationSettings.DeserializeFunctionBodies
 import org.jetbrains.kotlin.backend.common.serialization.encodings.*
 import org.jetbrains.kotlin.backend.common.serialization.encodings.BinarySymbolData.SymbolKind
 import org.jetbrains.kotlin.backend.common.serialization.encodings.BinarySymbolData.SymbolKind.*
@@ -20,8 +21,6 @@ import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.IrVariableImpl
-import org.jetbrains.kotlin.ir.declarations.lazy.IrLazyDeclarationBase
-import org.jetbrains.kotlin.ir.declarations.lazy.IrLazyFunctionBase
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCompositeImpl
 import org.jetbrains.kotlin.ir.symbols.*
@@ -69,18 +68,17 @@ class IrDeclarationDeserializer(
     val irFactory: IrFactory,
     private val libraryFile: IrLibraryFile,
     parent: IrDeclarationParent,
-    private val allowAlreadyBoundSymbols: Boolean,
-    val allowErrorNodes: Boolean,
-    private val deserializeInlineFunctions: Boolean,
-    private var deserializeBodies: Boolean,
+    private val settings: IrDeserializationSettings,
     val symbolDeserializer: IrSymbolDeserializer,
     private val onDeserializedClass: (IrClass, IdSignature) -> Unit,
     private val needToDeserializeFakeOverrides: (IrClass) -> Boolean,
     private val specialProcessingForMismatchedSymbolKind: ((deserializedSymbol: IrSymbol, fallbackSymbolKind: SymbolKind?) -> IrSymbol)?,
     private val irInterner: IrInterningService,
 ) {
+    private var areFunctionBodiesDeserialized: Boolean =
+        settings.deserializeFunctionBodies == DeserializeFunctionBodies.ALL
 
-    private val bodyDeserializer = IrBodyDeserializer(builtIns, allowErrorNodes, irFactory, libraryFile, this)
+    private val bodyDeserializer = IrBodyDeserializer(builtIns, irFactory, libraryFile, this, settings)
 
     private fun deserializeName(index: Int): Name = irInterner.name(Name.guessByFirstCharacter(libraryFile.string(index)))
 
@@ -168,7 +166,7 @@ class IrDeclarationDeserializer(
     }
 
     private fun deserializeErrorType(proto: ProtoErrorType): IrErrorType {
-        if (!allowErrorNodes) throw IrDisallowedErrorNode(IrErrorType::class.java)
+        if (!settings.allowErrorNodes) throw IrDisallowedErrorNode(IrErrorType::class.java)
         val annotations = deserializeAnnotations(proto.annotationList)
         return IrErrorTypeImpl(null, annotations, Variance.INVARIANT)
     }
@@ -358,7 +356,9 @@ class IrDeclarationDeserializer(
                         .mapNotNullTo(declarations) { declProto -> deserializeDeclaration(declProto).takeIf { it !in oldDeclarations } }
                 }
 
-                thisReceiver = deserializeIrValueParameter(proto.thisReceiver)
+                thisReceiver = deserializeIrValueParameter(proto.thisReceiver).also {
+                    it.kind = IrParameterKind.DispatchReceiver
+                }
 
                 valueClassRepresentation = when {
                     !flags.isValue -> null
@@ -422,7 +422,7 @@ class IrDeclarationDeserializer(
         }
 
     private fun deserializeErrorDeclaration(proto: ProtoErrorDeclaration, setParent: Boolean = true): IrErrorDeclaration {
-        if (!allowErrorNodes) throw IrDisallowedErrorNode(IrErrorDeclaration::class.java)
+        if (!settings.allowErrorNodes) throw IrDisallowedErrorNode(IrErrorDeclaration::class.java)
         val coordinates = BinaryCoordinates.decode(proto.coordinates)
         return irFactory.createErrorDeclaration(coordinates.startOffset, coordinates.endOffset).also {
             if (setParent) it.parent = currentParent
@@ -473,27 +473,28 @@ class IrDeclarationDeserializer(
     }
 
     private fun <T : IrFunction> T.withBodyGuard(block: T.() -> Unit) {
-        val oldBodiesPolicy = deserializeBodies
+        val oldBodiesPolicy = areFunctionBodiesDeserialized
 
-        fun checkInlineBody(): Boolean = deserializeInlineFunctions && this is IrSimpleFunction && isInline
+        fun checkInlineBody(): Boolean =
+            settings.deserializeFunctionBodies == DeserializeFunctionBodies.ONLY_INLINE && this is IrSimpleFunction && isInline
 
         try {
-            deserializeBodies = oldBodiesPolicy || checkInlineBody() || returnType.checkObjectLeak()
+            areFunctionBodiesDeserialized = oldBodiesPolicy || checkInlineBody() || returnType.checkObjectLeak()
             block()
         } finally {
-            deserializeBodies = oldBodiesPolicy
+            areFunctionBodiesDeserialized = oldBodiesPolicy
         }
     }
 
 
     private fun IrField.withInitializerGuard(isConst: Boolean, f: IrField.() -> Unit) {
-        val oldBodiesPolicy = deserializeBodies
+        val oldBodiesPolicy = areFunctionBodiesDeserialized
 
         try {
-            deserializeBodies = isConst || oldBodiesPolicy || type.checkObjectLeak()
+            areFunctionBodiesDeserialized = isConst || oldBodiesPolicy || type.checkObjectLeak()
             f()
         } finally {
-            deserializeBodies = oldBodiesPolicy
+            areFunctionBodiesDeserialized = oldBodiesPolicy
         }
     }
 
@@ -506,7 +507,7 @@ class IrDeclarationDeserializer(
     }
 
     fun deserializeExpressionBody(index: Int): IrExpressionBody? {
-        return if (deserializeBodies) {
+        return if (areFunctionBodiesDeserialized) {
             val bodyData = loadExpressionBodyProto(index)
             irFactory.createExpressionBody(bodyDeserializer.deserializeExpression(bodyData))
         } else {
@@ -515,7 +516,7 @@ class IrDeclarationDeserializer(
     }
 
     fun deserializeStatementBody(index: Int): IrElement? {
-        return if (deserializeBodies) {
+        return if (areFunctionBodiesDeserialized) {
             val bodyData = loadStatementBodyProto(index)
             bodyDeserializer.deserializeStatement(bodyData)
         } else {
@@ -555,12 +556,12 @@ class IrDeclarationDeserializer(
     }
 
     fun <T : IrFunction> T.withDeserializeBodies(block: T.() -> Unit) {
-        val oldBodiesPolicy = deserializeBodies
+        val oldBodiesPolicy = areFunctionBodiesDeserialized
         try {
-            deserializeBodies = true
+            areFunctionBodiesDeserialized = true
             usingParent { block() }
         } finally {
-            deserializeBodies = oldBodiesPolicy
+            areFunctionBodiesDeserialized = oldBodiesPolicy
         }
     }
 
@@ -859,7 +860,7 @@ class IrDeclarationDeserializer(
     private inline fun <Declaration : IrDeclaration, Symbol : IrBindableSymbol<*, Declaration>> createIfUnbound(
         symbol: Symbol,
         create: () -> Declaration,
-    ): Declaration = if (allowAlreadyBoundSymbols && symbol.isBound) {
+    ): Declaration = if (settings.allowAlreadyBoundSymbols && symbol.isBound) {
         symbol.owner
     } else {
         create()

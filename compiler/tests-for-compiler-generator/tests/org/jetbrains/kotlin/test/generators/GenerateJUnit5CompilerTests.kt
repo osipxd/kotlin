@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.test.utils.CUSTOM_TEST_DATA_EXTENSION_PATTERN
 
 fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
     val excludedCustomTestdataPattern = CUSTOM_TEST_DATA_EXTENSION_PATTERN
+    val k1BoxTestDir = listOf("multiplatform/k1")
     val k2BoxTestDir = listOf("multiplatform/k2")
     val excludedScriptDirs = listOf("script")
     // We exclude the 'inlineScopes' directory from the IR inliner tests. The reason is that
@@ -85,7 +86,7 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
 
             // We split JVM ABI tests into two parts, to avoid creation of a huge file, unable to analyze by IntelliJ with default settings
             testClass<AbstractJvmAbiConsistencyTest>("JvmAbiConsistencyTestBoxGenerated") {
-                model("codegen/box", excludeDirs = k2BoxTestDir)
+                model("codegen/box", excludeDirs = listOf("multiplatform"))
             }
 
             testClass<AbstractJvmAbiConsistencyTest>("JvmAbiConsistencyTestRestGenerated") {
@@ -139,10 +140,12 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
 
             testClass<AbstractIrBlackBoxInlineCodegenWithBytecodeInlinerTest> {
                 model("codegen/boxInline")
+                model("klib/syntheticAccessors")
             }
 
             testClass<AbstractIrBlackBoxInlineCodegenWithIrInlinerTest> {
                 model("codegen/boxInline")
+                model("klib/syntheticAccessors")
             }
 
             testClass<AbstractIrCompileKotlinAgainstInlineKotlinTest> {
@@ -176,7 +179,7 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
             // ------------- Inline scopes tests duplication -------------
 
             testClass<AbstractFirBlackBoxCodegenTestWithInlineScopes> {
-                model("codegen/box", excludeDirs = k2BoxTestDir + excludedScriptDirs)
+                model("codegen/box", excludeDirs = k1BoxTestDir + excludedScriptDirs)
             }
 
             testClass<AbstractFirBytecodeTextTestWithInlineScopes> {
@@ -219,13 +222,6 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
         // ---------------------------------------------- FIR tests ----------------------------------------------
 
         testGroup(testsRoot = "compiler/fir/analysis-tests/tests-gen", testDataRoot = "compiler/testData") {
-            testClass<AbstractFirPsiWithActualizerDiagnosticsTest>(suiteTestClassName = "FirOldFrontendMPPDiagnosticsWithPsiTestGenerated") {
-                model("diagnostics/tests/multiplatform", pattern = "^(.*)\\.kts?$", excludedPattern = excludedCustomTestdataPattern)
-            }
-
-            testClass<AbstractFirLightTreeWithActualizerDiagnosticsTest>(suiteTestClassName = "FirOldFrontendMPPDiagnosticsWithLightTreeTestGenerated") {
-                model("diagnostics/tests/multiplatform", pattern = "^(.*)\\.kts?$", excludedPattern = excludedCustomTestdataPattern)
-            }
             testClass<AbstractFirLightTreeWithActualizerDiagnosticsWithLatestLanguageVersionTest>(suiteTestClassName = "FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionTestGenerated") {
                 model("diagnostics/tests/multiplatform", pattern = "^(.*)\\.kts?$", excludedPattern = excludedCustomTestdataPattern)
             }
@@ -249,17 +245,6 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
                     skipTestAllFilesCheck = onlyTypealiases
                 )
             }
-
-            testClass<AbstractFirPsiDiagnosticTest>(
-                suiteTestClassName = "FirPsiOldFrontendDiagnosticsTestGenerated",
-                init = model(allowKts = true)
-            )
-
-
-            testClass<AbstractFirLightTreeDiagnosticsTest>(
-                suiteTestClassName = "FirLightTreeOldFrontendDiagnosticsTestGenerated",
-                init = model(allowKts = false)
-            )
 
             testClass<AbstractFirLightTreeDiagnosticsWithLatestLanguageVersionTest>(
                 suiteTestClassName = "FirLightTreeOldFrontendDiagnosticsWithLatestLanguageVersionTestGenerated",
@@ -314,11 +299,11 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
 
         testGroup(testsRoot = "compiler/fir/fir2ir/tests-gen", testDataRoot = "compiler/testData") {
             testClass<AbstractFirLightTreeBlackBoxCodegenTest> {
-                model("codegen/box", excludeDirs = excludedScriptDirs)
+                model("codegen/box", excludeDirs = k1BoxTestDir + excludedScriptDirs)
             }
 
             testClass<AbstractFirPsiBlackBoxCodegenTest> {
-                model("codegen/box")
+                model("codegen/box", excludeDirs = k1BoxTestDir)
             }
 
             testClass<AbstractFirLightTreeBlackBoxCodegenTest>("FirLightTreeBlackBoxModernJdkCodegenTestGenerated") {
@@ -339,10 +324,12 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
 
             testClass<AbstractFirLightTreeBlackBoxInlineCodegenWithBytecodeInlinerTest> {
                 model("codegen/boxInline")
+                model("klib/syntheticAccessors")
             }
 
             testClass<AbstractFirLightTreeBlackBoxInlineCodegenWithIrInlinerTest> {
                 model("codegen/boxInline")
+                model("klib/syntheticAccessors")
             }
 
             testClass<AbstractComposeLikeIrBlackBoxCodegenTest> {
@@ -459,8 +446,6 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
                 )
             }
 
-            testClass<AbstractFirPsiDiagnosticTest>(init = model(allowKts = true))
-            testClass<AbstractFirLightTreeDiagnosticsTest>(init = model(allowKts = false))
             testClass<AbstractFirLightTreeDiagnosticsWithLatestLanguageVersionTest>(init = model(allowKts = false))
             testClass<AbstractFirLightTreeDiagnosticsWithoutAliasExpansionTest>(init = model(allowKts = false, onlyTypealiases = true))
         }
@@ -495,6 +480,36 @@ fun generateJUnit5CompilerTests(args: Array<String>, mainClassName: String?) {
             testClass<AbstractFirPsiBytecodeTextTest> {
                 model("codegen/bytecodeText")
             }
+        }
+
+        // ---------------------------------------------- Tiered tests ----------------------------------------------
+
+        testGroup("compiler/fir/analysis-tests/tests-gen", "compiler/") {
+            testClass<AbstractTieredFrontendJvmLightTreeTest>(
+                init = configureTierModelsForK1AlongsideDiagnosticTestsStating(TestTierLabel.FRONTEND, allowKts = false),
+            )
+
+            testClass<AbstractTieredFrontendJvmPsiTest>(
+                init = configureTierModelsForK1AlongsideDiagnosticTestsStating(TestTierLabel.FRONTEND, allowKts = true),
+            )
+        }
+
+        testGroup("compiler/fir/fir2ir/tests-gen", "compiler/") {
+            testClass<AbstractTieredFir2IrJvmLightTreeTest>(
+                init = configureTierModelsForK1AlongsideDiagnosticTestsStating(TestTierLabel.FIR2IR, allowKts = false),
+            )
+
+            testClass<AbstractTieredFir2IrJvmPsiTest>(
+                init = configureTierModelsForK1AlongsideDiagnosticTestsStating(TestTierLabel.FIR2IR, allowKts = true),
+            )
+
+            testClass<AbstractTieredBackendJvmLightTreeTest>(
+                init = configureTierModelsForK1AlongsideDiagnosticTestsStating(TestTierLabel.BACKEND, allowKts = false),
+            )
+
+            testClass<AbstractTieredBackendJvmPsiTest>(
+                init = configureTierModelsForK1AlongsideDiagnosticTestsStating(TestTierLabel.BACKEND, allowKts = true),
+            )
         }
     }
 }

@@ -1,3 +1,5 @@
+// IGNORE_FIR_DIAGNOSTICS
+// RUN_PIPELINE_TILL: FRONTEND
 // LANGUAGE: +DataObjects
 // MODULE: m1-common
 // FILE: common.kt

@@ -1,7 +1,7 @@
 RAW_FIR:
 FILE: [ResolvedTo(RAW_FIR)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -32,7 +32,7 @@ FILE: [ResolvedTo(RAW_FIR)] constructorParameterScript.kts
 IMPORTS:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -63,7 +63,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 COMPILER_REQUIRED_ANNOTATIONS:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -94,7 +94,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 COMPANION_GENERATION:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -125,7 +125,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 SUPER_TYPES:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION, LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -156,7 +156,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 TYPES:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -173,13 +173,13 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
         public final? [ResolvedTo(TYPES)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] class MyClass : R|kotlin/Any| {
-            public? [ResolvedTo(TYPES)] [ContainingClassKey=MyClass] constructor([ResolvedTo(TYPES)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|properties/MyClass| {
+            public? [ResolvedTo(TYPES)] [ContainingClassKey=MyClass] constructor([ResolvedTo(TYPES)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|properties/MyClass| {
                 LAZY_super<R|kotlin/Any|>
             }
 
-            @PROPERTY:Anno[Unresolved](LAZY_EXPRESSION) field:@FIELD:Anno[Unresolved](LAZY_EXPRESSION) public? final? [ResolvedTo(RAW_FIR)] [IsFromPrimaryConstructor=true] var property: @R|properties/Anno|[Unresolved](<strcat>(String(parameter type: ), constant#)) List<R|@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>|> = R|<local>/property|
-                @PROPERTY_GETTER:Anno[Unresolved](LAZY_EXPRESSION) public? [ResolvedTo(RAW_FIR)] [ContainingClassKey=MyClass] get(): @R|properties/Anno|[Unresolved](<strcat>(String(parameter type: ), constant#)) List<R|@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>|>
-                @PROPERTY_SETTER:Anno[Unresolved](LAZY_EXPRESSION) public? [ResolvedTo(RAW_FIR)] [ContainingClassKey=MyClass] set([ResolvedTo(RAW_FIR)] @SETTER_PARAMETER:Anno[Unresolved](LAZY_EXPRESSION) value: @R|properties/Anno|[Unresolved](<strcat>(String(parameter type: ), constant#)) List<R|@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>|>): R|kotlin/Unit|
+            @PROPERTY:Anno[Unresolved](LAZY_EXPRESSION) field:@FIELD:Anno[Unresolved](LAZY_EXPRESSION) public? final? [ResolvedTo(RAW_FIR)] [IsFromPrimaryConstructor=true] var property: @R|properties/Anno|[Unresolved](LAZY_EXPRESSION) List<R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>|> = R|<local>/property|
+                @PROPERTY_GETTER:Anno[Unresolved](LAZY_EXPRESSION) public? [ResolvedTo(RAW_FIR)] [ContainingClassKey=MyClass] get(): @R|properties/Anno|[Unresolved](LAZY_EXPRESSION) List<R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>|>
+                @PROPERTY_SETTER:Anno[Unresolved](LAZY_EXPRESSION) public? [ResolvedTo(RAW_FIR)] [ContainingClassKey=MyClass] set([ResolvedTo(RAW_FIR)] @SETTER_PARAMETER:Anno[Unresolved](LAZY_EXPRESSION) value: @R|properties/Anno|[Unresolved](LAZY_EXPRESSION) List<R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>|>): R|kotlin/Unit|
 
         }
 
@@ -187,7 +187,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 STATUS:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -204,13 +204,13 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
         public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] class MyClass : R|kotlin/Any| {
-            public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] constructor([ResolvedTo(STATUS)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|properties/MyClass| {
+            public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] constructor([ResolvedTo(STATUS)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|properties/MyClass| {
                 LAZY_super<R|kotlin/Any|>
             }
 
-            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>| = R|<local>/property|
-                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|
-                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|kotlin/Unit|
+            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>| = R|<local>/property|
+                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|
+                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|kotlin/Unit|
 
         }
 
@@ -218,7 +218,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 EXPECT_ACTUAL_MATCHING:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -235,13 +235,13 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
         public final [ResolvedTo(EXPECT_ACTUAL_MATCHING)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] class MyClass : R|kotlin/Any| {
-            public [ResolvedTo(EXPECT_ACTUAL_MATCHING)] [ContainingClassKey=MyClass] constructor([ResolvedTo(EXPECT_ACTUAL_MATCHING)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|properties/MyClass| {
+            public [ResolvedTo(EXPECT_ACTUAL_MATCHING)] [ContainingClassKey=MyClass] constructor([ResolvedTo(EXPECT_ACTUAL_MATCHING)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|properties/MyClass| {
                 LAZY_super<R|kotlin/Any|>
             }
 
-            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>| = R|<local>/property|
-                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|
-                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|kotlin/Unit|
+            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>| = R|<local>/property|
+                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|
+                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|kotlin/Unit|
 
         }
 
@@ -249,7 +249,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 CONTRACTS:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -266,13 +266,13 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
         public final [ResolvedTo(CONTRACTS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] class MyClass : R|kotlin/Any| {
-            public [ResolvedTo(CONTRACTS)] [ContainingClassKey=MyClass] constructor([ResolvedTo(CONTRACTS)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|properties/MyClass| {
+            public [ResolvedTo(CONTRACTS)] [ContainingClassKey=MyClass] constructor([ResolvedTo(CONTRACTS)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|properties/MyClass| {
                 LAZY_super<R|kotlin/Any|>
             }
 
-            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>| = R|<local>/property|
-                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|
-                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|kotlin/Unit|
+            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>| = R|<local>/property|
+                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|
+                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|kotlin/Unit|
 
         }
 
@@ -280,7 +280,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 IMPLICIT_TYPES_BODY_RESOLVE:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -297,13 +297,13 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
         public final [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] class MyClass : R|kotlin/Any| {
-            public [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] [ContainingClassKey=MyClass] constructor([ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|properties/MyClass| {
+            public [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] [ContainingClassKey=MyClass] constructor([ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|properties/MyClass| {
                 LAZY_super<R|kotlin/Any|>
             }
 
-            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>| = R|<local>/property|
-                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|
-                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|kotlin/Unit|
+            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>| = R|<local>/property|
+                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|
+                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|kotlin/Unit|
 
         }
 
@@ -311,7 +311,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 CONSTANT_EVALUATION:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -328,13 +328,13 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
             public? [ResolvedTo(RAW_FIR)] get(): <implicit>
 
         public final [ResolvedTo(CONSTANT_EVALUATION)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] class MyClass : R|kotlin/Any| {
-            public [ResolvedTo(CONSTANT_EVALUATION)] [ContainingClassKey=MyClass] constructor([ResolvedTo(CONSTANT_EVALUATION)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|properties/MyClass| {
+            public [ResolvedTo(CONSTANT_EVALUATION)] [ContainingClassKey=MyClass] constructor([ResolvedTo(CONSTANT_EVALUATION)] [CorrespondingProperty=properties/MyClass.property] @CONSTRUCTOR_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|properties/MyClass| {
                 LAZY_super<R|kotlin/Any|>
             }
 
-            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>| = R|<local>/property|
-                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|
-                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(<strcat>(String(parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested parameter type: ), constant#))  kotlin/collections/List<@R|properties/Anno|(<strcat>(String(nested nested parameter type: ), constant#))  kotlin/Int>>|): R|kotlin/Unit|
+            @PROPERTY:R|properties/Anno|[Types](LAZY_EXPRESSION) field:@FIELD:R|properties/Anno|[Types](LAZY_EXPRESSION) public final [ResolvedTo(STATUS)] [IsFromPrimaryConstructor=true] var property: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>| = R|<local>/property|
+                @PROPERTY_GETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] get(): R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|
+                @PROPERTY_SETTER:R|properties/Anno|[Types](LAZY_EXPRESSION) public [ResolvedTo(STATUS)] [ContainingClassKey=MyClass] set([ResolvedTo(STATUS)] @SETTER_PARAMETER:R|properties/Anno|[Types](LAZY_EXPRESSION) value: R|@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/collections/List<@R|properties/Anno|(LAZY_EXPRESSION)  kotlin/Int>>|): R|kotlin/Unit|
 
         }
 
@@ -342,7 +342,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 ANNOTATION_ARGUMENTS:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -373,7 +373,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 BODY_RESOLVE:
 FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -404,7 +404,7 @@ FILE: [ResolvedTo(IMPORTS)] constructorParameterScript.kts
 FILE RAW TO BODY:
 FILE: [ResolvedTo(BODY_RESOLVE)] constructorParameterScript.kts
     SCRIPT: [ResolvedTo(BODY_RESOLVE)] <script-constructorParameterScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(BODY_RESOLVE)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(BODY_RESOLVE)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](allowedTargets = vararg(Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.VALUE_PARAMETER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.FIELD|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_SETTER|, Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.PROPERTY_GETTER|)) public final [ResolvedTo(BODY_RESOLVE)] [ContainingScriptKey=FirScriptSymbol properties.<script-constructorParameterScript.kts>] annotation class Anno : R|kotlin/Annotation| {

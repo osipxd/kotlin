@@ -6,8 +6,12 @@ class Regular {
 
 fun test(action: Regular.() -> Unit) {}
 
+fun otherReceiver(action: Any.() -> Unit) {}
+
 fun Regular.usage() {
     test {
-        <expr>this@usage.one()</expr>
+        otherReceiver {
+            <expr>this@test.one()</expr>
+        }
     }
 }

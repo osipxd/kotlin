@@ -46,12 +46,12 @@ object FirWasmErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
         map.put(
             NON_EXTERNAL_TYPE_EXTENDS_EXTERNAL_TYPE,
-            "Non-external type extends external type ''{0}''",
+            "Non-external type extends external type ''{0}''.",
             FirDiagnosticRenderers.RENDER_TYPE
         )
         map.put(
             EXTERNAL_TYPE_EXTENDS_NON_EXTERNAL_TYPE,
-            "External type extends non-external type ''{0}''",
+            "External type extends non-external type ''{0}''.",
             FirDiagnosticRenderers.RENDER_TYPE
         )
         map.put(CALL_TO_DEFINED_EXTERNALLY_FROM_NON_EXTERNAL_DECLARATION, "This property can only be used from external declarations.")
@@ -70,7 +70,7 @@ object FirWasmErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
         map.put(
             JSCODE_WRONG_CONTEXT,
-            "Calls to 'js(code)' should be a single expression inside a top-level function body or a property initializer in Kotlin/Wasm."
+            "Calls to 'js(code)' must be a single expression inside a top-level function body or a property initializer in Kotlin/Wasm."
         )
         map.put(
             JSCODE_UNSUPPORTED_FUNCTION_KIND,
@@ -79,15 +79,18 @@ object FirWasmErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(
             JSCODE_INVALID_PARAMETER_NAME,
-            "Parameters passed to 'js(code)' should have a valid JavaScript name."
+            "Parameters passed to 'js(code)' must have a valid JavaScript name."
         )
 
         map.put(NESTED_WASM_EXPORT, "Only top-level functions can be exported with '@WasmExport'.")
-        map.put(WASM_EXPORT_ON_EXTERNAL_DECLARATION, "Functions annotated with '@WasmExport' must not be external.")
+        map.put(WASM_EXPORT_ON_EXTERNAL_DECLARATION, "Functions annotated with '@WasmExport' cannot be external.")
         map.put(JS_AND_WASM_EXPORTS_ON_SAME_DECLARATION, "Cannot use '@WasmExport' and '@JsExport' for same function.")
         map.put(NESTED_WASM_IMPORT, "Only top-level functions can be imported with '@WasmImport'.")
         map.put(WASM_IMPORT_ON_NON_EXTERNAL_DECLARATION, "Functions annotated with '@WasmImport' must be external.")
-        map.put(WASM_IMPORT_EXPORT_PARAMETER_DEFAULT_VALUE, "Default parameter values are not supported with '@WasmImport' and '@WasmExport'.")
+        map.put(
+            WASM_IMPORT_EXPORT_PARAMETER_DEFAULT_VALUE,
+            "Default parameter values are not supported with '@WasmImport' and '@WasmExport'."
+        )
         map.put(WASM_IMPORT_EXPORT_VARARG_PARAMETER, "Vararg parameters are not supported with '@WasmImport' and '@WasmExport'.")
         map.put(
             WASM_IMPORT_EXPORT_UNSUPPORTED_PARAMETER_TYPE,
@@ -101,7 +104,7 @@ object FirWasmErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
 
         map.put(WASI_EXTERNAL_NOT_TOP_LEVEL_FUNCTION, "Only top-level functions can be external.")
-        map.put(WASI_EXTERNAL_FUNCTION_WITHOUT_IMPORT, "External functions should be annotated with '@WasmImport'.")
+        map.put(WASI_EXTERNAL_FUNCTION_WITHOUT_IMPORT, "External functions must be annotated with '@WasmImport'.")
 
         map.put(ASSOCIATED_OBJECT_INVALID_BINDING, "Invalid associated object binding.")
     }

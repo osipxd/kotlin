@@ -403,6 +403,21 @@ public class CliTestGenerated extends AbstractCliTest {
       runTest("compiler/testData/cli/jvm/conflictingProjection.args");
     }
 
+    @TestMetadata("contextParameters.args")
+    public void testContextParameters() {
+      runTest("compiler/testData/cli/jvm/contextParameters.args");
+    }
+
+    @TestMetadata("contextReceiversAndParametersAtTheSameTime.args")
+    public void testContextReceiversAndParametersAtTheSameTime() {
+      runTest("compiler/testData/cli/jvm/contextReceiversAndParametersAtTheSameTime.args");
+    }
+
+    @TestMetadata("contextReceiversDeprecated.args")
+    public void testContextReceiversDeprecated() {
+      runTest("compiler/testData/cli/jvm/contextReceiversDeprecated.args");
+    }
+
     @TestMetadata("coroutinesEnable.args")
     public void testCoroutinesEnable() {
       runTest("compiler/testData/cli/jvm/coroutinesEnable.args");
@@ -731,6 +746,16 @@ public class CliTestGenerated extends AbstractCliTest {
     @TestMetadata("forbidKotlinPackageK2.args")
     public void testForbidKotlinPackageK2() {
       runTest("compiler/testData/cli/jvm/forbidKotlinPackageK2.args");
+    }
+
+    @TestMetadata("fullyQualifiedDeepJavaIndividual.args")
+    public void testFullyQualifiedDeepJavaIndividual() {
+      runTest("compiler/testData/cli/jvm/fullyQualifiedDeepJavaIndividual.args");
+    }
+
+    @TestMetadata("fullyQualifiedDeepJavaWholeRoot.args")
+    public void testFullyQualifiedDeepJavaWholeRoot() {
+      runTest("compiler/testData/cli/jvm/fullyQualifiedDeepJavaWholeRoot.args");
     }
 
     @TestMetadata("functionReferenceWithDefaultValuesFeatureIsEnabledWithNewInference.args")

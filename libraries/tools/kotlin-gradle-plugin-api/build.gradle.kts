@@ -15,11 +15,6 @@ pluginApiReference {
 
     additionalDokkaConfiguration {
         reportUndocumented.set(true)
-
-        perPackageOption {
-            matchingRegex.set("org\\.jetbrains\\.kotlin\\.gradle\\.plugin\\.mpp.*")
-            suppress.set(true)
-        }
     }
 }
 
@@ -30,6 +25,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-util-klib")
     }
     commonApi(project(":kotlin-tooling-core"))
+    commonApi(project(":compiler:build-tools:kotlin-build-tools-api"))
 
     commonCompileOnly(project(":kotlin-gradle-compiler-types"))
 

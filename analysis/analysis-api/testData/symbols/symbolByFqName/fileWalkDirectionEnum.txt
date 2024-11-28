@@ -31,7 +31,22 @@ KaNamedFunctionSymbol:
     ]
     type: kotlin/collections/List<T>
   typeParameters: [
-    KaTypeParameterSymbol(T)
+    KaTypeParameterSymbol:
+      annotations: []
+      compilerVisibility: Local
+      isActual: false
+      isExpect: false
+      isReified: false
+      location: LOCAL
+      modality: FINAL
+      name: T
+      origin: LIBRARY
+      upperBounds: []
+      variance: INVARIANT
+      visibility: LOCAL
+      getContainingFileSymbol: null
+      getContainingModule: KaLibraryModule "Library kotlin-stdlib"
+      deprecationStatus: null
   ]
   valueParameters: [
     KaValueParameterSymbol:
@@ -66,6 +81,7 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: null
   getContainingJvmClassName: kotlin.collections.CollectionsKt
+  canBeOperator: false
   getContainingModule: KaLibraryModule "Library kotlin-stdlib"
   deprecationStatus: null
 
@@ -102,7 +118,22 @@ KaNamedFunctionSymbol:
     ]
     type: kotlin/collections/List<T>
   typeParameters: [
-    KaTypeParameterSymbol(T)
+    KaTypeParameterSymbol:
+      annotations: []
+      compilerVisibility: Local
+      isActual: false
+      isExpect: false
+      isReified: false
+      location: LOCAL
+      modality: FINAL
+      name: T
+      origin: LIBRARY
+      upperBounds: []
+      variance: INVARIANT
+      visibility: LOCAL
+      getContainingFileSymbol: null
+      getContainingModule: KaLibraryModule "Library kotlin-stdlib"
+      deprecationStatus: null
   ]
   valueParameters: [
     KaValueParameterSymbol:
@@ -137,6 +168,7 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: null
   getContainingJvmClassName: kotlin.collections.CollectionsKt
+  canBeOperator: false
   getContainingModule: KaLibraryModule "Library kotlin-stdlib"
   deprecationStatus: null
 
@@ -176,11 +208,27 @@ KaNamedFunctionSymbol:
     ]
     type: kotlin/collections/List<T>
   typeParameters: [
-    KaTypeParameterSymbol(T)
+    KaTypeParameterSymbol:
+      annotations: []
+      compilerVisibility: Local
+      isActual: false
+      isExpect: false
+      isReified: false
+      location: LOCAL
+      modality: FINAL
+      name: T
+      origin: LIBRARY
+      upperBounds: []
+      variance: INVARIANT
+      visibility: LOCAL
+      getContainingFileSymbol: null
+      getContainingModule: KaLibraryModule "Library kotlin-stdlib"
+      deprecationStatus: null
   ]
   valueParameters: []
   visibility: PUBLIC
   getContainingFileSymbol: null
   getContainingJvmClassName: kotlin.collections.CollectionsKt
+  canBeOperator: false
   getContainingModule: KaLibraryModule "Library kotlin-stdlib"
   deprecationStatus: null

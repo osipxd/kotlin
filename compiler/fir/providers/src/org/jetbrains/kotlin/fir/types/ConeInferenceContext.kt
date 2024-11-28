@@ -166,6 +166,14 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         }
     }
 
+    override fun KotlinTypeMarker.typeDepthForApproximation(): Int {
+        return if (this is ConeCapturedType) {
+            constructor.projection.type?.typeDepth() ?: 1
+        } else {
+            typeDepth()
+        }
+    }
+
     override fun RigidTypeMarker.typeDepth(): Int {
         require(this is ConeRigidType)
 
@@ -473,7 +481,9 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
 
     private fun AnnotationMarker.isCustomAttribute(): Boolean {
         val compilerAttributes = CompilerConeAttributes.classIdByCompilerAttributeKey
-        return (this as? ConeAttribute<*>)?.key !in compilerAttributes && this !is CustomAnnotationTypeAttribute
+        return (this as? ConeAttribute<*>)?.key !in compilerAttributes &&
+                this !is ParameterNameTypeAttribute &&
+                this !is CustomAnnotationTypeAttribute
     }
 
     override fun KotlinTypeMarker.replaceCustomAttributes(newAttributes: List<AnnotationMarker>): KotlinTypeMarker {

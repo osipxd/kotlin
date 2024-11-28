@@ -16,12 +16,16 @@ import org.jetbrains.kotlin.fir.analysis.checkers.*
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.declarations.utils.getDestructuredParameter
 import org.jetbrains.kotlin.fir.packageFqName
 import org.jetbrains.kotlin.fir.scopes.impl.FirPackageMemberScope
 import org.jetbrains.kotlin.fir.scopes.impl.PACKAGE_MEMBER
 import org.jetbrains.kotlin.fir.scopes.impl.typeAliasForConstructor
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.*
+import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.utils.SmartSet
@@ -76,7 +80,7 @@ object FirConflictsDeclarationChecker : FirBasicDeclarationChecker(MppCheckerKin
             }
             else -> {
                 if (declaration.source?.kind !is KtFakeSourceElementKind && declaration is FirTypeParameterRefsOwner) {
-                    if (declaration is FirFunction) {
+                    if (declaration is FirFunction || declaration is FirProperty) {
                         val destructuredParameters = getDestructuredParameters(declaration)
                         checkForLocalRedeclarations(destructuredParameters, context, reporter)
                     }
@@ -86,15 +90,25 @@ object FirConflictsDeclarationChecker : FirBasicDeclarationChecker(MppCheckerKin
         }
     }
 
-    private fun getDestructuredParameters(function: FirFunction): List<FirVariable> {
-        if (function.valueParameters.none { it.name == SpecialNames.DESTRUCT }) return function.valueParameters
-        val destructuredParametersBoxes = function.valueParameters
-            .filter { it.name == SpecialNames.DESTRUCT }
-            .mapTo(mutableSetOf()) { it.symbol }
+    private fun getDestructuredParameters(declaration: FirCallableDeclaration): List<FirVariable> {
+        return buildList {
+            declaration.contextReceivers.filterTo(this) { it.valueParameterKind == FirValueParameterKind.ContextParameter }
 
-        return function.body?.statements.orEmpty().mapNotNullTo(function.valueParameters.toMutableList()) {
-            val destructuredParameter = (it as? FirVariable)?.getDestructuredParameter() ?: return@mapNotNullTo null
-            if (destructuredParameter in destructuredParametersBoxes) it else null
+            if (declaration is FirFunction) {
+                addAll(declaration.valueParameters)
+
+                val destructuredParametersBoxes = declaration.valueParameters
+                    .filter { it.name == SpecialNames.DESTRUCT }
+                    .mapTo(mutableSetOf()) { it.symbol }
+
+                declaration.body?.statements?.mapNotNullTo(this) {
+                    (it as? FirVariable)?.takeIf { it.getDestructuredParameter() in destructuredParametersBoxes }
+                }
+            }
+
+            if (declaration is FirProperty) {
+                declaration.setter?.takeUnless { it.source?.kind == KtFakeSourceElementKind.DefaultAccessor }?.valueParameters?.let { addAll(it) }
+            }
         }
     }
 

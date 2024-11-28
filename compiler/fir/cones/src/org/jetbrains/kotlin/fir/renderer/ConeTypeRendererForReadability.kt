@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.fir.types.ConeDefinitelyNotNullType
 import org.jetbrains.kotlin.fir.types.ConeFlexibleType
 import org.jetbrains.kotlin.fir.types.ConeIntegerLiteralType
+import org.jetbrains.kotlin.fir.types.ConeIntersectionType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.renderer.replacePrefixesInTypeRepresentations
 import org.jetbrains.kotlin.renderer.typeStringsDifferOnlyInNullability
@@ -17,7 +18,7 @@ import org.jetbrains.kotlin.types.model.TypeConstructorMarker
 open class ConeTypeRendererForReadability(
     private val preRenderedConstructors: Map<TypeConstructorMarker, String>? = null,
     private val idRendererCreator: () -> ConeIdRenderer,
-) : ConeTypeRenderer(ConeAttributeRenderer.ForReadability) {
+) : ConeTypeRendererForDebugInfo() {
     constructor(
         builder: StringBuilder,
         preRenderedConstructors: Map<TypeConstructorMarker, String>? = null,
@@ -53,12 +54,11 @@ open class ConeTypeRendererForReadability(
     }
 
     private fun renderFlexibleTypeCompact(lowerRendered: String, upperRendered: String): String? {
-        if (typeStringsDifferOnlyInNullability(lowerRendered, upperRendered)) {
-            if (upperRendered.startsWith("(")) {
-                // the case of complex type, e.g. (() -> Unit)?
-                return "($lowerRendered)!"
-            }
-            return "$lowerRendered!"
+        // More precise handling of different cases inside typeStringsDifferOnlyInNullability
+        when {
+            lowerRendered == upperRendered.replace("?", "") -> return upperRendered.replace("?", "!")
+            upperRendered.endsWith("?") && ("$lowerRendered?") == upperRendered -> return "$lowerRendered!"
+            "($lowerRendered)?" == upperRendered -> return "($lowerRendered)!"
         }
 
         val kotlinCollectionsPrefix = (StandardNames.COLLECTIONS_PACKAGE_FQ_NAME.asString() + ".").takeIf { lowerRendered.startsWith(it) } ?: ""
@@ -95,19 +95,11 @@ open class ConeTypeRendererForReadability(
         return null
     }
 
-    override fun render(type: ConeIntegerLiteralType) {
-        render(type.getApproximatedType())
-    }
-
-    override fun ConeKotlinType.renderAttributes() {
-        renderNonCompilerAttributes()
-    }
-
-    override fun renderConstructor(constructor: TypeConstructorMarker) {
+    override fun renderConstructor(constructor: TypeConstructorMarker, nullabilityMarker: String) {
         preRenderedConstructors?.get(constructor)?.let {
-            builder.append(it)
+            builder.append(it.replace("^", nullabilityMarker))
             return
         }
-        super.renderConstructor(constructor)
+        super.renderConstructor(constructor, nullabilityMarker)
     }
 }

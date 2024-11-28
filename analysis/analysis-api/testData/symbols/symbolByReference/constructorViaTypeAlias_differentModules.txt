@@ -1,0 +1,26 @@
+KaConstructorSymbol:
+  annotations: []
+  callableId: null
+  compilerVisibility: Public
+  containingClassId: one/SimpleClass
+  contextReceivers: []
+  hasStableParameterNames: true
+  isActual: false
+  isExpect: false
+  isExtension: false
+  isPrimary: true
+  location: CLASS
+  modality: FINAL
+  origin: SOURCE_MEMBER_GENERATED
+  receiverParameter: null
+  returnType: KaUsualClassType:
+    annotations: []
+    typeArguments: []
+    type: one/SimpleClass
+  typeParameters: []
+  valueParameters: []
+  visibility: PUBLIC
+  getContainingFileSymbol: KaFileSymbol(Lib.kt)
+  getContainingJvmClassName: one.SimpleClass
+  getContainingModule: KaSourceModule "Sources of lib"
+  deprecationStatus: null

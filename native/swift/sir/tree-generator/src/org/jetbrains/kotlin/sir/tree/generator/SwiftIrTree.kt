@@ -50,7 +50,7 @@ object SwiftIrTree : AbstractSwiftIrTreeBuilder() {
         +field("parent", declarationParent, mutable = true, isChild = false) {
             useInBaseTransformerDetection = false
         }
-        +listField("attributes", attributeType, isMutableList = true)
+        +listField("attributes", attributeType)
     }
 
     val classMemberDeclaration by sealedElement {
@@ -96,12 +96,19 @@ object SwiftIrTree : AbstractSwiftIrTreeBuilder() {
         parent(declarationContainer)
     }
 
+    val protocol: Element by element {
+        customParentInVisitor = namedDeclaration
+        parent(namedDeclaration)
+        parent(declarationContainer)
+    }
+
     val `class`: Element by element {
         customParentInVisitor = namedDeclaration
         parent(namedDeclaration)
         parent(declarationContainer)
 
         +field("superClass", typeType, nullable = true)
+        +listField("protocols", protocol)
         +field("modality", modalityKind)
     }
 
@@ -116,6 +123,8 @@ object SwiftIrTree : AbstractSwiftIrTreeBuilder() {
         parent(declaration)
 
         +field("body", functionBodyType, nullable = true, mutable = true)
+
+        +field("errorType", typeType)
     }
 
     val init by element {
@@ -125,7 +134,8 @@ object SwiftIrTree : AbstractSwiftIrTreeBuilder() {
         +field("isFailable", boolean)
         +listField("parameters", parameterType)
 
-        +field("initKind", initKind)
+        +field("isConvenience", boolean)
+        +field("isRequired", boolean)
 
         +field("isOverride", boolean)
     }
@@ -136,6 +146,7 @@ object SwiftIrTree : AbstractSwiftIrTreeBuilder() {
         parent(classMemberDeclaration)
 
         +field("name", string)
+        +field("extensionReceiverParameter", parameterType, nullable = true)
         +listField("parameters", parameterType)
         +field("returnType", typeType)
     }

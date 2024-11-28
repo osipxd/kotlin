@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     id("jps-compatible")
+    id("d8-configuration")
 }
 
 val compilerModules: Array<String> by rootProject.extra

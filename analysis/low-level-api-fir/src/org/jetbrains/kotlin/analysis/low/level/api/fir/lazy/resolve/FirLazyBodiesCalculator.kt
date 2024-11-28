@@ -28,8 +28,10 @@ import org.jetbrains.kotlin.fir.references.builder.buildDelegateFieldReference
 import org.jetbrains.kotlin.fir.references.builder.buildImplicitThisReference
 import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
 import org.jetbrains.kotlin.fir.scopes.kotlinScopeProvider
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirReceiverParameterSymbol
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.builder.buildTypeProjectionWithVariance
 import org.jetbrains.kotlin.fir.types.impl.ConeTypeParameterTypeImpl
@@ -60,11 +62,7 @@ internal object FirLazyBodiesCalculator {
     }
 
     fun calculateAnnotations(firElement: FirElementWithResolveState) {
-        calculateAnnotations(firElement, firElement.moduleData.session)
-    }
-
-    fun calculateAnnotations(firElement: FirElement, session: FirSession) {
-        firElement.accept(LazyAnnotationCalculatorVisitor, session)
+        firElement.accept(LazyAnnotationCalculatorVisitor, firElement.moduleData.session)
     }
 
     fun calculateLazyArgumentsForAnnotation(annotationCall: FirAnnotationCall, session: FirSession): FirArgumentList {
@@ -353,17 +351,22 @@ private fun rebindThisRef(
     ) {
         withFirSymbolEntry("newTarget", newTarget)
         withFirSymbolEntry("oldTarget", oldTarget)
-        boundSymbol?.let { withFirSymbolEntry("boundSymbol", boundSymbol) }
+        boundSymbol?.let { withFirSymbolEntry("boundSymbol", boundSymbol as FirBasedSymbol<*>) }
     }
 
-    requireWithAttachment(boundSymbol == oldTarget, { "Unexpected bound symbol: ${boundSymbol?.let { it::class.simpleName }}" }) {
+    requireWithAttachment(
+        boundSymbol is FirReceiverParameterSymbol && boundSymbol.containingDeclarationSymbol == oldTarget,
+        {
+            "Unexpected bound symbol: ${boundSymbol?.let { it::class.simpleName }}"
+        }
+    ) {
         withFirSymbolEntry("newTarget", newTarget)
         withFirSymbolEntry("oldTarget", oldTarget)
-        boundSymbol?.let { withFirSymbolEntry("boundSymbol", boundSymbol) }
+        boundSymbol?.let { withFirSymbolEntry("boundSymbol", boundSymbol as FirBasedSymbol<*>) }
     }
 
     expression.replaceCalleeReference(buildImplicitThisReference {
-        this.boundSymbol = newTarget
+        this.boundSymbol = newTarget.receiverParameter!!.symbol
     })
 }
 

@@ -5,12 +5,15 @@
 
 package org.jetbrains.kotlin.fir.resolve.transformers.body.resolve
 
+import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.fir.FirTargetElement
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.expressions.impl.FirElseIfTrueCondition
 import org.jetbrains.kotlin.fir.expressions.impl.FirEmptyExpressionBlock
+import org.jetbrains.kotlin.fir.languageVersionSettings
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
+import org.jetbrains.kotlin.fir.resolve.expectedType
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
 import org.jetbrains.kotlin.fir.resolve.inference.TemporaryInferenceSessionHook
 import org.jetbrains.kotlin.fir.resolve.transformExpressionUsingSmartcastInfo
@@ -233,23 +236,22 @@ class FirControlFlowStatementsResolveTransformer(transformer: FirAbstractBodyRes
         @Suppress("NAME_SHADOWING")
         val data = data.takeUnless { it is ResolutionMode.WithExpectedType && !it.forceFullCompletion } ?: ResolutionMode.ContextDependent
 
-        val expectedType = data.expectedType?.coneTypeSafe<ConeKotlinType>()
-        val mayBeCoercionToUnitApplied = (data as? ResolutionMode.WithExpectedType)?.mayBeCoercionToUnitApplied == true
-
-        val resolutionModeForLhs =
-            if (mayBeCoercionToUnitApplied && expectedType?.isUnitOrFlexibleUnit == true)
-                withExpectedType(expectedType, mayBeCoercionToUnitApplied = true)
-            else
-                withExpectedType(expectedType?.withNullability(nullable = true, session.typeContext))
         dataFlowAnalyzer.enterElvis(elvisExpression)
-        elvisExpression.transformLhs(transformer, resolutionModeForLhs)
+
+        elvisExpression.transformLhs(
+            transformer,
+            // should be` expectedType.makeNullable()` or ResolutionMode.ContextDependent since LV >= 2.1
+            computeResolutionModeForElvisLHS(data)
+        )
         dataFlowAnalyzer.exitElvisLhs(elvisExpression)
 
-        val resolutionModeForRhs = withExpectedType(
-            expectedType,
-            mayBeCoercionToUnitApplied = mayBeCoercionToUnitApplied
+        elvisExpression.transformRhs(
+            transformer,
+            withExpectedType(
+                data.expectedType,
+                mayBeCoercionToUnitApplied = (data as? ResolutionMode.WithExpectedType)?.mayBeCoercionToUnitApplied == true
+            )
         )
-        elvisExpression.transformRhs(transformer, resolutionModeForRhs)
 
         val result = callCompleter.completeCall(
             syntheticCallGenerator.generateCalleeForElvisExpression(elvisExpression, resolutionContext, data), data
@@ -296,6 +298,36 @@ class FirControlFlowStatementsResolveTransformer(transformer: FirAbstractBodyRes
 
         dataFlowAnalyzer.exitElvis(elvisExpression, isLhsNotNull, data.forceFullCompletion)
         return result
+    }
+
+    private fun computeResolutionModeForElvisLHS(
+        data: ResolutionMode,
+    ): ResolutionMode {
+        val expectedType = data.expectedType
+        val mayBeCoercionToUnitApplied = (data as? ResolutionMode.WithExpectedType)?.mayBeCoercionToUnitApplied == true
+
+        val isObsoleteCompilerMode =
+            !session.languageVersionSettings.supportsFeature(LanguageFeature.ElvisInferenceImprovementsIn21)
+        return when {
+            mayBeCoercionToUnitApplied && expectedType?.isUnitOrFlexibleUnit == true ->
+                when {
+                    isObsoleteCompilerMode ->
+                        // The problematic part is that we even forget about nullability
+                        // And forcefully run coercion to Unit of nullable LHS
+                        withExpectedType(
+                            expectedType, // Always Unit here
+                            mayBeCoercionToUnitApplied = true
+                        )
+                    else -> ResolutionMode.ContextDependent
+                }
+            // In general, it might be ResolutionMode.ContextDependent as in the Unit-case with modern LV.
+            // The expected type should be applied at the completion stage for the whole elvis-call, thus affecting the inference
+            // at the LHS, too.
+            //
+            // But in some situations (like KT-72996 and KT-73011 as its non-elvis generalized version) propagation of the expected type
+            // helps to resolve callable references properly, so at this point we can't just get it back.
+            else -> withExpectedType(expectedType?.withNullability(nullable = true, session.typeContext))
+        }
     }
 
     private fun ConeKotlinType.makeConeFlexibleTypeWithNotNullableLowerBound(typeContext: ConeTypeContext): ConeKotlinType {

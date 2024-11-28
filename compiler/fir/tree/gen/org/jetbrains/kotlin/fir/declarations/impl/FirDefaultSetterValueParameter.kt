@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.references.FirControlFlowGraphReference
-import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.ConeSimpleKotlinType
 import org.jetbrains.kotlin.fir.types.FirTypeRef
@@ -37,31 +37,48 @@ internal class FirDefaultSetterValueParameter(
     override val origin: FirDeclarationOrigin,
     override val attributes: FirDeclarationAttributes,
     override var returnTypeRef: FirTypeRef,
-    override var receiverParameter: FirReceiverParameter?,
     override var deprecationsProvider: DeprecationsProvider,
-    override val containerSource: DeserializedContainerSource?,
-    override val dispatchReceiverType: ConeSimpleKotlinType?,
-    override var contextReceivers: MutableOrEmptyList<FirContextReceiver>,
-    override var initializer: FirExpression?,
-    override var delegate: FirExpression?,
-    override val isVar: Boolean,
-    override val isVal: Boolean,
-    override var getter: FirPropertyAccessor?,
-    override var setter: FirPropertyAccessor?,
-    override var backingField: FirBackingField?,
     override var annotations: MutableOrEmptyList<FirAnnotation>,
     override val symbol: FirValueParameterSymbol,
-    override var defaultValue: FirExpression?,
-    override val containingFunctionSymbol: FirFunctionSymbol<*>,
-    override val isCrossinline: Boolean,
-    override val isNoinline: Boolean,
-    override val isVararg: Boolean,
+    override val containingDeclarationSymbol: FirBasedSymbol<*>,
 ) : FirValueParameter() {
     override val typeParameters: List<FirTypeParameterRef>
         get() = emptyList()
     override var status: FirDeclarationStatus = FirResolvedDeclarationStatusImpl.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+    override val receiverParameter: FirReceiverParameter?
+        get() = null
+    override val containerSource: DeserializedContainerSource?
+        get() = null
+    override val dispatchReceiverType: ConeSimpleKotlinType?
+        get() = null
+    override val contextReceivers: List<FirValueParameter>
+        get() = emptyList()
     override val name: Name = Name.identifier("value")
+    override val initializer: FirExpression?
+        get() = null
+    override val delegate: FirExpression?
+        get() = null
+    override val isVar: Boolean
+        get() = false
+    override val isVal: Boolean
+        get() = true
+    override val getter: FirPropertyAccessor?
+        get() = null
+    override val setter: FirPropertyAccessor?
+        get() = null
+    override val backingField: FirBackingField?
+        get() = null
     override var controlFlowGraphReference: FirControlFlowGraphReference? = null
+    override val defaultValue: FirExpression?
+        get() = null
+    override val isCrossinline: Boolean
+        get() = false
+    override val isNoinline: Boolean
+        get() = false
+    override val isVararg: Boolean
+        get() = false
+    override val valueParameterKind: FirValueParameterKind
+        get() = FirValueParameterKind.Regular
 
     init {
         symbol.bind(this)
@@ -71,27 +88,13 @@ internal class FirDefaultSetterValueParameter(
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {
         status.accept(visitor, data)
         returnTypeRef.accept(visitor, data)
-        receiverParameter?.accept(visitor, data)
-        contextReceivers.forEach { it.accept(visitor, data) }
-        initializer?.accept(visitor, data)
-        delegate?.accept(visitor, data)
-        getter?.accept(visitor, data)
-        setter?.accept(visitor, data)
-        backingField?.accept(visitor, data)
         annotations.forEach { it.accept(visitor, data) }
         controlFlowGraphReference?.accept(visitor, data)
-        defaultValue?.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
         transformStatus(transformer, data)
         transformReturnTypeRef(transformer, data)
-        transformReceiverParameter(transformer, data)
-        transformInitializer(transformer, data)
-        transformDelegate(transformer, data)
-        transformGetter(transformer, data)
-        transformSetter(transformer, data)
-        transformBackingField(transformer, data)
         transformOtherChildren(transformer, data)
         return this
     }
@@ -111,32 +114,30 @@ internal class FirDefaultSetterValueParameter(
     }
 
     override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
-        receiverParameter = receiverParameter?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
         return this
     }
 
     override fun <D> transformInitializer(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
-        initializer = initializer?.transform(transformer, data)
         return this
     }
 
     override fun <D> transformDelegate(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
-        delegate = delegate?.transform(transformer, data)
         return this
     }
 
     override fun <D> transformGetter(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
-        getter = getter?.transform(transformer, data)
         return this
     }
 
     override fun <D> transformSetter(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
-        setter = setter?.transform(transformer, data)
         return this
     }
 
     override fun <D> transformBackingField(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
-        backingField = backingField?.transform(transformer, data)
         return this
     }
 
@@ -146,10 +147,8 @@ internal class FirDefaultSetterValueParameter(
     }
 
     override fun <D> transformOtherChildren(transformer: FirTransformer<D>, data: D): FirDefaultSetterValueParameter {
-        contextReceivers.transformInplace(transformer, data)
         transformAnnotations(transformer, data)
         controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
-        defaultValue = defaultValue?.transform(transformer, data)
         return this
     }
 
@@ -161,33 +160,21 @@ internal class FirDefaultSetterValueParameter(
         returnTypeRef = newReturnTypeRef
     }
 
-    override fun replaceReceiverParameter(newReceiverParameter: FirReceiverParameter?) {
-        receiverParameter = newReceiverParameter
-    }
+    override fun replaceReceiverParameter(newReceiverParameter: FirReceiverParameter?) {}
 
     override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
         deprecationsProvider = newDeprecationsProvider
     }
 
-    override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>) {
-        contextReceivers = newContextReceivers.toMutableOrEmpty()
-    }
+    override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>) {}
 
-    override fun replaceInitializer(newInitializer: FirExpression?) {
-        initializer = newInitializer
-    }
+    override fun replaceInitializer(newInitializer: FirExpression?) {}
 
-    override fun replaceDelegate(newDelegate: FirExpression?) {
-        delegate = newDelegate
-    }
+    override fun replaceDelegate(newDelegate: FirExpression?) {}
 
-    override fun replaceGetter(newGetter: FirPropertyAccessor?) {
-        getter = newGetter
-    }
+    override fun replaceGetter(newGetter: FirPropertyAccessor?) {}
 
-    override fun replaceSetter(newSetter: FirPropertyAccessor?) {
-        setter = newSetter
-    }
+    override fun replaceSetter(newSetter: FirPropertyAccessor?) {}
 
     override fun replaceAnnotations(newAnnotations: List<FirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
@@ -197,7 +184,5 @@ internal class FirDefaultSetterValueParameter(
         controlFlowGraphReference = newControlFlowGraphReference
     }
 
-    override fun replaceDefaultValue(newDefaultValue: FirExpression?) {
-        defaultValue = newDefaultValue
-    }
+    override fun replaceDefaultValue(newDefaultValue: FirExpression?) {}
 }

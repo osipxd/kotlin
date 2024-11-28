@@ -246,6 +246,12 @@ public class NativeCodegenLocalTestGenerated extends AbstractNativeCodegenBoxTes
     }
 
     @Test
+    @TestMetadata("kt72552.kt")
+    public void testKt72552() {
+      runTest("native/native.tests/testData/codegen/cinterop/kt72552.kt");
+    }
+
+    @Test
     @TestMetadata("libiconv.kt")
     public void testLibiconv() {
       runTest("native/native.tests/testData/codegen/cinterop/libiconv.kt");
@@ -497,6 +503,12 @@ public class NativeCodegenLocalTestGenerated extends AbstractNativeCodegenBoxTes
       @TestMetadata("overridabilityCondition.kt")
       public void testOverridabilityCondition() {
         runTest("native/native.tests/testData/codegen/cinterop/objc/overridabilityCondition.kt");
+      }
+
+      @Test
+      @TestMetadata("release_on_unattached_thread.kt")
+      public void testRelease_on_unattached_thread() {
+        runTest("native/native.tests/testData/codegen/cinterop/objc/release_on_unattached_thread.kt");
       }
 
       @Test
@@ -869,6 +881,24 @@ public class NativeCodegenLocalTestGenerated extends AbstractNativeCodegenBoxTes
     }
 
     @Test
+    @TestMetadata("assertDisabledInConditionAndMessage.kt")
+    public void testAssertDisabledInConditionAndMessage() {
+      runTest("native/native.tests/testData/codegen/fileCheck/assertDisabledInConditionAndMessage.kt");
+    }
+
+    @Test
+    @TestMetadata("assertDisabledInlined.kt")
+    public void testAssertDisabledInlined() {
+      runTest("native/native.tests/testData/codegen/fileCheck/assertDisabledInlined.kt");
+    }
+
+    @Test
+    @TestMetadata("assertDisabledInlinedCrossModule.kt")
+    public void testAssertDisabledInlinedCrossModule() {
+      runTest("native/native.tests/testData/codegen/fileCheck/assertDisabledInlinedCrossModule.kt");
+    }
+
+    @Test
     @TestMetadata("atomics.kt")
     public void testAtomics() {
       runTest("native/native.tests/testData/codegen/fileCheck/atomics.kt");
@@ -896,6 +926,18 @@ public class NativeCodegenLocalTestGenerated extends AbstractNativeCodegenBoxTes
     @TestMetadata("default_parameters_dont_box.kt")
     public void testDefault_parameters_dont_box() {
       runTest("native/native.tests/testData/codegen/fileCheck/default_parameters_dont_box.kt");
+    }
+
+    @Test
+    @TestMetadata("delegated_references_are_const.kt")
+    public void testDelegated_references_are_const() {
+      runTest("native/native.tests/testData/codegen/fileCheck/delegated_references_are_const.kt");
+    }
+
+    @Test
+    @TestMetadata("enumWithDifferentFileOrder.kt")
+    public void testEnumWithDifferentFileOrder() {
+      runTest("native/native.tests/testData/codegen/fileCheck/enumWithDifferentFileOrder.kt");
     }
 
     @Test
@@ -938,6 +980,18 @@ public class NativeCodegenLocalTestGenerated extends AbstractNativeCodegenBoxTes
     @TestMetadata("generic_safe_casts.kt")
     public void testGeneric_safe_casts() {
       runTest("native/native.tests/testData/codegen/fileCheck/generic_safe_casts.kt");
+    }
+
+    @Test
+    @TestMetadata("inline.kt")
+    public void testInline() {
+      runTest("native/native.tests/testData/codegen/fileCheck/inline.kt");
+    }
+
+    @Test
+    @TestMetadata("inline_property.kt")
+    public void testInline_property() {
+      runTest("native/native.tests/testData/codegen/fileCheck/inline_property.kt");
     }
 
     @Test

@@ -542,15 +542,13 @@ OutOfMemory:
 #endif
 
 extern "C" KFloat
-Kotlin_native_FloatingPointParser_parseFloatImpl(KString s, KInt e)
+Kotlin_native_FloatingPointParser_parseFloatImpl(KConstRef s, KInt e)
 {
-  const KChar* utf16 = CharArrayAddressOfElementAt(s, 0);
   std::string utf8;
-  utf8.reserve(s->count_);
   try {
-    utf8::utf16to8(utf16, utf16 + s->count_, back_inserter(utf8));
+    utf8 = kotlin::to_string<KStringConversionMode::CHECKED>(s);
   } catch (...) {
-    /* Illegal UTF-16 string. */
+    /* Illegal string. */
     ThrowNumberFormatException();
   }
   const char *str = utf8.c_str();

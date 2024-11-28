@@ -4,9 +4,6 @@
  */
 package org.jetbrains.kotlin.js.sourceMap
 
-import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.js.config.JSConfigurationKeys
-import org.jetbrains.kotlin.js.config.JsConfig
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
 import java.io.File
 import java.io.IOException
@@ -62,17 +59,6 @@ class SourceFilePathResolver(
     }
 
     companion object {
-        @JvmStatic
-        fun create(config: JsConfig) = create(config.configuration)
-
-        @JvmStatic
-        fun create(configuration: CompilerConfiguration) = create(
-            sourceRoots = configuration.get(JSConfigurationKeys.SOURCE_MAP_SOURCE_ROOTS, emptyList()),
-            sourceMapPrefix = configuration.get(JSConfigurationKeys.SOURCE_MAP_PREFIX, ""),
-            outputDir = configuration.get(JSConfigurationKeys.OUTPUT_DIR),
-            includeUnavailableSourcesIntoSourceMap = configuration.getBoolean(JSConfigurationKeys.SOURCE_MAP_INCLUDE_MAPPINGS_FROM_UNAVAILABLE_FILES)
-        )
-
         @JvmStatic
         fun create(
             sourceRoots: List<String>,

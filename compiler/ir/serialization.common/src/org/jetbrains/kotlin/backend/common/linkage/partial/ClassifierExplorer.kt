@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.builtins.UnsignedType
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.NotFoundClasses
+import org.jetbrains.kotlin.ir.InternalSymbolFinderAPI
 import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
@@ -46,18 +47,19 @@ internal class ClassifierExplorer(
         )
     }
 
+    @OptIn(InternalSymbolFinderAPI::class)  // KT-73430: Consider pre-finding these symbols and storing them into Symbols
     private val permittedAnnotationParameterSymbols: Set<IrClassSymbol> by lazy {
         buildSet {
             this += permittedAnnotationArrayParameterSymbols
 
             PrimitiveType.entries.forEach {
-                addIfNotNull(builtIns.findClass(it.typeName, BUILT_INS_PACKAGE_FQ_NAME)) // kotlin.<primitive>
-                addIfNotNull(builtIns.findClass(it.arrayTypeName, BUILT_INS_PACKAGE_FQ_NAME)) // kotlin.<primitive>Array
+                addIfNotNull(builtIns.symbolFinder.findClass(it.typeName, BUILT_INS_PACKAGE_FQ_NAME)) // kotlin.<primitive>
+                addIfNotNull(builtIns.symbolFinder.findClass(it.arrayTypeName, BUILT_INS_PACKAGE_FQ_NAME)) // kotlin.<primitive>Array
             }
 
             UnsignedType.entries.forEach {
-                addIfNotNull(builtIns.findClass(it.typeName, BUILT_INS_PACKAGE_FQ_NAME)) // kotlin.U<signed>
-                addIfNotNull(builtIns.findClass(it.arrayClassId.shortClassName, BUILT_INS_PACKAGE_FQ_NAME)) // kotlin.U<signed>Array
+                addIfNotNull(builtIns.symbolFinder.findClass(it.typeName, BUILT_INS_PACKAGE_FQ_NAME)) // kotlin.U<signed>
+                addIfNotNull(builtIns.symbolFinder.findClass(it.arrayClassId.shortClassName, BUILT_INS_PACKAGE_FQ_NAME)) // kotlin.U<signed>Array
             }
         }
     }

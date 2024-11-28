@@ -1,7 +1,17 @@
 @_exported import ExportedKotlinPackages
-import KotlinRuntime
 @_implementationOnly import KotlinBridges_main
+import KotlinRuntime
 
+open class ABSTRACT_CLASS : KotlinRuntime.KotlinBase {
+    package override init() {
+        fatalError()
+    }
+    package override init(
+        __externalRCRef: Swift.UInt
+    ) {
+        super.init(__externalRCRef: __externalRCRef)
+    }
+}
 public final class Class_without_package : KotlinRuntime.KotlinBase {
     public final class INNER_CLASS : KotlinRuntime.KotlinBase {
         public override init() {
@@ -9,7 +19,7 @@ public final class Class_without_package : KotlinRuntime.KotlinBase {
             super.init(__externalRCRef: __kt)
             Class_without_package_INNER_CLASS_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -24,7 +34,7 @@ public final class Class_without_package : KotlinRuntime.KotlinBase {
         private override init() {
             fatalError()
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -35,10 +45,40 @@ public final class Class_without_package : KotlinRuntime.KotlinBase {
         super.init(__externalRCRef: __kt)
         __root___Class_without_package_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
     }
-    public override init(
+    package override init(
         __externalRCRef: Swift.UInt
     ) {
         super.init(__externalRCRef: __externalRCRef)
+    }
+}
+public final class DATA_CLASS : KotlinRuntime.KotlinBase {
+    public var a: Swift.Int32 {
+        get {
+            return DATA_CLASS_a_get(self.__externalRCRef())
+        }
+    }
+    package override init(
+        __externalRCRef: Swift.UInt
+    ) {
+        super.init(__externalRCRef: __externalRCRef)
+    }
+    public init(
+        a: Swift.Int32
+    ) {
+        let __kt = __root___DATA_CLASS_init_allocate()
+        super.init(__externalRCRef: __kt)
+        __root___DATA_CLASS_init_initialize__TypesOfArguments__Swift_UInt_Swift_Int32__(__kt, a)
+    }
+    public func copy(
+        a: Swift.Int32
+    ) -> main.DATA_CLASS {
+        return main.DATA_CLASS(__externalRCRef: DATA_CLASS_copy__TypesOfArguments__Swift_Int32__(self.__externalRCRef(), a))
+    }
+    public func hashCode() -> Swift.Int32 {
+        return DATA_CLASS_hashCode(self.__externalRCRef())
+    }
+    public func toString() -> Swift.String {
+        return DATA_CLASS_toString(self.__externalRCRef())
     }
 }
 public final class Demo : KotlinRuntime.KotlinBase {
@@ -48,7 +88,7 @@ public final class Demo : KotlinRuntime.KotlinBase {
             super.init(__externalRCRef: __kt)
             Demo_INNER_CLASS_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -63,7 +103,7 @@ public final class Demo : KotlinRuntime.KotlinBase {
         private override init() {
             fatalError()
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -121,7 +161,7 @@ public final class Demo : KotlinRuntime.KotlinBase {
             return Demo_var4_set__TypesOfArguments__ExportedKotlinPackages_namespace_deeper_Object_with_package__(self.__externalRCRef(), newValue.__externalRCRef())
         }
     }
-    public override init(
+    package override init(
         __externalRCRef: Swift.UInt
     ) {
         super.init(__externalRCRef: __externalRCRef)
@@ -167,7 +207,7 @@ open class OPEN_CLASS : KotlinRuntime.KotlinBase {
         super.init(__externalRCRef: __kt)
         __root___OPEN_CLASS_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
     }
-    public override init(
+    package override init(
         __externalRCRef: Swift.UInt
     ) {
         super.init(__externalRCRef: __externalRCRef)
@@ -180,7 +220,7 @@ public final class Object_without_package : KotlinRuntime.KotlinBase {
             super.init(__externalRCRef: __kt)
             Object_without_package_INNER_CLASS_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -195,7 +235,7 @@ public final class Object_without_package : KotlinRuntime.KotlinBase {
         private override init() {
             fatalError()
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -209,7 +249,7 @@ public final class Object_without_package : KotlinRuntime.KotlinBase {
     private override init() {
         fatalError()
     }
-    public override init(
+    package override init(
         __externalRCRef: Swift.UInt
     ) {
         super.init(__externalRCRef: __externalRCRef)
@@ -217,10 +257,10 @@ public final class Object_without_package : KotlinRuntime.KotlinBase {
 }
 public var nullablePrim: Swift.Int32? {
     get {
-        return __root___nullablePrim_get()?.int32Value
+        return __root___nullablePrim_get().map { it in it.int32Value }
     }
     set {
-        return __root___nullablePrim_set__TypesOfArguments__Swift_Int32_opt___(newValue.flatMap { it in NSNumber(value: it) })
+        return __root___nullablePrim_set__TypesOfArguments__Swift_Int32_opt___(newValue.map { it in NSNumber(value: it) } ?? .none)
     }
 }
 public var nullableRef: main.Class_without_package? {
@@ -228,7 +268,7 @@ public var nullableRef: main.Class_without_package? {
         return switch __root___nullableRef_get() { case 0: .none; case let res: main.Class_without_package(__externalRCRef: res); }
     }
     set {
-        return __root___nullableRef_set__TypesOfArguments__main_Class_without_package_opt___(newValue?.__externalRCRef() ?? 0)
+        return __root___nullableRef_set__TypesOfArguments__main_Class_without_package_opt___(newValue.map { it in it.__externalRCRef() } ?? 0)
     }
 }
 public var val_class: main.Class_without_package {
@@ -291,21 +331,37 @@ public func combine(
 ) -> Swift.Void {
     return __root___combine__TypesOfArguments__main_Class_without_package_ExportedKotlinPackages_namespace_deeper_Class_with_package_main_Object_without_package_ExportedKotlinPackages_namespace_deeper_Object_with_package__(arg1.__externalRCRef(), arg2.__externalRCRef(), arg3.__externalRCRef(), arg4.__externalRCRef())
 }
+public func extensionOnNullabeRef(
+    receiver: main.Class_without_package?
+) -> Swift.Void {
+    return __root___extensionOnNullabeRef__TypesOfArguments__main_Class_without_package_opt___(receiver.map { it in it.__externalRCRef() } ?? 0)
+}
+public func extensionOnNullablePrimitive(
+    receiver: Swift.Int32?
+) -> Swift.Void {
+    return __root___extensionOnNullablePrimitive__TypesOfArguments__Swift_Int32_opt___(receiver.map { it in NSNumber(value: it) } ?? .none)
+}
 public func nullable_input_prim(
     i: Swift.Int32?
 ) -> Swift.Void {
-    return __root___nullable_input_prim__TypesOfArguments__Swift_Int32_opt___(i.flatMap { it in NSNumber(value: it) })
+    return __root___nullable_input_prim__TypesOfArguments__Swift_Int32_opt___(i.map { it in NSNumber(value: it) } ?? .none)
 }
 public func nullable_input_ref(
     i: main.Class_without_package?
 ) -> Swift.Void {
-    return __root___nullable_input_ref__TypesOfArguments__main_Class_without_package_opt___(i?.__externalRCRef() ?? 0)
+    return __root___nullable_input_ref__TypesOfArguments__main_Class_without_package_opt___(i.map { it in it.__externalRCRef() } ?? 0)
 }
 public func nullable_output_prim() -> Swift.Int32? {
-    return __root___nullable_output_prim()?.int32Value
+    return __root___nullable_output_prim().map { it in it.int32Value }
 }
 public func nullable_output_ref() -> main.Class_without_package? {
     return switch __root___nullable_output_ref() { case 0: .none; case let res: main.Class_without_package(__externalRCRef: res); }
+}
+public func produce_ABSTRACT_CLASS() -> main.ABSTRACT_CLASS {
+    return main.ABSTRACT_CLASS(__externalRCRef: __root___produce_ABSTRACT_CLASS())
+}
+public func produce_DATA_CLASS() -> main.DATA_CLASS {
+    return main.DATA_CLASS(__externalRCRef: __root___produce_DATA_CLASS())
 }
 public func produce_DATA_OBJECT() -> ExportedKotlinPackages.namespace.deeper.DATA_OBJECT {
     return ExportedKotlinPackages.namespace.deeper.DATA_OBJECT(__externalRCRef: __root___produce_DATA_OBJECT())
@@ -324,6 +380,16 @@ public func produce_object() -> main.Object_without_package {
 }
 public func produce_object_wp() -> ExportedKotlinPackages.namespace.deeper.Object_with_package {
     return ExportedKotlinPackages.namespace.deeper.Object_with_package(__externalRCRef: __root___produce_object_wp())
+}
+public func receive_ABSTRACT_CLASS(
+    x: main.ABSTRACT_CLASS
+) -> Swift.Void {
+    return __root___receive_ABSTRACT_CLASS__TypesOfArguments__main_ABSTRACT_CLASS__(x.__externalRCRef())
+}
+public func receive_DATA_CLASS(
+    x: main.DATA_CLASS
+) -> Swift.Void {
+    return __root___receive_DATA_CLASS__TypesOfArguments__main_DATA_CLASS__(x.__externalRCRef())
 }
 public func recieve_DATA_OBJECT(
     x: ExportedKotlinPackages.namespace.deeper.DATA_OBJECT
@@ -363,7 +429,7 @@ public extension ExportedKotlinPackages.namespace.deeper {
                 super.init(__externalRCRef: __kt)
                 namespace_deeper_Class_with_package_INNER_CLASS_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
             }
-            public override init(
+            package override init(
                 __externalRCRef: Swift.UInt
             ) {
                 super.init(__externalRCRef: __externalRCRef)
@@ -378,7 +444,7 @@ public extension ExportedKotlinPackages.namespace.deeper {
             private override init() {
                 fatalError()
             }
-            public override init(
+            package override init(
                 __externalRCRef: Swift.UInt
             ) {
                 super.init(__externalRCRef: __externalRCRef)
@@ -389,7 +455,7 @@ public extension ExportedKotlinPackages.namespace.deeper {
             super.init(__externalRCRef: __kt)
             namespace_deeper_Class_with_package_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -409,7 +475,7 @@ public extension ExportedKotlinPackages.namespace.deeper {
         private override init() {
             fatalError()
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -428,7 +494,7 @@ public extension ExportedKotlinPackages.namespace.deeper {
                 super.init(__externalRCRef: __kt)
                 namespace_deeper_Object_with_package_INNER_CLASS_init_initialize__TypesOfArguments__Swift_UInt__(__kt)
             }
-            public override init(
+            package override init(
                 __externalRCRef: Swift.UInt
             ) {
                 super.init(__externalRCRef: __externalRCRef)
@@ -443,7 +509,7 @@ public extension ExportedKotlinPackages.namespace.deeper {
             private override init() {
                 fatalError()
             }
-            public override init(
+            package override init(
                 __externalRCRef: Swift.UInt
             ) {
                 super.init(__externalRCRef: __externalRCRef)
@@ -457,7 +523,7 @@ public extension ExportedKotlinPackages.namespace.deeper {
         private override init() {
             fatalError()
         }
-        public override init(
+        package override init(
             __externalRCRef: Swift.UInt
         ) {
             super.init(__externalRCRef: __externalRCRef)
@@ -465,14 +531,30 @@ public extension ExportedKotlinPackages.namespace.deeper {
     }
 }
 public extension ExportedKotlinPackages.ignored {
-    public static func produce_ABSTRACT_CLASS() -> Swift.Never {
-        fatalError()
+    public final class ENUM : KotlinRuntime.KotlinBase, Swift.CaseIterable {
+        public static var A: ExportedKotlinPackages.ignored.ENUM {
+            get {
+                return ExportedKotlinPackages.ignored.ENUM(__externalRCRef: ignored_ENUM_A_get())
+            }
+        }
+        public static var allCases: [ExportedKotlinPackages.ignored.ENUM] {
+            get {
+                return ignored_ENUM_entries_get() as! Swift.Array<ExportedKotlinPackages.ignored.ENUM>
+            }
+        }
+        package override init(
+            __externalRCRef: Swift.UInt
+        ) {
+            super.init(__externalRCRef: __externalRCRef)
+        }
+        public static func valueOf(
+            value: Swift.String
+        ) -> ExportedKotlinPackages.ignored.ENUM {
+            return ExportedKotlinPackages.ignored.ENUM(__externalRCRef: ignored_ENUM_valueOf__TypesOfArguments__Swift_String__(value))
+        }
     }
-    public static func produce_DATA_CLASS() -> Swift.Never {
-        fatalError()
-    }
-    public static func produce_ENUM() -> Swift.Never {
-        fatalError()
+    public static func produce_ENUM() -> ExportedKotlinPackages.ignored.ENUM {
+        return ExportedKotlinPackages.ignored.ENUM(__externalRCRef: ignored_produce_ENUM())
     }
     public static func produce_INTERFACE() -> Swift.Never {
         fatalError()
@@ -480,20 +562,10 @@ public extension ExportedKotlinPackages.ignored {
     public static func produce_VALUE_CLASS() -> Swift.Never {
         fatalError()
     }
-    public static func receive_ABSTRACT_CLASS(
-        x: Swift.Never
-    ) -> Swift.Void {
-        fatalError()
-    }
-    public static func receive_DATA_CLASS(
-        x: Swift.Never
-    ) -> Swift.Void {
-        fatalError()
-    }
     public static func receive_ENUM(
-        x: Swift.Never
+        x: ExportedKotlinPackages.ignored.ENUM
     ) -> Swift.Void {
-        fatalError()
+        return ignored_receive_ENUM__TypesOfArguments__ExportedKotlinPackages_ignored_ENUM__(x.__externalRCRef())
     }
     public static func receive_INTERFACE(
         x: Swift.Never

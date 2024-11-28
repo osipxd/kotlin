@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.backend.jvm.lower
 
 import org.jetbrains.kotlin.backend.common.ClassLoweringPass
+import org.jetbrains.kotlin.backend.common.defaultArgumentsOriginalFunction
 import org.jetbrains.kotlin.backend.common.ir.moveBodyTo
 import org.jetbrains.kotlin.backend.common.lower.LoweredDeclarationOrigins
 import org.jetbrains.kotlin.backend.common.phaser.PhaseDescription
@@ -36,14 +37,11 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 
 /**
- * This phase moves interface members with default implementations to the
- * associated companion DefaultImpls with bridges, as appropriate. It then
- * performs a traversal of any other code in this interface and redirects calls
- * to the interface to the companion, if functions were moved completely.
+ * Moves interface members with default implementations to the associated DefaultImpls classes with bridges. It then performs a traversal
+ * of any other code in this interface and redirects calls to the interface to the DefaultImpls, if functions were moved completely.
  */
 @PhaseDescription(
     name = "Interface",
-    description = "Move default implementations of interface members to DefaultImpls class",
     prerequisite = [JvmDefaultParameterInjector::class]
 )
 internal class InterfaceLowering(val context: JvmBackendContext) : IrElementTransformerVoid(), ClassLoweringPass {
@@ -171,7 +169,7 @@ internal class InterfaceLowering(val context: JvmBackendContext) : IrElementTran
                 isCompatibilityMode -> {
                     val visibility =
                         if (function.origin == IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER)
-                            context.mapping.defaultArgumentsOriginalFunction[function]!!.visibility
+                            function.defaultArgumentsOriginalFunction!!.visibility
                         else function.visibility
                     if (!DescriptorVisibilities.isPrivate(visibility)) {
                         createJvmDefaultCompatibilityDelegate(function)

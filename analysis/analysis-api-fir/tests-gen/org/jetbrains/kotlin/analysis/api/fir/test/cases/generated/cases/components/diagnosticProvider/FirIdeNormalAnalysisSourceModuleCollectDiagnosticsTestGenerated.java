@@ -95,6 +95,12 @@ public class FirIdeNormalAnalysisSourceModuleCollectDiagnosticsTestGenerated ext
   }
 
   @Test
+  @TestMetadata("externalAnnotations.kt")
+  public void testExternalAnnotations() {
+    runTest("analysis/analysis-api/testData/components/diagnosticsProvider/diagnostics/externalAnnotations.kt");
+  }
+
+  @Test
   @TestMetadata("genericsOnOuterClass.kt")
   public void testGenericsOnOuterClass() {
     runTest("analysis/analysis-api/testData/components/diagnosticsProvider/diagnostics/genericsOnOuterClass.kt");
@@ -248,6 +254,12 @@ public class FirIdeNormalAnalysisSourceModuleCollectDiagnosticsTestGenerated ext
   @TestMetadata("unusedDestructuring.kt")
   public void testUnusedDestructuring() {
     runTest("analysis/analysis-api/testData/components/diagnosticsProvider/diagnostics/unusedDestructuring.kt");
+  }
+
+  @Test
+  @TestMetadata("varargParameterFromLibraryWithFunctionalType.kt")
+  public void testVarargParameterFromLibraryWithFunctionalType() {
+    runTest("analysis/analysis-api/testData/components/diagnosticsProvider/diagnostics/varargParameterFromLibraryWithFunctionalType.kt");
   }
 
   @Nested

@@ -15,13 +15,15 @@ import org.jetbrains.kotlin.fir.expressions.impl.FirResolvedArgumentList
 import org.jetbrains.kotlin.fir.resolve.DoubleColonLHS
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
 import org.jetbrains.kotlin.fir.resolve.calls.AbstractCallInfo
+import org.jetbrains.kotlin.fir.resolve.calls.ConeResolutionAtom
+import org.jetbrains.kotlin.fir.resolve.calls.ConeResolutionAtom.Companion.createRawAtom
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.FirTypeProjection
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.inference.ConstraintSystemBuilder
 
-data class CallInfo(
-    override val callSite: FirElement,
+open class CallInfo(
+    final override val callSite: FirElement,
     val callKind: CallKind,
     override val name: Name,
 
@@ -38,12 +40,6 @@ data class CallInfo(
     val candidateForCommonInvokeReceiver: Candidate? = null,
 
     val resolutionMode: ResolutionMode,
-
-    // Five properties for callable references only
-    val expectedType: ConeKotlinType? = null,
-    val outerCSBuilder: ConstraintSystemBuilder? = null,
-    val lhs: DoubleColonLHS? = null,
-    val hasSyntheticOuterCall: Boolean = false,
     val origin: FirFunctionCallOrigin = FirFunctionCallOrigin.Regular,
 ) : AbstractCallInfo() {
     /**
@@ -57,8 +53,10 @@ data class CallInfo(
      *
      * @see FirCallResolver.collectAllCandidates
      */
-    val arguments: List<FirExpression> get() = (argumentList as? FirResolvedArgumentList)?.originalArgumentList?.arguments ?: argumentList.arguments
+    val arguments: List<FirExpression>
+        get() = (argumentList as? FirResolvedArgumentList)?.originalArgumentList?.arguments ?: argumentList.arguments
     val argumentCount: Int get() = arguments.size
+    val argumentAtoms: List<ConeResolutionAtom> = arguments.map { createRawAtom(it) }
 
     fun replaceWithVariableAccess(): CallInfo =
         copy(callKind = CallKind.VariableAccess, typeArguments = emptyList(), argumentList = FirEmptyArgumentList)
@@ -73,4 +71,55 @@ data class CallInfo(
                 arguments += argumentList.arguments
             }
         )
+
+    open fun copy(
+        callKind: CallKind = this.callKind,
+        typeArguments: List<FirTypeProjection> = this.typeArguments,
+        argumentList: FirArgumentList = this.argumentList,
+        explicitReceiver: FirExpression? = this.explicitReceiver,
+        name: Name = this.name,
+        isImplicitInvoke: Boolean = this.isImplicitInvoke,
+        candidateForCommonInvokeReceiver: Candidate? = this.candidateForCommonInvokeReceiver,
+    ): CallInfo = CallInfo(
+        callSite, callKind, name, explicitReceiver, argumentList,
+        isImplicitInvoke, isUsedAsGetClassReceiver, typeArguments,
+        session, containingFile, containingDeclarations,
+        candidateForCommonInvokeReceiver, resolutionMode, origin
+    )
+}
+
+class CallableReferenceInfo(
+    callSite: FirElement,
+    name: Name,
+    explicitReceiver: FirExpression?,
+    session: FirSession,
+    containingFile: FirFile,
+    containingDeclarations: List<FirDeclaration>,
+
+    // Five properties for callable references only
+    val expectedType: ConeKotlinType?,
+    val outerCSBuilder: ConstraintSystemBuilder?,
+    val lhs: DoubleColonLHS?,
+    val hasSyntheticOuterCall: Boolean,
+
+    origin: FirFunctionCallOrigin = FirFunctionCallOrigin.Regular,
+) : CallInfo(
+    callSite, CallKind.CallableReference, name, explicitReceiver, FirEmptyArgumentList,
+    isImplicitInvoke = false, isUsedAsGetClassReceiver = false, typeArguments = emptyList(),
+    session, containingFile, containingDeclarations,
+    candidateForCommonInvokeReceiver = null, resolutionMode = ResolutionMode.ContextIndependent, origin
+) {
+    override fun copy(
+        callKind: CallKind,
+        typeArguments: List<FirTypeProjection>,
+        argumentList: FirArgumentList,
+        explicitReceiver: FirExpression?,
+        name: Name,
+        isImplicitInvoke: Boolean,
+        candidateForCommonInvokeReceiver: Candidate?,
+    ): CallableReferenceInfo = CallableReferenceInfo(
+        callSite, name, explicitReceiver,
+        session, containingFile, containingDeclarations,
+        expectedType, outerCSBuilder, lhs, hasSyntheticOuterCall, origin
+    )
 }

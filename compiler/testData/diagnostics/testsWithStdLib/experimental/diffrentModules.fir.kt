@@ -1,6 +1,5 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // OPT_IN: kotlin.RequiresOptIn
-// FILE: api.kt
-
 
 // MODULE: A
 package main

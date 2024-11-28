@@ -30,10 +30,12 @@ import org.jetbrains.kotlin.fir.resolve.toClassSymbol
 import org.jetbrains.kotlin.fir.resolve.toRegularClassSymbol
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.*
+import org.jetbrains.kotlin.fir.symbols.lazyResolveToPhase
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.utils.exceptions.withFirEntry
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.FILLED_FOR_UNBOUND_SYMBOL
 import org.jetbrains.kotlin.ir.declarations.impl.IrFactoryImpl
 import org.jetbrains.kotlin.ir.expressions.IrSyntheticBodyKind
 import org.jetbrains.kotlin.ir.irFlag
@@ -41,7 +43,7 @@ import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.*
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classOrNull
-import org.jetbrains.kotlin.ir.util.createParameterDeclarations
+import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.load.kotlin.FacadeClassSource
 import org.jetbrains.kotlin.name.FqName
@@ -427,6 +429,12 @@ class Fir2IrDeclarationStorage(
 
     fun <T : IrFunction> T.putParametersInScope(function: FirFunction): T {
         val contextReceivers = function.contextReceiversForFunctionOrContainingProperty()
+
+        for ((firParameter, irParameter) in contextReceivers.zip(this.valueParameters.take(contextReceivers.size))) {
+            if (!firParameter.isLegacyContextReceiver()) {
+                localStorage.putParameter(firParameter, irParameter.symbol)
+            }
+        }
 
         for ((firParameter, irParameter) in function.valueParameters.zip(valueParameters.drop(contextReceivers.size))) {
             localStorage.putParameter(firParameter, irParameter.symbol)
@@ -1208,6 +1216,8 @@ class Fir2IrDeclarationStorage(
     private fun fillUnboundSymbols(cache: Map<out FirCallableDeclaration, IrSymbol>) {
         for ((firDeclaration, irSymbol) in cache) {
             if (irSymbol.isBound) continue
+            // To generate a declaration, we should assure its signature resolve is over here (KT-70856)
+            firDeclaration.lazyResolveToPhase(FirResolvePhase.ANNOTATION_ARGUMENTS)
             generateDeclaration(firDeclaration.symbol)
         }
     }
@@ -1229,6 +1239,7 @@ class Fir2IrDeclarationStorage(
             is FirNamedFunctionSymbol -> createAndCacheIrFunction(
                 originalSymbol.fir,
                 irParent,
+                predefinedOrigin = FILLED_FOR_UNBOUND_SYMBOL,
                 fakeOverrideOwnerLookupTag = null
             )
 
@@ -1368,7 +1379,7 @@ class Fir2IrDeclarationStorage(
                         source = containerSource
                     ).apply {
                         parent = parentPackage
-                        createParameterDeclarations()
+                        createThisReceiverParameter()
                         this.isNonCachedSourceFileFacade = true
                     }
                 }

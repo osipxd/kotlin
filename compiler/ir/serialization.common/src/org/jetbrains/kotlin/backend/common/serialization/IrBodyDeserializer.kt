@@ -76,10 +76,10 @@ import org.jetbrains.kotlin.backend.common.serialization.proto.MemberAccessCommo
 
 class IrBodyDeserializer(
     private val builtIns: IrBuiltIns,
-    private val allowErrorNodes: Boolean,
     private val irFactory: IrFactory,
     private val libraryFile: IrLibraryFile,
-    private val declarationDeserializer: IrDeclarationDeserializer
+    private val declarationDeserializer: IrDeclarationDeserializer,
+    private val settings: IrDeserializationSettings,
 ) {
 
     private val fileLoops = hashMapOf<Int, IrLoop>()
@@ -191,8 +191,18 @@ class IrBodyDeserializer(
         return IrClassReferenceImpl(start, end, type, symbol, classType)
     }
 
-    // TODO: probably a bit more abstraction possible here up to `IrMemberAccessExpression`
-    // but at this point further complexization looks overengineered
+    /**
+     * This is a special lazy type for annotation. This type is computed using the symbol of
+     * the annotation class that is retrieved through `IrConstructorCall.symbol.owner.parentAsClass`.
+     *
+     * The reason why this [IrAnnotationType] exists is that for some reason [IrConstructorCall]s representing
+     * annotations are serialized just as [IrConstructorCall] and not as a part of [IrExpression]. As far as types for
+     * expressions are always serialized as a part of [IrExpression], there are no serialized types for annotations.
+     * So, the type needs to somehow be restored given only [IrConstructorCall].
+     *
+     * TODO: Probably a bit more abstraction possible here up to [IrMemberAccessExpression] but at this point further complexization
+     *   looks like overengineering.
+     */
     private class IrAnnotationType : IrDelegatedSimpleType() {
         var irConstructorCall: IrConstructorCall? = null
 
@@ -231,9 +241,16 @@ class IrBodyDeserializer(
     }
 
     fun deserializeAnnotation(proto: ProtoConstructorCall): IrConstructorCall {
-        val irType = IrAnnotationType()
         // TODO: use real coordinates
-        return deserializeConstructorCall(proto, 0, 0, irType).also { irType.irConstructorCall = it }
+        val startOffset = 0
+        val endOffset = 0
+
+        if (settings.useNullableAnyAsAnnotationConstructorCallType)
+            return deserializeConstructorCall(proto, startOffset, endOffset, builtIns.anyNType)
+        else {
+            val irType = IrAnnotationType()
+            return deserializeConstructorCall(proto, startOffset, endOffset, irType).also { irType.irConstructorCall = it }
+        }
     }
 
     private fun deserializeConstructorCall(proto: ProtoConstructorCall, start: Int, end: Int, type: IrType): IrConstructorCall {
@@ -344,7 +361,7 @@ class IrBodyDeserializer(
         proto: ProtoErrorExpression,
         start: Int, end: Int, type: IrType
     ): IrErrorExpression {
-        require(allowErrorNodes) {
+        require(settings.allowErrorNodes) {
             "IrErrorExpression($start, $end, \"${libraryFile.string(proto.description)}\") found but error code is not allowed"
         }
         return IrErrorExpressionImpl(start, end, type, libraryFile.string(proto.description))
@@ -354,7 +371,7 @@ class IrBodyDeserializer(
         proto: ProtoErrorCallExpression,
         start: Int, end: Int, type: IrType
     ): IrErrorCallExpression {
-        require(allowErrorNodes) {
+        require(settings.allowErrorNodes) {
             "IrErrorCallExpressionImpl($start, $end, \"${libraryFile.string(proto.description)}\") found but error code is not allowed"
         }
         return IrErrorCallExpressionImpl(start, end, type, libraryFile.string(proto.description)).apply {

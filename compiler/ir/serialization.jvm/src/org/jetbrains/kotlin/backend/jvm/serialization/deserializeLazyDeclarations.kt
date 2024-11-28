@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.backend.common.overrides.FileLocalAwareLinker
 import org.jetbrains.kotlin.backend.common.overrides.IrLinkerFakeOverrideProvider
 import org.jetbrains.kotlin.backend.common.serialization.*
 import org.jetbrains.kotlin.backend.common.serialization.encodings.BinarySymbolData
-import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureFactory
 import org.jetbrains.kotlin.backend.jvm.serialization.proto.JvmIr
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.IrBuiltIns
@@ -74,10 +73,9 @@ fun deserializeFromByteArray(
     // Patching will be needed.
     val deserializer = IrDeclarationDeserializer(
         irBuiltIns, symbolTable, irBuiltIns.irFactory, irLibraryFile, toplevelParent,
-        allowAlreadyBoundSymbols = true,
-        allowErrorNodes = false,
-        deserializeInlineFunctions = true,
-        deserializeBodies = true,
+        settings = IrDeserializationSettings(
+            allowAlreadyBoundSymbols = true,
+        ),
         symbolDeserializer,
         onDeserializedClass = { _, _ -> },
         needToDeserializeFakeOverrides = { false },
@@ -219,7 +217,7 @@ private fun buildFakeOverridesForLocalClasses(
 
 class PrePopulatedDeclarationTable(
     sig2symbol: Map<IdSignature, IrSymbol>
-) : FakeOverrideDeclarationTable(JvmIrMangler, signatureSerializerFactory = ::IdSignatureFactory) {
+) : FakeOverrideDeclarationTable(JvmIrMangler) {
     private val symbol2Sig = sig2symbol.entries.associate { (x, y) -> y to x }
 
     override fun tryComputeBackendSpecificSignature(declaration: IrDeclaration): IdSignature? {

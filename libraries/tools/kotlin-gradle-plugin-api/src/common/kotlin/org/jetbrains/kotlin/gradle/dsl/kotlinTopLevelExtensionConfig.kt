@@ -15,7 +15,10 @@ package org.jetbrains.kotlin.gradle.dsl
  * }
  * ```
  */
-@KotlinGradlePluginDsl
+@Deprecated(
+    "Use KotlinBaseExtension interface instead",
+    ReplaceWith("KotlinBaseExtension")
+)
 interface KotlinTopLevelExtensionConfig {
 
     /**
@@ -54,7 +57,7 @@ interface KotlinTopLevelExtensionConfig {
 }
 
 /**
- * Different modes that can be used to set the level of issue reporting for [KotlinTopLevelExtensionConfig.explicitApi] option.
+ * Different modes that can be used to set the level of issue reporting for [KotlinTopLevelExtension.explicitApi] option.
  */
 enum class ExplicitApiMode(
     /**

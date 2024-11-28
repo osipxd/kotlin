@@ -2653,6 +2653,34 @@ public class JvmAbiConsistencyTestRestGenerated extends AbstractJvmAbiConsistenc
     }
 
     @Nested
+    @TestMetadata("compiler/testData/codegen/boxInline/functionReference")
+    @TestDataPath("$PROJECT_ROOT")
+    public class FunctionReference {
+      @Test
+      public void testAllFilesPresentInFunctionReference() {
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/boxInline/functionReference"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+      }
+
+      @Test
+      @TestMetadata("fourthOrder.kt")
+      public void testFourthOrder() {
+        runTest("compiler/testData/codegen/boxInline/functionReference/fourthOrder.kt");
+      }
+
+      @Test
+      @TestMetadata("noInlineForLambda.kt")
+      public void testNoInlineForLambda() {
+        runTest("compiler/testData/codegen/boxInline/functionReference/noInlineForLambda.kt");
+      }
+
+      @Test
+      @TestMetadata("thirdOrder.kt")
+      public void testThirdOrder() {
+        runTest("compiler/testData/codegen/boxInline/functionReference/thirdOrder.kt");
+      }
+    }
+
+    @Nested
     @TestMetadata("compiler/testData/codegen/boxInline/inlineArgsInplace")
     @TestDataPath("$PROJECT_ROOT")
     public class InlineArgsInplace {
@@ -5414,6 +5442,12 @@ public class JvmAbiConsistencyTestRestGenerated extends AbstractJvmAbiConsistenc
       }
 
       @Test
+      @TestMetadata("linenumberZero.kt")
+      public void testLinenumberZero() {
+        runTest("compiler/testData/codegen/boxInline/suspend/linenumberZero.kt");
+      }
+
+      @Test
       @TestMetadata("maxStackWithCrossinline.kt")
       public void testMaxStackWithCrossinline() {
         runTest("compiler/testData/codegen/boxInline/suspend/maxStackWithCrossinline.kt");
@@ -6168,6 +6202,12 @@ public class JvmAbiConsistencyTestRestGenerated extends AbstractJvmAbiConsistenc
       @TestMetadata("concatDynamicWithInline.kt")
       public void testConcatDynamicWithInline() {
         runTest("compiler/testData/codegen/boxModernJdk/testsWithJava11/concatDynamicWithInline.kt");
+      }
+
+      @Test
+      @TestMetadata("inheritranceFromJavaUtilProperties.kt")
+      public void testInheritranceFromJavaUtilProperties() {
+        runTest("compiler/testData/codegen/boxModernJdk/testsWithJava11/inheritranceFromJavaUtilProperties.kt");
       }
 
       @Test
@@ -10189,6 +10229,12 @@ public class JvmAbiConsistencyTestRestGenerated extends AbstractJvmAbiConsistenc
         }
 
         @Test
+        @TestMetadata("forInRangeToUByteMaxValue.kt")
+        public void testForInRangeToUByteMaxValue() {
+          runTest("compiler/testData/codegen/bytecodeText/forLoop/unsigned/forInRangeToUByteMaxValue.kt");
+        }
+
+        @Test
         @TestMetadata("forInRangeToUIntMaxValue.kt")
         public void testForInRangeToUIntMaxValue() {
           runTest("compiler/testData/codegen/bytecodeText/forLoop/unsigned/forInRangeToUIntMaxValue.kt");
@@ -10198,6 +10244,12 @@ public class JvmAbiConsistencyTestRestGenerated extends AbstractJvmAbiConsistenc
         @TestMetadata("forInRangeToULongMaxValue.kt")
         public void testForInRangeToULongMaxValue() {
           runTest("compiler/testData/codegen/bytecodeText/forLoop/unsigned/forInRangeToULongMaxValue.kt");
+        }
+
+        @Test
+        @TestMetadata("forInRangeToUShortMaxValue.kt")
+        public void testForInRangeToUShortMaxValue() {
+          runTest("compiler/testData/codegen/bytecodeText/forLoop/unsigned/forInRangeToUShortMaxValue.kt");
         }
 
         @Test
@@ -15001,6 +15053,28 @@ public class JvmAbiConsistencyTestRestGenerated extends AbstractJvmAbiConsistenc
         }
 
         @Nested
+        @TestMetadata("compiler/testData/codegen/bytecodeListing/jvm8/defaults/defaultCompatibilityBridges")
+        @TestDataPath("$PROJECT_ROOT")
+        public class DefaultCompatibilityBridges {
+          @Test
+          public void testAllFilesPresentInDefaultCompatibilityBridges() {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/bytecodeListing/jvm8/defaults/defaultCompatibilityBridges"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+          }
+
+          @Test
+          @TestMetadata("annotations.kt")
+          public void testAnnotations() {
+            runTest("compiler/testData/codegen/bytecodeListing/jvm8/defaults/defaultCompatibilityBridges/annotations.kt");
+          }
+
+          @Test
+          @TestMetadata("noBridgeIfSuperMethodIsAbstract.kt")
+          public void testNoBridgeIfSuperMethodIsAbstract() {
+            runTest("compiler/testData/codegen/bytecodeListing/jvm8/defaults/defaultCompatibilityBridges/noBridgeIfSuperMethodIsAbstract.kt");
+          }
+        }
+
+        @Nested
         @TestMetadata("compiler/testData/codegen/bytecodeListing/jvm8/defaults/noDefaultImpl")
         @TestDataPath("$PROJECT_ROOT")
         public class NoDefaultImpl {
@@ -15632,6 +15706,18 @@ public class JvmAbiConsistencyTestRestGenerated extends AbstractJvmAbiConsistenc
         @TestMetadata("partiallySpecializedClass.kt")
         public void testPartiallySpecializedClass() {
           runTest("compiler/testData/codegen/bytecodeListing/specialBridges/signatures/partiallySpecializedClass.kt");
+        }
+
+        @Test
+        @TestMetadata("withPlatformDependentDeclarations.kt")
+        public void testWithPlatformDependentDeclarations() {
+          runTest("compiler/testData/codegen/bytecodeListing/specialBridges/signatures/withPlatformDependentDeclarations.kt");
+        }
+
+        @Test
+        @TestMetadata("withoutPlatformDependentDeclarations.kt")
+        public void testWithoutPlatformDependentDeclarations() {
+          runTest("compiler/testData/codegen/bytecodeListing/specialBridges/signatures/withoutPlatformDependentDeclarations.kt");
         }
       }
     }

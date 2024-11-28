@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.backend.common
 
+import org.jetbrains.kotlin.backend.common.ir.Ir
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.IrElement
@@ -12,9 +13,13 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
+import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.ir.util.resolveFakeOverrideMaybeAbstract
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
+import org.jetbrains.kotlin.resolve.scopes.receivers.ExtensionReceiver
 
 typealias ReportError = (element: IrElement, message: String) -> Unit
 
@@ -165,13 +170,15 @@ internal class CheckIrElementVisitor(
 
         // TODO: Why don't we check parameters as well?
 
-        val returnType = expression.symbol.owner.returnType
+        val callee = expression.symbol.owner
         // TODO: We don't have the proper type substitution yet, so skip generics for now.
+        val actualCallee = callee.resolveFakeOverrideMaybeAbstract { it.returnType.classifierOrNull !is IrTypeParameterSymbol } ?: callee
+        val returnType = actualCallee.returnType
         if (returnType is IrSimpleType &&
             returnType.classifier is IrClassSymbol &&
             returnType.arguments.isEmpty()
         ) {
-            expression.ensureTypeIs(returnType)
+            expression.ensureTypeIs(callee.returnType)
         }
 
         expression.superQualifierSymbol?.ensureBound(expression)
@@ -252,15 +259,42 @@ internal class CheckIrElementVisitor(
         super.visitFunction(declaration)
         declaration.checkFunction(declaration)
 
-        for ((i, p) in declaration.valueParameters.withIndex()) {
-            if (p.index != i) {
-                reportError(declaration, "Inconsistent index of value parameter ${p.index} != $i")
+        for ((i, param) in declaration.valueParameters.withIndex()) {
+            if (param.indexInOldValueParameters != i) {
+                reportError(declaration, "Inconsistent index (old API) of value parameter ${param.indexInOldValueParameters} != $i")
             }
         }
 
-        for ((i, p) in declaration.typeParameters.withIndex()) {
-            if (p.index != i) {
-                reportError(declaration, "Inconsistent index of type parameter ${p.index} != $i")
+        var lastKind: IrParameterKind? = null
+        for ((i, param) in declaration.parameters.withIndex()) {
+            if (param.indexInParameters != i) {
+                reportError(declaration, "Inconsistent index (new API) of value parameter ${param.indexInParameters} != $i")
+            }
+
+            val kind = param.kind
+            if (lastKind != null) {
+                if (kind < lastKind) {
+                    reportError(
+                        declaration,
+                        "Invalid order of function parameters: $kind is placed after $lastKind.\n" +
+                                "Parameters must follow a strict order: " +
+                                "[dispatch receiver, context parameters, extension receiver, regular parameters]."
+                    )
+                }
+
+                if (kind == IrParameterKind.DispatchReceiver || kind == IrParameterKind.ExtensionReceiver) {
+                    if (kind == lastKind) {
+                        reportError(declaration, "Function may have only one $kind parameter")
+                    }
+                }
+            }
+
+            lastKind = kind
+        }
+
+        for ((i, param) in declaration.typeParameters.withIndex()) {
+            if (param.index != i) {
+                reportError(declaration, "Inconsistent index of type parameter ${param.index} != $i")
             }
         }
     }

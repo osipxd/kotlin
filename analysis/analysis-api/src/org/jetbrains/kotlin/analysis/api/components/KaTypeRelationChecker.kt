@@ -1,19 +1,15 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package org.jetbrains.kotlin.analysis.api.components
 
-import org.jetbrains.kotlin.analysis.api.lifetime.withValidityAssertion
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.name.ClassId
 
 public interface KaTypeRelationChecker {
-    @Deprecated("Use 'semanticallyEquals()' instead", replaceWith = ReplaceWith("semanticallyEquals(other)"))
-    public fun KaType.isEqualTo(other: KaType): Boolean = semanticallyEquals(other)
-
     /**
      * Returns whether this [KaType] is semantically equal to [other].
      *
@@ -25,10 +21,6 @@ public interface KaTypeRelationChecker {
         errorTypePolicy: KaSubtypingErrorTypePolicy = KaSubtypingErrorTypePolicy.STRICT,
     ): Boolean
 
-    @Deprecated("Use 'semanticallyEquals()' instead.", replaceWith = ReplaceWith("semanticallyEquals(other, errorTypePolicy)"))
-    public fun KaType.isEqualTo(other: KaType, errorTypePolicy: KaSubtypingErrorTypePolicy): Boolean =
-        semanticallyEquals(other, errorTypePolicy)
-
     /**
      * Returns whether this [KaType] is a subtype of [supertype]. The relation is non-strict, i.e. any type `t` is a subtype of itself.
      */
@@ -36,23 +28,6 @@ public interface KaTypeRelationChecker {
         supertype: KaType,
         errorTypePolicy: KaSubtypingErrorTypePolicy = KaSubtypingErrorTypePolicy.STRICT,
     ): Boolean
-
-    @Deprecated("Use 'isSubtypeOf' instead.", replaceWith = ReplaceWith("isSubtypeOf(other, errorTypePolicy)"))
-    public fun KaType.isSubTypeOf(
-        superType: KaType,
-        errorTypePolicy: KaSubtypingErrorTypePolicy = KaSubtypingErrorTypePolicy.STRICT,
-    ): Boolean = isSubtypeOf(superType, errorTypePolicy)
-
-    @Deprecated(
-        "Use negated 'isSubtypeOf()' instead.",
-        replaceWith = ReplaceWith("!isSubtypeOf(other, errorTypePolicy)")
-    )
-    public fun KaType.isNotSubTypeOf(
-        superType: KaType,
-        errorTypePolicy: KaSubtypingErrorTypePolicy = KaSubtypingErrorTypePolicy.STRICT,
-    ): Boolean = withValidityAssertion {
-        return !isSubtypeOf(superType, errorTypePolicy)
-    }
 
     /**
      * Returns whether this [KaType] is a subtype of a class called [classId].
@@ -138,6 +113,3 @@ public enum class KaSubtypingErrorTypePolicy {
      */
     LENIENT,
 }
-
-@Deprecated("Use 'KaSubtypingErrorTypePolicy' instead.", replaceWith = ReplaceWith("KaSubtypingErrorTypePolicy"))
-public typealias KtSubtypingErrorTypePolicy = KaSubtypingErrorTypePolicy

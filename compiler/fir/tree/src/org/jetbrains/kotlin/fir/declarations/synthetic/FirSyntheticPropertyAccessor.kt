@@ -74,7 +74,7 @@ class FirSyntheticPropertyAccessor @FirImplementationDetail internal constructor
         bind(this@FirSyntheticPropertyAccessor)
     }
 
-    override val contextReceivers: List<FirContextReceiver>
+    override val contextReceivers: List<FirValueParameter>
         get() = delegate.contextReceivers
 
     override val controlFlowGraphReference: FirControlFlowGraphReference? = null
@@ -102,6 +102,10 @@ class FirSyntheticPropertyAccessor @FirImplementationDetail internal constructor
     }
 
     override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirPropertyAccessorImpl {
+        notSupported()
+    }
+
+    override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirPropertyAccessor {
         notSupported()
     }
 
@@ -153,7 +157,7 @@ class FirSyntheticPropertyAccessor @FirImplementationDetail internal constructor
         notSupported()
     }
 
-    override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>) {
+    override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>) {
         notSupported()
     }
 

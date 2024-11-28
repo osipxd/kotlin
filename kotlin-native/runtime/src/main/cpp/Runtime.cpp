@@ -132,13 +132,12 @@ void deinitRuntime(RuntimeState* state, bool destroyRuntime) {
   if (destroyRuntime)
     InitOrDeinitGlobalVariables(DEINIT_GLOBALS, state->memoryState);
 
-  // Worker deinit must be performed in the runnable state because
-  // Worker's destructor unregisters stable refs.
+  // Do not use ThreadStateGuard because memoryState will be destroyed during DeinitMemory.
+  kotlin::SwitchThreadState(state->memoryState, kotlin::ThreadState::kNative);
+
   auto workerId = GetWorkerId(state->worker);
   WorkerDeinit(state->worker);
 
-  // Do not use ThreadStateGuard because memoryState will be destroyed during DeinitMemory.
-  kotlin::SwitchThreadState(state->memoryState, kotlin::ThreadState::kNative);
   DeinitMemory(state->memoryState, destroyRuntime);
   delete state;
   WorkerDestroyThreadDataIfNeeded(workerId);
@@ -170,6 +169,8 @@ bool kotlin::initializeGlobalRuntimeIfNeeded() noexcept {
 #endif
     return true;
 }
+
+const char* kotlin::programName = nullptr;
 
 extern "C" {
 
@@ -307,6 +308,15 @@ KInt Konan_Platform_getCpuArchitecture() {
 
 KBoolean Konan_Platform_isDebugBinary() {
   return kotlin::compiler::shouldContainDebugInfo();
+}
+
+OBJ_GETTER0(Konan_Platform_getProgramName) {
+    if (kotlin::programName == nullptr) {
+        // null in case Platform.getProgramName is called from within a library and the main function of the binary is not built with Kotlin
+        RETURN_OBJ(nullptr)
+    } else {
+        RETURN_RESULT_OF(CreateStringFromCString, kotlin::programName)
+    }
 }
 
 bool Kotlin_memoryLeakCheckerEnabled() {

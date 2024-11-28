@@ -1,4 +1,7 @@
+// IGNORE_FIR_DIAGNOSTICS
+// RUN_PIPELINE_TILL: FRONTEND
 // WITH_STDLIB
+// ALLOW_KOTLIN_PACKAGE
 // MODULE: m1-common
 // FILE: common.kt
 package kotlin
@@ -21,8 +24,11 @@ annotation class MyOptIn
 expect fun skippedAnnotationsOnExpectOnly()
 
 @OptIn(ExperimentalMultiplatform::class)
-@<!DEPRECATION_ERROR!>kotlin.jvm.ImplicitlyActualizedByJvmDeclaration<!>
+@kotlin.jvm.<!DEPRECATION_ERROR!>ImplicitlyActualizedByJvmDeclaration<!>
 expect class ImplicitlyActualizedByJvmDeclarationOnExpectOnly
+
+@SubclassOptInRequired(MyOptIn::class)
+expect open class SubclassOptInRequiredOnExpectOnly
 
 // MODULE: m1-jvm()()(m1-common)
 // FILE: jvm.kt
@@ -34,3 +40,5 @@ actual annotation class OptionalExpectationOnExpectOnly
 actual fun skippedAnnotationsOnExpectOnly() {}
 
 actual class ImplicitlyActualizedByJvmDeclarationOnExpectOnly
+
+actual open class SubclassOptInRequiredOnExpectOnly

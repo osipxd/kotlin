@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // CHECK_TYPE
 // DIAGNOSTICS: -UNUSED_ANONYMOUS_PARAMETER -UNUSED_VARIABLE
 
@@ -8,7 +9,7 @@ fun testReturnType(foo: String) {
 
     val bas: () -> String = fun () = foo
 
-    val bag: () -> Int = <!INITIALIZER_TYPE_MISMATCH!>fun () = foo<!>
+    val bag: () -> Int = fun () = <!RETURN_TYPE_MISMATCH!>foo<!>
 }
 
 fun testParamType() {

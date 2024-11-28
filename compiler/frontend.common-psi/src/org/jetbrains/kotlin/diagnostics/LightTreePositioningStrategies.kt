@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.psi.KtParameter.VAL_VAR_TOKEN_SET
+import org.jetbrains.kotlin.psi.psiUtil.getAssignmentLhsIfUnwrappable
 import org.jetbrains.kotlin.psi.stubs.elements.KtConstantExpressionElementType
 import org.jetbrains.kotlin.psi.stubs.elements.KtStringTemplateExpressionElementType
 import org.jetbrains.kotlin.psi.stubs.elements.KtTokenSets
@@ -134,6 +135,7 @@ object LightTreePositioningStrategies {
             tree: FlyweightCapableTreeStructure<LighterASTNode>
         ): List<TextRange> = markElement(getElementToMark(node, tree), startOffset, endOffset, tree, node)
 
+        @OptIn(DiagnosticLossRisk::class)
         override fun isValid(node: LighterASTNode, tree: FlyweightCapableTreeStructure<LighterASTNode>): Boolean =
             super.isValid(getElementToMark(node, tree), tree)
 
@@ -250,22 +252,6 @@ object LightTreePositioningStrategies {
             }
             return markElement(nameIdentifier, startOffset, endOffset, tree, node)
         }
-
-        override fun isValid(node: LighterASTNode, tree: FlyweightCapableTreeStructure<LighterASTNode>): Boolean {
-            //in FE 1.0 this is part of DeclarationHeader abstract strategy
-            if (node.tokenType != KtNodeTypes.OBJECT_DECLARATION
-                && node.tokenType != KtNodeTypes.FUN
-                && node.tokenType != KtNodeTypes.PRIMARY_CONSTRUCTOR
-                && node.tokenType != KtNodeTypes.SECONDARY_CONSTRUCTOR
-                && node.tokenType != KtNodeTypes.OBJECT_LITERAL
-                && node.tokenType != KtNodeTypes.PROPERTY_ACCESSOR
-            ) {
-                if (tree.nameIdentifier(node) == null) {
-                    return false
-                }
-            }
-            return super.isValid(node, tree)
-        }
     }
 
     val DECLARATION_NAME_ONLY: LightTreePositioningStrategy = BaseDeclarationNameStrategy()
@@ -331,7 +317,7 @@ object LightTreePositioningStrategies {
                 KtNodeTypes.PROPERTY_ACCESSOR -> {
                     val endOfSignatureElement =
                         tree.typeReference(node)
-                            ?: tree.rightParenthesis(node)
+                            ?: tree.valueParameterList(node)
                             ?: tree.accessorNamePlaceholder(node)
 
                     return markRange(node, endOfSignatureElement, startOffset, endOffset, tree, node)
@@ -380,7 +366,7 @@ object LightTreePositioningStrategies {
                 KtNodeTypes.PROPERTY_ACCESSOR -> {
                     val endOfSignatureElement =
                         tree.typeReference(node)
-                            ?: tree.rightParenthesis(node)
+                            ?: tree.valueParameterList(node)
                             ?: tree.accessorNamePlaceholder(node)
 
                     return markRange(tree.accessorNamePlaceholder(node), endOfSignatureElement, startOffset, endOffset, tree, node)
@@ -568,10 +554,6 @@ object LightTreePositioningStrategies {
             val delegate = tree.findChildByType(node, KtNodeTypes.PROPERTY_DELEGATE)
             return markElement(delegate ?: node, startOffset, endOffset, tree, node)
         }
-
-        override fun isValid(node: LighterASTNode, tree: FlyweightCapableTreeStructure<LighterASTNode>): Boolean {
-            return tree.findChildByType(node, KtNodeTypes.PROPERTY_DELEGATE) != null
-        }
     }
 
     val PROPERTY_DELEGATE_BY_KEYWORD: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
@@ -584,10 +566,6 @@ object LightTreePositioningStrategies {
             val byKeyword = tree.getParent(node)
                 ?.let { tree.byKeyword(it) }
             return markElement(byKeyword ?: node, startOffset, endOffset, tree, node)
-        }
-
-        override fun isValid(node: LighterASTNode, tree: FlyweightCapableTreeStructure<LighterASTNode>): Boolean {
-            return tree.getParent(node)?.tokenType == KtNodeTypes.PROPERTY_DELEGATE
         }
     }
 
@@ -1285,6 +1263,7 @@ object LightTreePositioningStrategies {
             }
         }
 
+        @OptIn(DiagnosticLossRisk::class)
         override fun isValid(node: LighterASTNode, tree: FlyweightCapableTreeStructure<LighterASTNode>): Boolean = true
     }
 
@@ -1395,6 +1374,30 @@ object LightTreePositioningStrategies {
                 return super.mark(expression, expression.startOffset, expression.endOffset, tree)
             }
             return super.mark(node, startOffset, endOffset, tree)
+        }
+    }
+
+    val OUTERMOST_PARENTHESES_IN_ASSIGNMENT_LHS: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>
+        ): List<TextRange> {
+            val parenthesized = node.getAssignmentLhsIfUnwrappable(tree) ?: return super.mark(node, startOffset, endOffset, tree)
+            return super.mark(parenthesized, parenthesized.startOffset, parenthesized.endOffset, tree)
+        }
+    }
+
+    val DEPRECATION: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>
+        ): List<TextRange> {
+            if (node.tokenType == KtNodeTypes.TYPE_REFERENCE) return SELECTOR_BY_QUALIFIED.mark(node, startOffset, endOffset, tree)
+            return REFERENCED_NAME_BY_QUALIFIED.mark(node, startOffset, endOffset, tree)
         }
     }
 }
@@ -1613,10 +1616,6 @@ private fun keywordStrategy(
             return markElement(fieldKeyword, startOffset, endOffset, tree, node)
         }
         return LightTreePositioningStrategies.DEFAULT.mark(node, startOffset, endOffset, tree)
-    }
-
-    override fun isValid(node: LighterASTNode, tree: FlyweightCapableTreeStructure<LighterASTNode>): Boolean {
-        return tree.keywordExtractor(node) != null
     }
 }
 

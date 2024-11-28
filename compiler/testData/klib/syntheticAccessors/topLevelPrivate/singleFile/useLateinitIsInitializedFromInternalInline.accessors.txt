@@ -10,7 +10,7 @@ private lateinit var o: String?
     /* TARGET declaration */ private fun <set-o>(<set-?>: String)
         /* TARGET use-site */ #o = <set-?>
 public lateinit var k: String?
-    /* TARGET declaration */ public /* static field */ field k: String?
+    /* TARGET declaration */ private /* static field */ field k: String?
     public fun <get-k>(): String
         val tmp: String? = #k
             /* TARGET use-site */ #k
@@ -26,6 +26,15 @@ private inline fun doInitializeAndReadOK(): String
             /* TARGET use-site */ #k
     /* TARGET use-site */ <get-o>()
 internal inline fun initializeAndReadOK(): String
+    /* ACCESSOR use-site */ access$<get-o>$p$tUseLateinitIsInitializedFromInternalInlineKt()
+    /* ACCESSOR use-site */ access$<set-o>$tUseLateinitIsInitializedFromInternalInlineKt(<set-?> = "O")
+    /* ACCESSOR use-site */ access$<get-o>$p$tUseLateinitIsInitializedFromInternalInlineKt()
+    local class <no name provided>
+        public fun run()
+            /* ACCESSOR use-site */ access$<get-k>$p$tUseLateinitIsInitializedFromInternalInlineKt()
+            /* ACCESSOR use-site */ access$<get-k>$p$tUseLateinitIsInitializedFromInternalInlineKt()
+    /* ACCESSOR use-site */ access$<get-o>$tUseLateinitIsInitializedFromInternalInlineKt()
+public fun box(): String
     /* ACCESSOR use-site */ access$<get-o>$p$tUseLateinitIsInitializedFromInternalInlineKt()
     /* ACCESSOR use-site */ access$<set-o>$tUseLateinitIsInitializedFromInternalInlineKt(<set-?> = "O")
     /* ACCESSOR use-site */ access$<get-o>$p$tUseLateinitIsInitializedFromInternalInlineKt()

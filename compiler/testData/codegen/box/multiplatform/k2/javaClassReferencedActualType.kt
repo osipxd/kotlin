@@ -1,5 +1,4 @@
 // LANGUAGE: +MultiPlatformProjects
-// IGNORE_BACKEND_K1: ANY
 // TARGET_BACKEND: JVM_IR
 
 // MODULE: common

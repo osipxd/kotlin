@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.cpp.CppUsage
+import org.jetbrains.kotlin.konan.target.TargetWithSanitizer
 import org.jetbrains.kotlin.nativeDistribution.nativeProtoDistribution
 
 plugins {
@@ -8,6 +10,16 @@ plugins {
 
 application {
     mainClass.set("org.jetbrains.kotlin.native.interop.gen.jvm.MainKt")
+}
+
+val testCppRuntime by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    attributes {
+        attribute(CppUsage.USAGE_ATTRIBUTE, objects.named(CppUsage.LIBRARY_RUNTIME))
+        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.DYNAMIC_LIB))
+        attribute(TargetWithSanitizer.TARGET_ATTRIBUTE, TargetWithSanitizer.host)
+    }
 }
 
 dependencies {
@@ -21,6 +33,8 @@ dependencies {
     implementation(project(":compiler:ir.serialization.common"))
 
     testImplementation(kotlinTest("junit"))
+    testCppRuntime(project(":kotlin-native:libclangInterop"))
+    testCppRuntime(project(":kotlin-native:Interop:Runtime"))
 }
 
 sourceSets {
@@ -28,17 +42,25 @@ sourceSets {
     "test" { projectDefault() }
 }
 
+open class TestArgumentProvider @Inject constructor(
+        objectFactory: ObjectFactory,
+) : CommandLineArgumentProvider {
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    val nativeLibraries: ConfigurableFileCollection = objectFactory.fileCollection()
+
+    override fun asArguments(): Iterable<String> = listOf(
+            "-Djava.library.path=${nativeLibraries.files.joinToString(File.pathSeparator) { it.parentFile.absolutePath }}"
+    )
+}
+
 tasks {
     // Copy-pasted from Indexer build.gradle.kts.
     withType<Test>().configureEach {
-        val projectsWithNativeLibs = listOf(
-                project(":kotlin-native:Interop:Indexer"),
-                project(":kotlin-native:Interop:Runtime")
-        )
-        dependsOn(projectsWithNativeLibs.map { "${it.path}:nativelibs" })
         dependsOn(nativeDependencies.llvmDependency)
-        systemProperty("java.library.path", projectsWithNativeLibs.joinToString(File.pathSeparator) {
-            it.layout.buildDirectory.dir("nativelibs").get().asFile.absolutePath
+        jvmArgumentProviders.add(objects.newInstance<TestArgumentProvider>().apply {
+            nativeLibraries.from(testCppRuntime)
         })
         val libclangPath = "${nativeDependencies.llvmPath}/" + if (org.jetbrains.kotlin.konan.target.HostManager.hostIsMingw) {
             "bin/libclang.dll"

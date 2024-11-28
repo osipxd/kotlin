@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.diagnostics.reportOn
 import org.jetbrains.kotlin.fir.analysis.checkers.MppCheckerKind
+import org.jetbrains.kotlin.fir.analysis.checkers.classKind
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.checkers.getContainingClassSymbol
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
@@ -85,8 +86,8 @@ object FirUninitializedEnumChecker : FirQualifiedAccessExpressionChecker(MppChec
 
         // Local enum class are prohibited
         // So report error on access of local enum entry
-        if (enumClassSymbol.visibility == Visibilities.Local) {
-            reporter.reportOn(source, FirErrors.UNINITIALIZED_ENUM_ENTRY, calleeSymbol as FirEnumEntrySymbol, context)
+        if (enumClassSymbol.visibility == Visibilities.Local && calleeSymbol is FirEnumEntrySymbol) {
+            reporter.reportOn(source, FirErrors.UNINITIALIZED_ENUM_ENTRY, calleeSymbol, context)
         }
 
         // An accessed context within the enum class of interest. We should look up until either enum members or enum entries are found,
@@ -253,7 +254,7 @@ object FirUninitializedEnumChecker : FirQualifiedAccessExpressionChecker(MppChec
         val containingClassSymbol = when (this) {
             is FirConstructor -> {
                 if (!isPrimary) return false
-                (containingClassForStaticMemberAttr as? ConeClassLookupTagWithFixedSymbol)?.symbol
+                (containingClassForStaticMemberAttr as? ConeClassLikeLookupTagWithFixedSymbol)?.symbol
             }
             is FirAnonymousInitializer -> {
                 containingDeclarationSymbol as? FirClassSymbol

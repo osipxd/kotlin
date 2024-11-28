@@ -2650,6 +2650,34 @@ public class IrSerializeCompileKotlinAgainstInlineKotlinTestGenerated extends Ab
   }
 
   @Nested
+  @TestMetadata("compiler/testData/codegen/boxInline/functionReference")
+  @TestDataPath("$PROJECT_ROOT")
+  public class FunctionReference {
+    @Test
+    public void testAllFilesPresentInFunctionReference() {
+      KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/boxInline/functionReference"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR_SERIALIZE, true);
+    }
+
+    @Test
+    @TestMetadata("fourthOrder.kt")
+    public void testFourthOrder() {
+      runTest("compiler/testData/codegen/boxInline/functionReference/fourthOrder.kt");
+    }
+
+    @Test
+    @TestMetadata("noInlineForLambda.kt")
+    public void testNoInlineForLambda() {
+      runTest("compiler/testData/codegen/boxInline/functionReference/noInlineForLambda.kt");
+    }
+
+    @Test
+    @TestMetadata("thirdOrder.kt")
+    public void testThirdOrder() {
+      runTest("compiler/testData/codegen/boxInline/functionReference/thirdOrder.kt");
+    }
+  }
+
+  @Nested
   @TestMetadata("compiler/testData/codegen/boxInline/inlineArgsInplace")
   @TestDataPath("$PROJECT_ROOT")
   public class InlineArgsInplace {
@@ -5408,6 +5436,12 @@ public class IrSerializeCompileKotlinAgainstInlineKotlinTestGenerated extends Ab
     @TestMetadata("kt52198.kt")
     public void testKt52198() {
       runTest("compiler/testData/codegen/boxInline/suspend/kt52198.kt");
+    }
+
+    @Test
+    @TestMetadata("linenumberZero.kt")
+    public void testLinenumberZero() {
+      runTest("compiler/testData/codegen/boxInline/suspend/linenumberZero.kt");
     }
 
     @Test

@@ -31,8 +31,9 @@ import org.jetbrains.kotlin.fir.checkers.registerExtraCommonCheckers
 import org.jetbrains.kotlin.fir.deserialization.ModuleDataProvider
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
+import org.jetbrains.kotlin.fir.resolve.providers.impl.FirBuiltinSyntheticFunctionInterfaceProvider
+import org.jetbrains.kotlin.fir.resolve.providers.impl.syntheticFunctionInterfacesSymbolProvider
 import org.jetbrains.kotlin.fir.session.*
-import org.jetbrains.kotlin.fir.session.environment.AbstractProjectEnvironment
 import org.jetbrains.kotlin.library.metadata.resolver.impl.KotlinResolvedLibraryImpl
 import org.jetbrains.kotlin.library.resolveSingleFileKlib
 import org.jetbrains.kotlin.load.kotlin.PackageAndMetadataPartProvider
@@ -70,7 +71,7 @@ open class FirFrontendFacade(
     testServices: TestServices,
     private val additionalSessionConfiguration: SessionConfiguration?
 ) : FrontendFacade<FirOutputArtifact>(testServices, FrontendKinds.FIR) {
-    private val testModulesByName by lazy { testServices.moduleStructure.modules.associateBy { it.name } }
+    private val testModulesByName by lazy { testServices.moduleStructure.testModulesByName }
 
     // Separate constructor is needed for creating callable references to it
     constructor(testServices: TestServices) : this(testServices, additionalSessionConfiguration = null)
@@ -84,14 +85,7 @@ open class FirFrontendFacade(
         get() = listOf(FirDiagnosticsDirectives)
 
     override fun shouldRunAnalysis(module: TestModule): Boolean {
-        if (!super.shouldRunAnalysis(module)) return false
-
-        return if (module.languageVersionSettings.supportsFeature(LanguageFeature.MultiPlatformProjects)) {
-            testServices.moduleStructure
-                .modules.none { testModule -> testModule.dependsOnDependencies.any { testModulesByName[it.moduleName] == module } }
-        } else {
-            true
-        }
+        return shouldRunFirFrontendFacade(module, testServices.moduleStructure, testModulesByName)
     }
 
     private fun registerExtraComponents(session: FirSession) {
@@ -111,7 +105,7 @@ open class FirFrontendFacade(
         val predefinedJavaComponents = runIf(targetPlatform.isJvm()) {
             FirSharableJavaComponents(firCachesFactoryForCliMode)
         }
-        val projectEnvironment = createLibrarySession(
+        val (projectEnvironment, librarySession) = createLibrarySession(
             module,
             project,
             Name.special("<${module.name}>"),
@@ -123,7 +117,7 @@ open class FirFrontendFacade(
         )
 
         val firOutputPartForDependsOnModules = sortedModules.map {
-            analyze(it, moduleDataMap[it]!!, targetPlatform, projectEnvironment, extensionRegistrars, predefinedJavaComponents)
+            analyze(it, moduleDataMap[it]!!, targetPlatform, projectEnvironment, librarySession, extensionRegistrars, predefinedJavaComponents)
         }
 
         return FirOutputArtifactImpl(firOutputPartForDependsOnModules)
@@ -184,12 +178,12 @@ open class FirFrontendFacade(
         configuration: CompilerConfiguration,
         extensionRegistrars: List<FirExtensionRegistrar>,
         predefinedJavaComponents: FirSharableJavaComponents?
-    ): AbstractProjectEnvironment? {
+    ): Pair<VfsBasedProjectEnvironment?, FirSession> {
         val compilerConfigurationProvider = testServices.compilerConfigurationProvider
-        val projectEnvironment: AbstractProjectEnvironment?
+        val projectEnvironment: VfsBasedProjectEnvironment?
         val languageVersionSettings = module.languageVersionSettings
         val isCommon = module.targetPlatform.isCommon()
-        when {
+        val session = when {
             isCommon || module.targetPlatform.isJvm() -> {
                 val packagePartProviderFactory = compilerConfigurationProvider.getPackagePartProviderFactory(module)
                 projectEnvironment = VfsBasedProjectEnvironment(
@@ -273,14 +267,15 @@ open class FirFrontendFacade(
             }
             else -> error("Unsupported")
         }
-        return projectEnvironment
+        return projectEnvironment to session
     }
 
     private fun analyze(
         module: TestModule,
         moduleData: FirModuleData,
         targetPlatform: TargetPlatform,
-        projectEnvironment: AbstractProjectEnvironment?,
+        projectEnvironment: VfsBasedProjectEnvironment?,
+        librarySession: FirSession,
         extensionRegistrars: List<FirExtensionRegistrar>,
         predefinedJavaComponents: FirSharableJavaComponents?,
     ): FirOutputPartForDependsOnModule {
@@ -302,6 +297,8 @@ open class FirFrontendFacade(
         }
 
         val sessionConfigurator: FirSessionConfigurator.() -> Unit = {
+            registerComponent(FirBuiltinSyntheticFunctionInterfaceProvider::class, librarySession.syntheticFunctionInterfacesSymbolProvider)
+
             if (FirDiagnosticsDirectives.WITH_EXTRA_CHECKERS in module.directives) {
                 registerExtraCommonCheckers()
             }
@@ -351,7 +348,7 @@ open class FirFrontendFacade(
         moduleData: FirModuleData,
         targetPlatform: TargetPlatform,
         sessionProvider: FirProjectSessionProvider,
-        projectEnvironment: AbstractProjectEnvironment?,
+        projectEnvironment: VfsBasedProjectEnvironment?,
         extensionRegistrars: List<FirExtensionRegistrar>,
         sessionConfigurator: FirSessionConfigurator.() -> Unit,
         predefinedJavaComponents: FirSharableJavaComponents?,
@@ -466,5 +463,23 @@ open class FirFrontendFacade(
                 }
             }
         }
+    }
+}
+
+fun shouldRunFirFrontendFacade(
+    module: TestModule,
+    moduleStructure: TestModuleStructure,
+    testModulesByName: Map<String, TestModule>,
+): Boolean {
+    val shouldRunAnalysis = module.frontendKind == FrontendKinds.FIR
+
+    if (!shouldRunAnalysis) {
+        return false
+    }
+
+    return if (module.languageVersionSettings.supportsFeature(LanguageFeature.MultiPlatformProjects)) {
+        moduleStructure.modules.none { testModule -> testModule.dependsOnDependencies.any { testModulesByName[it.moduleName] == module } }
+    } else {
+        true
     }
 }

@@ -22,8 +22,6 @@ dependencies {
     api(project(":compiler:fir:checkers:checkers.wasm"))
     api(project(":compiler:fir:java"))
     api(project(":compiler:backend.common.jvm"))
-    api(project(":analysis:analysis-api-impl-barebone"))
-    api(project(":js:js.config"))
     api(project(":compiler:cli-common"))
     implementation(project(":analysis:decompiled:decompiler-to-psi"))
     testImplementation(project(":analysis:analysis-api-fir"))
@@ -39,6 +37,8 @@ dependencies {
     implementation(project(":kotlin-assignment-compiler-plugin.cli"))
     implementation(libs.caffeine)
 
+    implementation(libs.opentelemetry.api)
+
     api(intellijCore())
 
     testApi(projectTests(":compiler:test-infrastructure-utils"))
@@ -51,7 +51,6 @@ dependencies {
     testRuntimeOnly(toolsJar())
     testImplementation(projectTests(":compiler:tests-common"))
     testImplementation(projectTests(":compiler:fir:analysis-tests:legacy-fir-tests"))
-    testImplementation(projectTests(":analysis:analysis-api-impl-barebone"))
     testImplementation(projectTests(":analysis:analysis-test-framework"))
     testImplementation(projectTests(":analysis:analysis-api-impl-base"))
     testImplementation(kotlinTest("junit"))
@@ -61,6 +60,7 @@ dependencies {
     testImplementation(project(":analysis:symbol-light-classes"))
     testImplementation(projectTests(":plugins:scripting:scripting-tests"))
     testImplementation(project(":kotlin-scripting-common"))
+    testImplementation(projectTests(":kotlinx-serialization-compiler-plugin"))
 
     testRuntimeOnly(project(":core:descriptors.runtime"))
 

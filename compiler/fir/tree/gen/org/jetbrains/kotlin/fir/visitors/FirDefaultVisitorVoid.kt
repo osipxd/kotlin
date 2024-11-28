@@ -9,10 +9,7 @@
 package org.jetbrains.kotlin.fir.visitors
 
 import org.jetbrains.kotlin.fir.FirTargetElement
-import org.jetbrains.kotlin.fir.contracts.FirEffectDeclaration
-import org.jetbrains.kotlin.fir.contracts.FirLegacyRawContractDescription
-import org.jetbrains.kotlin.fir.contracts.FirRawContractDescription
-import org.jetbrains.kotlin.fir.contracts.FirResolvedContractDescription
+import org.jetbrains.kotlin.fir.contracts.*
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.references.*
@@ -118,6 +115,10 @@ abstract class FirDefaultVisitorVoid : FirVisitorVoid() {
         visitExpression(anonymousObjectExpression)
     }
 
+    override fun visitTypeAlias(typeAlias: FirTypeAlias) {
+        visitClassLikeDeclaration(typeAlias)
+    }
+
     override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: FirAnonymousFunctionExpression) {
         visitExpression(anonymousFunctionExpression)
     }
@@ -143,7 +144,7 @@ abstract class FirDefaultVisitorVoid : FirVisitorVoid() {
     }
 
     override fun visitReceiverParameter(receiverParameter: FirReceiverParameter) {
-        visitAnnotationContainer(receiverParameter)
+        visitDeclaration(receiverParameter)
     }
 
     override fun visitScriptReceiverParameter(scriptReceiverParameter: FirScriptReceiverParameter) {
@@ -356,6 +357,10 @@ abstract class FirDefaultVisitorVoid : FirVisitorVoid() {
 
     override fun visitLegacyRawContractDescription(legacyRawContractDescription: FirLegacyRawContractDescription) {
         visitContractDescription(legacyRawContractDescription)
+    }
+
+    override fun visitErrorContractDescription(errorContractDescription: FirErrorContractDescription) {
+        visitContractDescription(errorContractDescription)
     }
 
 }

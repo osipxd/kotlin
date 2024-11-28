@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.fir.correspondingProperty
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
+import org.jetbrains.kotlin.fir.declarations.FirValueParameterKind
 import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
 import org.jetbrains.kotlin.fir.declarations.builder.buildValueParameter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
@@ -25,15 +26,17 @@ import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyGetter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertySetter
 import org.jetbrains.kotlin.fir.declarations.utils.fromPrimaryConstructor
 import org.jetbrains.kotlin.fir.declarations.utils.isFromVararg
+import org.jetbrains.kotlin.fir.diagnostics.ConeContextParameterWithDefaultValue
 import org.jetbrains.kotlin.fir.diagnostics.ConeSyntaxDiagnostic
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildAnnotationCallCopy
+import org.jetbrains.kotlin.fir.expressions.builder.buildErrorExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildPropertyAccessExpression
 import org.jetbrains.kotlin.fir.lightTree.fir.modifier.Modifier
 import org.jetbrains.kotlin.fir.references.builder.buildPropertyFromParameterResolvedNamedReference
-import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
@@ -54,10 +57,11 @@ class ValueParameter(
     val source: KtSourceElement,
     private val moduleData: FirModuleData,
     private val isFromPrimaryConstructor: Boolean,
+    private val isContextParameter: Boolean,
     private val additionalAnnotations: List<FirAnnotation>,
     val name: Name,
     val defaultValue: FirExpression?,
-    private val containingFunctionSymbol: FirFunctionSymbol<*>?,
+    private val containingDeclarationSymbol: FirBasedSymbol<*>?,
     val destructuringDeclaration: DestructuringDeclaration? = null
 ) {
     fun hasValOrVar(): Boolean {
@@ -88,10 +92,20 @@ class ValueParameter(
 
             this.name = this@ValueParameter.name
             symbol = valueParameterSymbol
-            defaultValue = this@ValueParameter.defaultValue
+            defaultValue = this@ValueParameter.defaultValue?.let {
+                if (isContextParameter) {
+                    buildErrorExpression {
+                        source = this@ValueParameter.source.fakeElement(KtFakeSourceElementKind.ContextParameterDefaultValue)
+                        diagnostic = ConeContextParameterWithDefaultValue
+                    }
+                } else {
+                    it
+                }
+            }
             isCrossinline = modifiers.hasCrossinline()
             isNoinline = modifiers.hasNoinline()
-            containingFunctionSymbol = this@ValueParameter.containingFunctionSymbol
+            valueParameterKind = if (isContextParameter) FirValueParameterKind.ContextParameter else FirValueParameterKind.Regular
+            containingDeclarationSymbol = this@ValueParameter.containingDeclarationSymbol
                 ?: error("containingFunctionSymbol should present when converting ValueParameter to a FirValueParameter")
 
             annotations += this@ValueParameter.annotations

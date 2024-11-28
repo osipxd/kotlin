@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.fir.declarations.FirAnonymousInitializer
 import org.jetbrains.kotlin.fir.declarations.FirBackingField
 import org.jetbrains.kotlin.fir.declarations.FirCallableDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirConstructor
-import org.jetbrains.kotlin.fir.declarations.FirContextReceiver
 import org.jetbrains.kotlin.fir.declarations.FirDanglingModifierList
 import org.jetbrains.kotlin.fir.declarations.FirEnumEntry
 import org.jetbrains.kotlin.fir.declarations.FirErrorPrimaryConstructor
@@ -38,8 +37,7 @@ import org.jetbrains.kotlin.fir.expressions.FirArgumentList
 import org.jetbrains.kotlin.fir.expressions.FirErrorAnnotationCall
 import org.jetbrains.kotlin.fir.types.FirErrorTypeRef
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
-import org.jetbrains.kotlin.fir.types.coneType
-import org.jetbrains.kotlin.fir.types.customAnnotations
+import org.jetbrains.kotlin.fir.types.typeAnnotations
 import org.jetbrains.kotlin.fir.types.forEachType
 import org.jetbrains.kotlin.fir.visitors.FirVisitor
 
@@ -83,7 +81,7 @@ internal abstract class NonLocalAnnotationVisitor<T> : FirVisitor<Unit, T>() {
 
     private fun visitTypeAnnotations(resolvedTypeRef: FirResolvedTypeRef, data: T) {
         resolvedTypeRef.coneType.forEachType { coneType ->
-            for (typeArgumentAnnotation in coneType.customAnnotations) {
+            for (typeArgumentAnnotation in coneType.typeAnnotations) {
                 typeArgumentAnnotation.accept(this, data)
             }
         }
@@ -130,19 +128,15 @@ internal abstract class NonLocalAnnotationVisitor<T> : FirVisitor<Unit, T>() {
 
     override fun visitRegularClass(regularClass: FirRegularClass, data: T) {
         visitMemberDeclaration(regularClass, data)
-        visitContextReceivers(regularClass.contextReceivers, data)
+        regularClass.contextReceivers.forEach { it.accept(this, data) }
         regularClass.superTypeRefs.forEach { it.accept(this, data) }
     }
 
     override fun visitCallableDeclaration(callableDeclaration: FirCallableDeclaration, data: T) {
         visitMemberDeclaration(callableDeclaration, data)
-        visitContextReceivers(callableDeclaration.contextReceivers, data)
+        callableDeclaration.contextReceivers.forEach { it.accept(this, data) }
         callableDeclaration.receiverParameter?.accept(this, data)
         callableDeclaration.returnTypeRef.accept(this, data)
-    }
-
-    fun visitContextReceivers(contextReceivers: List<FirContextReceiver>, data: T) {
-        contextReceivers.forEach { it.accept(this, data) }
     }
 
     override fun visitAnnotationContainer(annotationContainer: FirAnnotationContainer, data: T) {
@@ -155,10 +149,6 @@ internal abstract class NonLocalAnnotationVisitor<T> : FirVisitor<Unit, T>() {
 
     override fun visitReceiverParameter(receiverParameter: FirReceiverParameter, data: T) {
         receiverParameter.acceptChildren(this, data)
-    }
-
-    override fun visitContextReceiver(contextReceiver: FirContextReceiver, data: T) {
-        contextReceiver.acceptChildren(this, data)
     }
 
     override fun visitTypeParameter(typeParameter: FirTypeParameter, data: T) {

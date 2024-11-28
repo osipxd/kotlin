@@ -39,7 +39,6 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.jvm.JvmClassName
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmBackendErrors
 import org.jetbrains.org.objectweb.asm.Type
-import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 class JvmBackendContext(
@@ -67,9 +66,6 @@ class JvmBackendContext(
 
     override val irFactory: IrFactory = IrFactoryImpl
 
-    override val scriptMode: Boolean = false
-
-    override val builtIns = state.module.builtIns
     override val typeSystem: IrTypeSystemContext = JvmIrTypeSystemContext(irBuiltIns)
     val defaultTypeMapper = IrTypeMapper(this)
     val defaultMethodSignatureMapper = MethodSignatureMapper(this, defaultTypeMapper)
@@ -83,9 +79,9 @@ class JvmBackendContext(
 
     val ktDiagnosticReporter = KtDiagnosticReporterWithImplicitIrBasedContext(state.diagnosticReporter, config.languageVersionSettings)
 
-    override val ir = JvmIr(this.symbolTable)
+    override val ir = JvmIr()
 
-    override val sharedVariablesManager = JvmSharedVariablesManager(state.module, ir.symbols, irBuiltIns, irFactory)
+    val sharedVariablesManager = JvmSharedVariablesManager(state.module, ir.symbols, irBuiltIns, irFactory)
 
     lateinit var getIntrinsic: (IrFunctionSymbol) -> IntrinsicMarker?
 
@@ -104,8 +100,6 @@ class JvmBackendContext(
     override var inVerbosePhase: Boolean = false
 
     override val configuration get() = state.configuration
-
-    override val internalPackageFqn = FqName("kotlin.jvm")
 
     val inlineClassReplacements = MemoizedInlineClassReplacements(config.functionsWithInlineClassReturnTypesMangled, irFactory, this)
 
@@ -142,11 +136,6 @@ class JvmBackendContext(
     internal fun referenceTypeParameter(descriptor: TypeParameterDescriptor): IrTypeParameterSymbol =
         symbolTable.lazyWrapper.descriptorExtension.referenceTypeParameter(descriptor)
 
-    override fun throwUninitializedPropertyAccessException(builder: IrBuilderWithScope, name: String): IrExpression =
-        builder.irBlock {
-            +super.throwUninitializedPropertyAccessException(builder, name)
-        }
-
     override val preferJavaLikeCounterLoop: Boolean
         get() = true
 
@@ -159,10 +148,8 @@ class JvmBackendContext(
     override val optimizeNullChecksUsingKotlinNullability: Boolean
         get() = false
 
-    inner class JvmIr(
-        symbolTable: SymbolTable,
-    ) : Ir<JvmBackendContext>(this) {
-        override val symbols = JvmSymbols(this@JvmBackendContext, symbolTable)
+    inner class JvmIr : Ir() {
+        override val symbols = JvmSymbols(this@JvmBackendContext)
 
         override fun shouldGenerateHandlerParameterForDefaultBodyFun() = true
     }

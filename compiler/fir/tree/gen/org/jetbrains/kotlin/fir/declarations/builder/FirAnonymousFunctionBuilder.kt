@@ -43,9 +43,8 @@ class FirAnonymousFunctionBuilder : FirFunctionBuilder, FirAnnotationContainerBu
     override lateinit var returnTypeRef: FirTypeRef
     var receiverParameter: FirReceiverParameter? = null
     override var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
-    override var containerSource: DeserializedContainerSource? = null
     override var dispatchReceiverType: ConeSimpleKotlinType? = null
-    override val contextReceivers: MutableList<FirContextReceiver> = mutableListOf()
+    override val contextReceivers: MutableList<FirValueParameter> = mutableListOf()
     var controlFlowGraphReference: FirControlFlowGraphReference? = null
     override val valueParameters: MutableList<FirValueParameter> = mutableListOf()
     override var body: FirBlock? = null
@@ -71,7 +70,6 @@ class FirAnonymousFunctionBuilder : FirFunctionBuilder, FirAnnotationContainerBu
             returnTypeRef,
             receiverParameter,
             deprecationsProvider,
-            containerSource,
             dispatchReceiverType,
             contextReceivers.toMutableOrEmpty(),
             controlFlowGraphReference,
@@ -89,6 +87,13 @@ class FirAnonymousFunctionBuilder : FirFunctionBuilder, FirAnnotationContainerBu
         )
     }
 
+
+    @Deprecated("Modification of 'containerSource' has no impact for FirAnonymousFunctionBuilder", level = DeprecationLevel.HIDDEN)
+    override var containerSource: DeserializedContainerSource?
+        get() = throw IllegalStateException()
+        set(_) {
+            throw IllegalStateException()
+        }
 }
 
 @OptIn(ExperimentalContracts::class)

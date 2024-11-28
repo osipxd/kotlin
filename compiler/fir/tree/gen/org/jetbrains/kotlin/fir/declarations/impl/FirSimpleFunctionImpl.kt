@@ -42,7 +42,7 @@ internal class FirSimpleFunctionImpl(
     override var deprecationsProvider: DeprecationsProvider,
     override val containerSource: DeserializedContainerSource?,
     override val dispatchReceiverType: ConeSimpleKotlinType?,
-    override var contextReceivers: MutableOrEmptyList<FirContextReceiver>,
+    override var contextReceivers: MutableOrEmptyList<FirValueParameter>,
     override val valueParameters: MutableList<FirValueParameter>,
     override var body: FirBlock?,
     override var contractDescription: FirContractDescription?,
@@ -75,7 +75,7 @@ internal class FirSimpleFunctionImpl(
         transformStatus(transformer, data)
         transformReturnTypeRef(transformer, data)
         transformReceiverParameter(transformer, data)
-        contextReceivers.transformInplace(transformer, data)
+        transformContextReceivers(transformer, data)
         controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
         transformValueParameters(transformer, data)
         transformBody(transformer, data)
@@ -97,6 +97,11 @@ internal class FirSimpleFunctionImpl(
 
     override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirSimpleFunctionImpl {
         receiverParameter = receiverParameter?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirSimpleFunctionImpl {
+        contextReceivers.transformInplace(transformer, data)
         return this
     }
 
@@ -141,7 +146,7 @@ internal class FirSimpleFunctionImpl(
         deprecationsProvider = newDeprecationsProvider
     }
 
-    override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>) {
+    override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>) {
         contextReceivers = newContextReceivers.toMutableOrEmpty()
     }
 

@@ -83,14 +83,6 @@ abstract class FirVisitorVoid : FirVisitor<Unit, Nothing?>() {
         visitElement(controlFlowGraphOwner)
     }
 
-    final override fun visitContextReceiver(contextReceiver: FirContextReceiver, data: Nothing?) {
-        visitContextReceiver(contextReceiver)
-    }
-
-    open fun visitContextReceiver(contextReceiver: FirContextReceiver) {
-        visitElement(contextReceiver)
-    }
-
     final override fun visitElementWithResolveState(elementWithResolveState: FirElementWithResolveState, data: Nothing?) {
         visitElementWithResolveState(elementWithResolveState)
     }
@@ -723,6 +715,14 @@ abstract class FirVisitorVoid : FirVisitor<Unit, Nothing?>() {
         visitElement(codeFragment)
     }
 
+    final override fun visitReplSnippet(replSnippet: FirReplSnippet, data: Nothing?) {
+        visitReplSnippet(replSnippet)
+    }
+
+    open fun visitReplSnippet(replSnippet: FirReplSnippet) {
+        visitElement(replSnippet)
+    }
+
     final override fun visitPackageDirective(packageDirective: FirPackageDirective, data: Nothing?) {
         visitPackageDirective(packageDirective)
     }
@@ -1249,5 +1249,13 @@ abstract class FirVisitorVoid : FirVisitor<Unit, Nothing?>() {
 
     open fun visitLegacyRawContractDescription(legacyRawContractDescription: FirLegacyRawContractDescription) {
         visitElement(legacyRawContractDescription)
+    }
+
+    final override fun visitErrorContractDescription(errorContractDescription: FirErrorContractDescription, data: Nothing?) {
+        visitErrorContractDescription(errorContractDescription)
+    }
+
+    open fun visitErrorContractDescription(errorContractDescription: FirErrorContractDescription) {
+        visitElement(errorContractDescription)
     }
 }

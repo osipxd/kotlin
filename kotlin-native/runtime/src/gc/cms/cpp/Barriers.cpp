@@ -9,6 +9,7 @@
 #include <atomic>
 
 #include "GCImpl.hpp"
+#include "Memory.h"
 #include "ThreadData.hpp"
 #include "ThreadRegistry.hpp"
 
@@ -127,6 +128,8 @@ namespace {
 
 // TODO decide whether it's really beneficial to NO_INLINE the slow path
 NO_INLINE void beforeHeapRefUpdateSlowPath(mm::DirectRefAccessor ref, ObjHeader* value, bool loadAtomic) noexcept {
+    AssertThreadState(ThreadState::kRunnable);
+
     ObjHeader* prev;
     if (loadAtomic) {
         prev = ref.loadAtomic(std::memory_order_relaxed);
@@ -154,6 +157,23 @@ PERFORMANCE_INLINE void gc::barriers::beforeHeapRefUpdate(mm::DirectRefAccessor 
     BarriersLogDebug(phase, "Write *%p <- %p (%p overwritten)", ref.location(), value, ref.load());
     if (__builtin_expect(phase == BarriersPhase::kMarkClosure, false)) {
         beforeHeapRefUpdateSlowPath(ref, value, loadAtomic);
+    }
+}
+
+PERFORMANCE_INLINE gc::barriers::SpecialRefReleaseGuard::Impl::Impl(mm::DirectRefAccessor ref) noexcept {
+    // Can be called with any possible thread state: kotlin, native, unattached thread.
+    // This guard synchronizes with the `ConcurrentMark` via the ThreadRegistry lock.
+    // It must be done before the barriers phase check.
+    if (mm::ThreadRegistry::IsCurrentThreadRegistered()) {
+        // If the thread is registered, just ensure, that the root set mutation happens will happen in the runnable state
+        stateGuard_ = ThreadStateGuard{ThreadState::kRunnable, true};
+        // NOTE that this barrier must be executed before the RC decrement
+        beforeHeapRefUpdate(ref, nullptr, false);
+    } else {
+        // In case of an unregistered thread, just do thing outside the mark phase.
+        // NOTE This code can be called from quite an unexpected places (such as TLS destructors).
+        // One can't simply register the thread from here.
+        markMutex_ = markDispatcher().markMutex();
     }
 }
 

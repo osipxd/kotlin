@@ -7,31 +7,23 @@ package org.jetbrains.kotlin.js.testOld
 
 import com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlin.js.engine.ScriptEngine
-import org.jetbrains.kotlin.js.engine.ScriptEngineNashorn
 import org.jetbrains.kotlin.js.engine.ScriptEngineV8
 import org.jetbrains.kotlin.js.engine.loadFiles
 import org.jetbrains.kotlin.js.test.utils.KOTLIN_TEST_INTERNAL
 import org.jetbrains.kotlin.test.utils.withSuffixAndExtension
 import org.junit.Assert
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 
 internal const val TEST_DATA_DIR_PATH = "js/js.translator/testData/"
-private const val DIST_DIR_JS_PATH = "dist/js/"
 private const val ESM_EXTENSION = ".mjs"
 
-fun createScriptEngine(): ScriptEngine {
-    return if (java.lang.Boolean.getBoolean("kotlin.js.useNashorn")) ScriptEngineNashorn() else ScriptEngineV8()
-}
-
-fun ScriptEngine.overrideAsserter() {
-    eval("this['kotlin-test'].kotlin.test.overrideAsserter_wbnzx$(this['kotlin-test'].kotlin.test.DefaultAsserter);")
-}
+fun createScriptEngine(): ScriptEngine = ScriptEngineV8()
 
 private fun String.escapePath(): String {
     return replace("\\", "/")
 }
 
-@Suppress("UNUSED_PARAMETER")
 fun ScriptEngine.runTestFunction(
     testModuleName: String?,
     testPackageName: String?,
@@ -61,7 +53,7 @@ fun ScriptEngine.runTestFunction(
     return eval(script)
 }
 
-abstract class AbstractJsTestChecker {
+object V8JsTestChecker {
     fun check(
         files: List<String>,
         testModuleName: String?,
@@ -129,140 +121,7 @@ abstract class AbstractJsTestChecker {
 
     private fun String.normalize() = StringUtil.convertLineSeparators(this)
 
-    protected abstract fun run(files: List<String>, f: ScriptEngine.() -> String): String
-
-    protected val SCRIPT_ENGINE_REUSAGE_LIMIT = 100
-    protected var engineUsageCnt = 0
-    protected inline fun periodicScriptEngineRecreate(doCleanup: () -> Unit) {
-        if (engineUsageCnt++ > SCRIPT_ENGINE_REUSAGE_LIMIT) {
-            engineUsageCnt = 0
-            doCleanup()
-        }
-    }
-}
-
-fun ScriptEngine.runAndRestoreContext(f: ScriptEngine.() -> String): String {
-    return try {
-        saveGlobalState()
-        f()
-    } finally {
-        restoreGlobalState()
-    }
-}
-
-abstract class AbstractNashornJsTestChecker : AbstractJsTestChecker() {
-    private var engineCache: ScriptEngineNashorn? = null
-
-    protected val engine: ScriptEngineNashorn
-        get() = engineCache ?: createScriptEngineForTest().also {
-            engineCache = it
-        }
-
-    protected open fun beforeRun() {}
-
-    override fun run(files: List<String>, f: ScriptEngine.() -> String): String {
-        periodicScriptEngineRecreate {
-            engine.release()
-            engineCache = null
-        }
-
-        beforeRun()
-
-        return engine.runAndRestoreContext {
-            loadFiles(files)
-            f()
-        }
-    }
-
-    protected abstract val preloadedScripts: List<String>
-
-    protected open fun createScriptEngineForTest(): ScriptEngineNashorn {
-        val engine = ScriptEngineNashorn()
-
-        engine.loadFiles(preloadedScripts)
-
-        return engine
-    }
-}
-
-const val SETUP_KOTLIN_OUTPUT = "kotlin.kotlin.io.output = new kotlin.kotlin.io.BufferedOutput();"
-const val GET_KOTLIN_OUTPUT = "main.get_output().buffer_1"
-
-private val JS_IR_OUTPUT_REWRITE = """
-    set_output(new BufferedOutput())
-    _.get_output = get_output
-""".trimIndent()
-
-object NashornJsTestChecker : AbstractNashornJsTestChecker() {
-
-    override fun beforeRun() {
-        engine.eval(SETUP_KOTLIN_OUTPUT)
-    }
-
-    override val preloadedScripts = listOf(
-        TEST_DATA_DIR_PATH + "nashorn-polyfills.js",
-        DIST_DIR_JS_PATH + "kotlin.js",
-        DIST_DIR_JS_PATH + "kotlin-test.js"
-    )
-
-    override fun createScriptEngineForTest(): ScriptEngineNashorn {
-        val engine = super.createScriptEngineForTest()
-
-        engine.overrideAsserter()
-
-        return engine
-    }
-}
-
-object NashornIrJsTestChecker : AbstractNashornJsTestChecker() {
-    override val preloadedScripts = listOf(
-        TEST_DATA_DIR_PATH + "nashorn-polyfills.js",
-        "libraries/stdlib/js-v1/src/js/polyfills.js"
-    )
-}
-
-object V8JsTestChecker : AbstractJsTestChecker() {
-    private val engineTL = object : ThreadLocal<ScriptEngineV8>() {
-        override fun initialValue() =
-            ScriptEngineV8().apply {
-                val preloadedScripts = listOf(
-                    DIST_DIR_JS_PATH + "kotlin.js",
-                    DIST_DIR_JS_PATH + "kotlin-test.js"
-                )
-                loadFiles(preloadedScripts)
-
-                overrideAsserter()
-            }
-
-        override fun remove() {
-            get().release()
-            super.remove()
-        }
-    }
-
-    private val engine get() = engineTL.get()
-
-    override fun run(files: List<String>, f: ScriptEngine.() -> String): String {
-        periodicScriptEngineRecreate { engineTL.remove() }
-
-        engine.eval(SETUP_KOTLIN_OUTPUT)
-        return engine.runAndRestoreContext {
-            loadFiles(files)
-            f()
-        }
-    }
-}
-
-object V8IrJsTestChecker : AbstractJsTestChecker() {
-    private val engineTL = object : ThreadLocal<ScriptEngineV8>() {
-        override fun initialValue() = ScriptEngineV8()
-        override fun remove() {
-            get().release()
-            super.remove()
-        }
-    }
-
-    override fun run(files: List<String>, f: ScriptEngine.() -> String): String {
+    fun run(files: List<String>, f: ScriptEngine.() -> String): String {
         periodicScriptEngineRecreate { engineTL.remove() }
 
         val engine = engineTL.get()
@@ -273,4 +132,30 @@ object V8IrJsTestChecker : AbstractJsTestChecker() {
             engine.reset()
         }
     }
+
+    private var engineUsageCnt = AtomicInteger(0)
+
+    private val engineTL = object : ThreadLocal<ScriptEngineV8>() {
+        override fun initialValue() = ScriptEngineV8()
+        override fun remove() {
+            get().release()
+            super.remove()
+        }
+    }
+
+    private fun periodicScriptEngineRecreate(doCleanup: () -> Unit) {
+        if (engineUsageCnt.getAndIncrement() > SCRIPT_ENGINE_REUSAGE_LIMIT) {
+            engineUsageCnt.set(0)
+            doCleanup()
+        }
+    }
+
+    private const val SCRIPT_ENGINE_REUSAGE_LIMIT = 100
 }
+
+const val GET_KOTLIN_OUTPUT = "main.get_output().buffer_1"
+
+private val JS_IR_OUTPUT_REWRITE = """
+    set_output(new BufferedOutput())
+    _.get_output = get_output
+""".trimIndent()

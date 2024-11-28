@@ -35,6 +35,7 @@ val (nativeInteropRuntimeSourceSet, nativeInteropRuntimeApi) = extraSourceSet("n
 
 dependencies {
     api(kotlinStdlib("jdk8"))
+    api(project(":core:util.runtime"))
     api(intellijPlatformUtil()) {
         exclude(module = "annotations")
     }
@@ -72,7 +73,7 @@ dependencies {
     testImplementation(projectTests(":analysis:analysis-api-impl-base"))
     testImplementation(projectTests(":analysis:analysis-test-framework"))
     testApi(projectTests(":plugins:plugin-sandbox"))
-    testApi(projectTests(":plugins:plugin-sandbox:fir-plugin-ic-test"))
+    testApi(projectTests(":plugins:plugin-sandbox:plugin-sandbox-ic-test"))
     testApi(projectTests(":plugins:plugins-interactions-testing"))
     testApi(projectTests(":generators:test-generator"))
     testApi(projectTests(":generators:analysis-api-generator"))

@@ -38,7 +38,6 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrSetFieldImpl
 import org.jetbrains.kotlin.ir.irAttribute
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classOrNull
-import org.jetbrains.kotlin.ir.types.getArrayElementType
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
@@ -633,7 +632,7 @@ private val Modality.flags: Int
     }
 
 private val DescriptorVisibility.flags: Int
-    get() = DescriptorAsmUtil.getVisibilityAccessFlag(this) ?: throw AssertionError("Unsupported visibility $this")
+    get() = AsmUtil.getVisibilityAccessFlag(delegate) ?: throw AssertionError("Unsupported visibility $this")
 
 // From `isAnonymousClass` in inlineCodegenUtils.kt
 private val Type.isAnonymousClass: Boolean

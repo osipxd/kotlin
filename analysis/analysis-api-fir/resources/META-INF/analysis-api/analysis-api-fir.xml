@@ -24,10 +24,27 @@
         serviceImplementation="org.jetbrains.kotlin.analysis.api.fir.references.ReadWriteAccessCheckerFirImpl"
     />
 
+    <projectService
+        serviceInterface="org.jetbrains.kotlin.analysis.api.imports.KaDefaultImportsProvider"
+        serviceImplementation="org.jetbrains.kotlin.analysis.api.fir.KaFirDefaultImportsProvider"
+    />
+
+    <projectService
+        serviceInterface="org.jetbrains.kotlin.analysis.api.platform.statistics.KaStatisticsService"
+        serviceImplementation="org.jetbrains.kotlin.analysis.api.fir.statistics.KaFirStatisticsService"
+    />
+
     <registryKey
         defaultValue="true"
         description="Perform cache clean-up when running out of RAM"
         key="kotlin.analysis.lowMemoryCacheCleanup"
+        restartRequired="true"
+    />
+
+    <registryKey
+        defaultValue="false"
+        description="Enables post-compute-based Java Functions Cache (should be used only when data race is detected with less strict version)"
+        key="kotlin.analysis.postComputeEnhancedJavaFunctionsCache"
         restartRequired="true"
     />
   </extensions>

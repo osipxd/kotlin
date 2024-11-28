@@ -78,7 +78,7 @@ public data class SwiftExportConfig(
     }
     internal val targetPackageFqName = settings[ROOT_PACKAGE]?.let { packageName ->
         packageName.takeIf { FqNameUnsafe.isValid(it) }?.let { FqName(it) }
-            ?.takeIf { it.pathSegments().all { it.toString().isValidSwiftIdentifier() } }
+            ?.takeIf { it.pathSegments().all { it.toString().isValidSwiftIdentifier } }
             ?: null.also {
                 logger.report(
                     SwiftExportLogger.Severity.Warning,
@@ -309,12 +309,41 @@ private fun TranslationResult.writeModule(): SwiftExportModule {
 private object StandaloneSirTypeNamer : SirTypeNamer {
     override fun swiftFqName(type: SirType): String = type.swiftName
     override fun kotlinFqName(type: SirType): String {
+        if (type is SirUnsupportedType) return "Nothing"
         require(type is SirNominalType)
 
         return when(val declaration = type.typeDeclaration) {
             KotlinRuntimeModule.kotlinBase -> "kotlin.Any"
             SirSwiftModule.string -> "kotlin.String"
+
+            SirSwiftModule.bool -> "Boolean"
+
+            SirSwiftModule.int8 -> "Byte"
+            SirSwiftModule.int16 -> "Short"
+            SirSwiftModule.int32 -> "Int"
+            SirSwiftModule.int64 -> "Long"
+
+            SirSwiftModule.uint8 -> "UByte"
+            SirSwiftModule.uint16 -> "UShort"
+            SirSwiftModule.uint32 -> "UInt"
+            SirSwiftModule.uint64 -> "ULong"
+
+            SirSwiftModule.double -> "Double"
+            SirSwiftModule.float -> "Float"
+
+            SirSwiftModule.utf16CodeUnit -> "Char"
+
+            SirSwiftModule.uint -> "UInt"
+
+            SirSwiftModule.void -> "Void"
+            SirSwiftModule.never -> "Nothing"
+
+            SirSwiftModule.array -> "kotlin.collections.List<${kotlinFqName(type.typeArguments.first())}>"
+            SirSwiftModule.set -> "kotlin.collections.Set<${kotlinFqName(type.typeArguments.first())}>"
+            SirSwiftModule.dictionary -> "kotlin.collections.Map<${kotlinFqName(type.typeArguments[0])}, ${kotlinFqName(type.typeArguments[1])}>"
+
             SirSwiftModule.optional -> kotlinFqName(type.typeArguments.first()) + "?"
+
             else -> ((declaration.origin as KotlinSource).symbol as KaClassLikeSymbol).classId!!.asFqNameString()
         }
     }

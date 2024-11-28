@@ -111,7 +111,6 @@ val distLibraryProjects = listOfNotNull(
     ":kotlin-scripting-compiler",
     ":kotlin-scripting-compiler-impl",
     ":kotlin-scripting-jvm",
-    ":js:js.engines",
     ":libraries:tools:mutability-annotations-compat",
     ":plugins:android-extensions-compiler",
     ":plugins:jvm-abi-gen"
@@ -129,7 +128,7 @@ val distCompilerPluginProjects = listOf(
     ":kotlin-lombok-compiler-plugin",
     ":kotlin-assignment-compiler-plugin",
     ":kotlin-scripting-compiler",
-    ":plugins:compose-compiler-plugin:compiler",
+    ":plugins:compose-compiler-plugin:compiler-hosted",
 )
 val distCompilerPluginProjectsCompat = listOf(
     ":kotlinx-serialization-compiler-plugin",
@@ -202,8 +201,6 @@ dependencies {
     if (kotlinBuildProperties.isInJpsBuildIdeaSync) {
         sources(kotlinStdlib(classifier = "sources"))
         sources("org.jetbrains.kotlin:kotlin-reflect:$bootstrapKotlinVersion:sources")
-        distCommonContents(kotlinStdlib(classifier = "common"))
-        distCommonContents(kotlinStdlib(classifier = "common-sources"))
     } else {
         sources(project(":kotlin-stdlib", configuration = "distSources"))
         sources(project(":kotlin-stdlib", configuration = "distJsSourcesJar"))
@@ -321,6 +318,7 @@ val proguard by task<CacheableProguardTask> {
             !net/sf/cglib/**,
             !META-INF/maven**,
             **.class,**.properties,**.kt,**.kotlin_*,**.jnilib,**.so,**.dll,**.txt,**.caps,
+            custom-formatters.js,
             META-INF/services/**,META-INF/native/**,META-INF/extensions/**,META-INF/MANIFEST.MF,
             messages/**""".trimIndent()),
         packCompiler.map { it.outputs.files.singleFile }

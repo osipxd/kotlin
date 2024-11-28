@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.backend.common.lower
 
-import org.jetbrains.kotlin.backend.common.BackendContext
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.ir.ExpectSymbolTransformer
 import org.jetbrains.kotlin.descriptors.*
@@ -30,8 +29,6 @@ import kotlin.collections.set
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 open class ExpectDeclarationRemover(val symbolTable: ReferenceSymbolTable, private val doRemove: Boolean) : ExpectSymbolTransformer(),
     FileLoweringPass {
-
-    constructor(context: BackendContext) : this(context.ir.symbols.externalSymbolTable, true)
 
     private val typeParameterSubstitutionMap = mutableMapOf<Pair<IrFunction, IrFunction>, Map<IrTypeParameter, IrTypeParameter>>()
 
@@ -127,7 +124,7 @@ open class ExpectDeclarationRemover(val symbolTable: ReferenceSymbolTable, priva
 
         if (!function.descriptor.isActual) return
 
-        val index = declaration.index
+        val index = declaration.indexInOldValueParameters
 
         if (index < 0) return
 

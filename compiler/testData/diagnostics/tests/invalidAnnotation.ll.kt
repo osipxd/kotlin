@@ -1,9 +1,11 @@
 // LL_FIR_DIVERGENCE
 // Different syntax errors
 // LL_FIR_DIVERGENCE
+// RUN_PIPELINE_TILL: FRONTEND
 // WITH_STDLIB
 // ISSUE: KT-49962
 // COMPARE_WITH_LIGHT_TREE
+// IGNORE_PHASE_VERIFICATION: invalid code inside annotations
 
 import java.io.*
 

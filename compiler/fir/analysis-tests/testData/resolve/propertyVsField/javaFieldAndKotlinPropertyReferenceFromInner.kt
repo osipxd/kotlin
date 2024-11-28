@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: BACKEND
 // FILE: base/Jaba.java
 
 package base;
@@ -12,7 +13,7 @@ import base.Jaba
 
 fun box(): String {
     val x = object : Jaba() {
-        private val a: String = "OK"
+        private val <!PROPERTY_HIDES_JAVA_FIELD!>a<!>: String = "OK"
         inner class S {
             // Should be resolved to a property
             fun foo() = a

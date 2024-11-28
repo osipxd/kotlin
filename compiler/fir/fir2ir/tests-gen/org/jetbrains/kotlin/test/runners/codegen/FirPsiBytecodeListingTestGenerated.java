@@ -1912,6 +1912,28 @@ public class FirPsiBytecodeListingTestGenerated extends AbstractFirPsiBytecodeLi
       }
 
       @Nested
+      @TestMetadata("compiler/testData/codegen/bytecodeListing/jvm8/defaults/defaultCompatibilityBridges")
+      @TestDataPath("$PROJECT_ROOT")
+      public class DefaultCompatibilityBridges {
+        @Test
+        public void testAllFilesPresentInDefaultCompatibilityBridges() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/bytecodeListing/jvm8/defaults/defaultCompatibilityBridges"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+        }
+
+        @Test
+        @TestMetadata("annotations.kt")
+        public void testAnnotations() {
+          runTest("compiler/testData/codegen/bytecodeListing/jvm8/defaults/defaultCompatibilityBridges/annotations.kt");
+        }
+
+        @Test
+        @TestMetadata("noBridgeIfSuperMethodIsAbstract.kt")
+        public void testNoBridgeIfSuperMethodIsAbstract() {
+          runTest("compiler/testData/codegen/bytecodeListing/jvm8/defaults/defaultCompatibilityBridges/noBridgeIfSuperMethodIsAbstract.kt");
+        }
+      }
+
+      @Nested
       @TestMetadata("compiler/testData/codegen/bytecodeListing/jvm8/defaults/noDefaultImpl")
       @TestDataPath("$PROJECT_ROOT")
       public class NoDefaultImpl {
@@ -2543,6 +2565,18 @@ public class FirPsiBytecodeListingTestGenerated extends AbstractFirPsiBytecodeLi
       @TestMetadata("partiallySpecializedClass.kt")
       public void testPartiallySpecializedClass() {
         runTest("compiler/testData/codegen/bytecodeListing/specialBridges/signatures/partiallySpecializedClass.kt");
+      }
+
+      @Test
+      @TestMetadata("withPlatformDependentDeclarations.kt")
+      public void testWithPlatformDependentDeclarations() {
+        runTest("compiler/testData/codegen/bytecodeListing/specialBridges/signatures/withPlatformDependentDeclarations.kt");
+      }
+
+      @Test
+      @TestMetadata("withoutPlatformDependentDeclarations.kt")
+      public void testWithoutPlatformDependentDeclarations() {
+        runTest("compiler/testData/codegen/bytecodeListing/specialBridges/signatures/withoutPlatformDependentDeclarations.kt");
       }
     }
   }

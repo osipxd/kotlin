@@ -11,7 +11,9 @@ val testModules = listOf(
 )
 
 val mainModules = listOf(
-    ":generators"
+    ":generators",
+    ":compiler:tests-mutes",
+    ":compiler:tests-mutes:mutes-junit5",
 )
 
 dependencies {
@@ -21,8 +23,6 @@ dependencies {
     testModules.forEach {
         embedded(projectTests(it)) { isTransitive = false }
     }
-
-    embedded(intellijJavaRt()) { isTransitive = false }
 }
 
 publish()

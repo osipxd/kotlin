@@ -26,14 +26,23 @@ import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.types.AbstractTypeChecker
 import org.jetbrains.kotlin.types.TypeCheckerState
 
-@PhaseDescription(
-    name = "CollectionStubMethod",
-    description = "Generate Collection stub methods"
-)
+/**
+ * Generates exception-throwing stubs for methods from mutable collection classes not implemented in Kotlin classes which inherit only from
+ * Kotlin's read-only collections. This is required on JVM because Kotlin's read-only collections are mapped to mutable JDK collections.
+ *
+ * For example:
+ *
+ *     class C<T> : Collection<String>
+ *
+ * In the bytecode, `C` will have implementations of all mutating methods (`add`, `remove`, `clear`, ...) which throw
+ * `java.lang.UnsupportedOperationException` with the message "Operation is not supported for read-only collection".
+ */
+@PhaseDescription(name = "CollectionStubMethod")
 internal class CollectionStubMethodLowering(val context: JvmBackendContext) : ClassLoweringPass {
     private val collectionStubComputer = context.collectionStubComputer
 

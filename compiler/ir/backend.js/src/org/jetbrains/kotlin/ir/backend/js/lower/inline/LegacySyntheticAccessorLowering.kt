@@ -6,7 +6,7 @@
 package org.jetbrains.kotlin.ir.backend.js.lower.inline
 
 import org.jetbrains.kotlin.backend.common.BodyLoweringPass
-import org.jetbrains.kotlin.backend.common.CommonBackendContext
+import org.jetbrains.kotlin.backend.common.LoweringContext
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
@@ -24,11 +24,14 @@ import org.jetbrains.kotlin.ir.util.SimpleTypeRemapper
 import org.jetbrains.kotlin.ir.util.withinScope
 import org.jetbrains.kotlin.ir.visitors.*
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.utils.memoryOptimizedMap
 
 /**
+ * Wraps top level inline function to access through them from inline functions (legacy lowering).
+ *
  * TODO: Drop in favor of [SyntheticAccessorLowering].
  */
-class LegacySyntheticAccessorLowering(private val context: CommonBackendContext) : BodyLoweringPass {
+class LegacySyntheticAccessorLowering(private val context: LoweringContext) : BodyLoweringPass {
 
     private class CandidatesCollector(val candidates: MutableCollection<IrSimpleFunction>) : IrElementVisitorVoid {
 
@@ -94,7 +97,7 @@ class LegacySyntheticAccessorLowering(private val context: CommonBackendContext)
                 return declaration.factory.createSimpleFunction(
                     startOffset = declaration.startOffset,
                     endOffset = declaration.endOffset,
-                    origin = mapDeclarationOrigin(declaration.origin),
+                    origin = declaration.origin,
                     name = newName,
                     visibility = DescriptorVisibilities.INTERNAL,
                     isInline = declaration.isInline,
@@ -116,14 +119,14 @@ class LegacySyntheticAccessorLowering(private val context: CommonBackendContext)
             }
 
             private fun IrSimpleFunction.transformFunctionChildren(declaration: IrSimpleFunction) {
-                copyTypeParametersFrom(declaration)
+                typeParameters = declaration.typeParameters.memoryOptimizedMap { it.transform() }
                 typeRemapper.withinScope(this) {
                     assert(declaration.dispatchReceiverParameter == null) { "Top level functions do not have dispatch receiver" }
                     extensionReceiverParameter = declaration.extensionReceiverParameter?.transform()?.also {
                         it.parent = this
                     }
                     returnType = typeRemapper.remapType(declaration.returnType)
-                    valueParameters = declaration.valueParameters.transform()
+                    valueParameters = declaration.valueParameters.memoryOptimizedMap { it.transform() }
                     valueParameters.forEach { it.parent = this }
                     typeParameters.forEach { it.parent = this }
                 }

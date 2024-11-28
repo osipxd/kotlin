@@ -140,7 +140,7 @@ abstract class IrBasedCallableDescriptor<T : IrDeclaration>(owner: T) : Callable
 open class IrBasedValueParameterDescriptor(owner: IrValueParameter) : ValueParameterDescriptor,
     IrBasedCallableDescriptor<IrValueParameter>(owner) {
 
-    override val index get() = owner.index
+    override val index get() = owner.indexInOldValueParameters
     override val isCrossinline get() = owner.isCrossinline
     override val isNoinline get() = owner.isNoinline
     override val varargElementType get() = owner.varargElementType?.toIrBasedKotlinType()
@@ -206,7 +206,7 @@ open class IrBasedReceiverParameterDescriptor(owner: IrValueParameter) : Receive
 }
 
 fun IrValueParameter.toIrBasedDescriptor() =
-    if (index < 0)
+    if (indexInOldValueParameters < 0)
         IrBasedReceiverParameterDescriptor(this)
     else
         IrBasedValueParameterDescriptor(this)
@@ -350,19 +350,19 @@ fun IrLocalDelegatedProperty.toIrBasedDescriptor() = IrBasedVariableDescriptorWi
 
 abstract class IrBasedFunctionDescriptor<Function : IrFunction>(owner: Function) : IrBasedCallableDescriptor<Function>(owner) {
 
-    override fun getExtensionReceiverParameter() = owner.extensionReceiverParameter?.toIrBasedDescriptor() as? ReceiverParameterDescriptor
+    override fun getExtensionReceiverParameter() = owner.parameters
+        .firstOrNull { it.kind == IrParameterKind.ExtensionReceiver }
+        ?.toIrBasedDescriptor() as? ReceiverParameterDescriptor
 
-    override fun getContextReceiverParameters() = owner.valueParameters
-        .asSequence()
-        .take(owner.contextReceiverParametersCount)
+    override fun getContextReceiverParameters() = owner.parameters
+        .filter { it.kind == IrParameterKind.Context }
         .map(::IrBasedReceiverParameterDescriptor)
-        .toMutableList()
+        .toList()
 
-    override fun getValueParameters() = owner.valueParameters
-        .asSequence()
-        .drop(owner.contextReceiverParametersCount)
+    override fun getValueParameters() = owner.parameters
+        .filter { it.kind == IrParameterKind.Regular }
         .map(::IrBasedValueParameterDescriptor)
-        .toMutableList()
+        .toList()
 }
 
 // We make all IR-based function descriptors instances of DescriptorWithContainerSource, and use .parentClassId to
@@ -848,8 +848,9 @@ open class IrBasedPropertyDescriptor(owner: IrProperty) :
 
     override fun isLateInit() = owner.isLateinit
 
-    override fun getExtensionReceiverParameter() =
-        owner.getter?.extensionReceiverParameter?.toIrBasedDescriptor() as? ReceiverParameterDescriptor
+    override fun getExtensionReceiverParameter() = owner.getter?.parameters
+        ?.firstOrNull { it.kind == IrParameterKind.ExtensionReceiver }
+        ?.toIrBasedDescriptor() as? ReceiverParameterDescriptor
 
     override fun getContextReceiverParameters(): List<ReceiverParameterDescriptor> {
         return getter?.contextReceiverParameters ?: emptyList()
@@ -1307,7 +1308,7 @@ private fun IrConstructorCall.toAnnotationDescriptor(): AnnotationDescriptor {
     }
     return AnnotationDescriptorImpl(
         annotationClass.defaultType.toIrBasedKotlinType(),
-        symbol.owner.valueParameters.memoryOptimizedMap { it.name to getValueArgument(it.index) }
+        symbol.owner.parameters.memoryOptimizedMap { it.name to arguments[it.indexInParameters] }
             .filter { it.second != null }
             .associate { it.first to it.second!!.toConstantValue() },
         source

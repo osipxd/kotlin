@@ -27,10 +27,9 @@ import org.jetbrains.kotlin.cli.jvm.index.JavaRoot
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.load.kotlin.JvmPackagePartProviderBase
 import org.jetbrains.kotlin.load.kotlin.loadModuleMapping
-import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmMetadataVersion
+import org.jetbrains.kotlin.metadata.deserialization.MetadataVersion
 import org.jetbrains.kotlin.metadata.jvm.deserialization.ModuleMapping
 import org.jetbrains.kotlin.resolve.CompilerDeserializationConfiguration
-import org.jetbrains.kotlin.resolve.jvm.JvmCompilerDeserializationConfiguration
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
 import java.io.PrintStream
@@ -39,7 +38,7 @@ class JvmPackagePartProvider(
     languageVersionSettings: LanguageVersionSettings,
     private val scope: GlobalSearchScope
 ) : JvmPackagePartProviderBase<VirtualFile>() {
-    override val deserializationConfiguration = JvmCompilerDeserializationConfiguration(languageVersionSettings)
+    override val deserializationConfiguration = CompilerDeserializationConfiguration(languageVersionSettings)
 
     override val loadedModules: MutableList<ModuleMappingInfo<VirtualFile>> = SmartList()
 
@@ -74,7 +73,7 @@ fun tryLoadModuleMapping(
         messageCollector.report(
             ERROR,
             "Module was compiled with an incompatible version of Kotlin. The binary version of its metadata is " +
-                    "$incompatibleVersion, expected version is ${JvmMetadataVersion.INSTANCE}.",
+                    "$incompatibleVersion, expected version is ${MetadataVersion.INSTANCE}.",
             CompilerMessageLocation.create(modulePath)
         )
     }

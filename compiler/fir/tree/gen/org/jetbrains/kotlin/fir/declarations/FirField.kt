@@ -37,7 +37,7 @@ abstract class FirField : FirVariable(), FirControlFlowGraphOwner {
     abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val containerSource: DeserializedContainerSource?
     abstract override val dispatchReceiverType: ConeSimpleKotlinType?
-    abstract override val contextReceivers: List<FirContextReceiver>
+    abstract override val contextReceivers: List<FirValueParameter>
     abstract override val name: Name
     abstract override val initializer: FirExpression?
     abstract override val delegate: FirExpression?
@@ -66,7 +66,7 @@ abstract class FirField : FirVariable(), FirControlFlowGraphOwner {
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
-    abstract override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>)
+    abstract override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>)
 
     abstract override fun replaceInitializer(newInitializer: FirExpression?)
 
@@ -87,6 +87,8 @@ abstract class FirField : FirVariable(), FirControlFlowGraphOwner {
     abstract override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirField
 
     abstract override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirField
+
+    abstract override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirField
 
     abstract override fun <D> transformInitializer(transformer: FirTransformer<D>, data: D): FirField
 

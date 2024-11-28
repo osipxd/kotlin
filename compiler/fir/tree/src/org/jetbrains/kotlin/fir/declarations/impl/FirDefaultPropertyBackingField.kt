@@ -18,6 +18,8 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.name.CallableId
 
+private val BACKING_FIELD_CALLABLE_ID = CallableId(BACKING_FIELD)
+
 @OptIn(FirImplementationDetail::class)
 class FirDefaultPropertyBackingField(
     moduleData: FirModuleData,
@@ -36,23 +38,14 @@ class FirDefaultPropertyBackingField(
     origin = origin,
     attributes = FirDeclarationAttributes(),
     returnTypeRef = returnTypeRef,
-    receiverParameter = null,
     deprecationsProvider = UnresolvedDeprecationProvider,
-    containerSource = null,
-    dispatchReceiverType = null,
     name = BACKING_FIELD,
-    delegate = null,
     isVar = isVar,
     isVal = !isVar,
-    getter = null,
-    setter = null,
-    backingField = null,
-    symbol = FirBackingFieldSymbol(CallableId(BACKING_FIELD)),
+    symbol = FirBackingFieldSymbol(BACKING_FIELD_CALLABLE_ID),
     propertySymbol = propertySymbol,
     initializer = null,
     annotations = annotations.toMutableOrEmpty(),
-    typeParameters = mutableListOf(),
     status = status,
-    contextReceivers = MutableOrEmptyList.empty(),
 )
 

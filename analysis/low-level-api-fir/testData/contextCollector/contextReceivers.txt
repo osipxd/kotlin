@@ -15,12 +15,10 @@ Tower Data Context:
         Scope: FirLocalScope
     Element 7
         Context receivers:
-            FirNamedFunctionSymbol context(R|Foo|, R|Bar|)
-            public final fun test(): R|kotlin/Unit|
+            FirValueParameterSymbol R|Foo|
                 Type: Foo
                 Label: Foo
-            FirNamedFunctionSymbol context(R|Foo|, R|Bar|)
-            public final fun test(): R|kotlin/Unit|
+            FirValueParameterSymbol R|Bar|
                 Type: Bar
                 Label: Bar
     Element 8
@@ -35,7 +33,7 @@ FILE: [ResolvedTo(IMPORTS)] contextReceivers.kt
         public abstract [ResolvedTo(CONTRACTS)] fun bar(): R|kotlin/Int|
 
     }
-    context(R|Foo|, R|Bar|)
+    context([ResolvedTo(BODY_RESOLVE)] R|Foo|, [ResolvedTo(BODY_RESOLVE)] R|Bar|)
     public final [ResolvedTo(BODY_RESOLVE)] fun test(): R|kotlin/Unit| {
-        this@R|/test|.R|/Foo.foo|().R|kotlin/Int.plus|(this@R|/test|.R|/Bar.bar|())
+        this@R|context of /test|.R|/Foo.foo|().R|kotlin/Int.plus|(this@R|context of /test|.R|/Bar.bar|())
     }

@@ -31,7 +31,6 @@ kotlin {
                 "org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl"
             )
         )
-        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0)
     }
 
     tasks.named<Test>("test") {
@@ -113,6 +112,7 @@ dependencies {
     commonApi(platform(project(":kotlin-gradle-plugins-bom")))
     commonApi(project(":kotlin-gradle-plugin-api"))
     commonApi(project(":kotlin-gradle-plugin-model"))
+    commonApi(project(":libraries:tools:gradle:fus-statistics-gradle-plugin"))
 
     // Following two dependencies is a workaround for IDEA import to pick-up them correctly
     commonCompileOnly(project(":kotlin-gradle-plugin-api")) {
@@ -168,7 +168,7 @@ dependencies {
     commonImplementation(project(":kotlin-gradle-plugin-idea"))
     commonImplementation(project(":kotlin-gradle-plugin-idea-proto"))
     commonImplementation(project(":native:kotlin-klib-commonizer-api")) // TODO: consider removing in KT-70247
-    commonImplementation(project(":compiler:build-tools:kotlin-build-tools-api"))
+
     commonImplementation(project(":compiler:build-tools:kotlin-build-statistics"))
     commonImplementation(project(":kotlin-util-klib-metadata")) // TODO: consider removing in KT-70247
 
@@ -195,8 +195,8 @@ dependencies {
         exclude(group = "*")
     }
 
-    commonCompileOnly("org.apache.commons:commons-compress:1.26.0")
-    embedded("org.apache.commons:commons-compress:1.26.0")
+    commonCompileOnly(libs.apache.commons.compress)
+    embedded(libs.apache.commons.compress)
 
     if (!kotlinBuildProperties.isInJpsBuildIdeaSync) {
         // Adding workaround KT-57317 for Gradle versions where Kotlin runtime <1.8.0
@@ -220,6 +220,72 @@ configurations.commonCompileClasspath.get().exclude("org.jetbrains.kotlinx", "ko
 
 if (kotlinBuildProperties.isInJpsBuildIdeaSync) {
     configurations.commonApi.get().exclude("com.android.tools.external.com-intellij", "intellij-core")
+}
+
+/**
+ * Security Advisory: Vulnerable Transitive Dependencies
+ *
+ * The dependency com.android.tools.build:gradle:8.7.2 introduces several transitive
+ * dependencies with known security vulnerabilities. The following configuration
+ * enforces safer versions of these dependencies.
+ *
+ * Affected Libraries:
+ * ├── com.google.protobuf
+ * │   ├── protobuf-java:* → 3.25.5
+ * │   └── protobuf-java-util:3.22.3
+ * ├── io.netty
+ * │   ├── netty-buffer:*
+ * │   ├── netty-codec-http:* → 4.1.115.Final
+ * │   ├── netty-codec-http2:* → 4.1.115.Final
+ * │   ├── netty-common:* → 4.1.115.Final
+ * │   └── netty-handler:* → 4.1.115.Final
+ * ├── org.apache.commons
+ * │   ├── commons-compress:* → 1.27.1
+ * │   └── commons-io:* → 2.16.1
+ * └── org.bouncycastle:bcpkix-jdk18on:* → 1.79
+ *
+ * Mitigated Vulnerabilities:
+ * 1. Google Protobuf
+ *    - CVE-2024-7254: Potential security vulnerability
+ *
+ * 2. Netty Components
+ *    - CVE-2024-47535: Network security vulnerability
+ *    - CVE-2024-29025: Remote code execution risk
+ *    - CVE-2023-4586: Information disclosure vulnerability
+ *    - CVE-2023-34462: Potential denial of service
+ *
+ * 3. Bouncy Castle
+ *    - CVE-2024-34447: Cryptographic security issue
+ *    - CVE-2024-30172: Potential encryption vulnerability
+ *    - CVE-2024-30171: Security protocol weakness
+ *    - CVE-2024-29857: Cryptographic implementation flaw
+ */
+configurations.all {
+    resolutionStrategy.eachDependency {
+        // Google Protobuf
+        if (requested.group == "com.google.protobuf" && requested.name == "protobuf-java") {
+            useVersion("3.25.5")
+            because("CVE-2024-7254")
+        }
+
+        // Netty Components
+        if (requested.group == "io.netty" &&
+            listOf(
+                "netty-buffer",
+                "netty-codec-http2",
+                "netty-handler-proxy",
+            ).contains(requested.name)
+        ) {
+            useVersion("4.1.115.Final")
+            because("CVE-2024-47535, CVE-2024-29025, CVE-2023-4586, CVE-2023-34462")
+        }
+
+        // Bouncy Castle
+        if (requested.group == "org.bouncycastle" && requested.name == "bcpkix-jdk18on") {
+            useVersion("1.79")
+            because("CVE-2024-34447, CVE-2024-30172, CVE-2024-30171, CVE-2024-29857")
+        }
+    }
 }
 
 tasks {
@@ -437,21 +503,24 @@ if (!kotlinBuildProperties.isInJpsBuildIdeaSync) {
 
     val functionalTestCompilation = kotlin.target.compilations.getByName("functionalTest")
     functionalTestCompilation.compileJavaTaskProvider.configure {
-        sourceCompatibility = JavaLanguageVersion.of(11).toString()
-        targetCompatibility = JavaLanguageVersion.of(11).toString()
+        sourceCompatibility = JavaLanguageVersion.of(17).toString()
+        targetCompatibility = JavaLanguageVersion.of(17).toString()
     }
     functionalTestCompilation.compileTaskProvider.configure {
         with(this as KotlinCompile) {
-            kotlinJavaToolchain.toolchain.use(project.getToolchainLauncherFor(JdkMajorVersion.JDK_11_0))
+            kotlinJavaToolchain.toolchain.use(project.getToolchainLauncherFor(JdkMajorVersion.JDK_17_0))
         }
     }
     functionalTestCompilation.associateWith(kotlin.target.compilations.getByName(gradlePluginVariantForFunctionalTests.sourceSetName))
     functionalTestCompilation.associateWith(kotlin.target.compilations.getByName("common"))
 
-    tasks.register<Test>("functionalTest")
+    tasks.register<Test>("functionalTest") {
+        systemProperty("kotlinVersion", rootProject.extra["kotlinVersion"] as String)
+    }
 
     tasks.register<Test>("functionalUnitTest") {
         include("**/org/jetbrains/kotlin/gradle/unitTests/**")
+        systemProperty("kotlinVersion", rootProject.extra["kotlinVersion"] as String)
     }
 
     tasks.register<Test>("functionalRegressionTest") {
@@ -475,7 +544,7 @@ if (!kotlinBuildProperties.isInJpsBuildIdeaSync) {
         classpath = functionalTestSourceSet.runtimeClasspath
         workingDir = projectDir
         javaLauncher.set(javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(11))
+            languageVersion.set(JavaLanguageVersion.of(17))
         })
         dependsOnKotlinGradlePluginInstall()
         androidSdkProvisioner {
@@ -483,6 +552,7 @@ if (!kotlinBuildProperties.isInJpsBuildIdeaSync) {
             dependsOn(acceptLicensesTask)
         }
         maxParallelForks = 8
+        maxHeapSize = "4G" // KT-72460 to investigate why we need to change heap size
 
         testLogging {
             events("passed", "skipped", "failed")
@@ -493,9 +563,9 @@ if (!kotlinBuildProperties.isInJpsBuildIdeaSync) {
         val implementation = project.configurations.getByName(functionalTestSourceSet.implementationConfigurationName)
         val compileOnly = project.configurations.getByName(functionalTestSourceSet.compileOnlyConfigurationName)
 
-        implementation("com.android.tools.build:gradle:7.4.2")
-        implementation("com.android.tools.build:gradle-api:7.4.2")
-        compileOnly("com.android.tools:common:30.2.1")
+        implementation("com.android.tools.build:gradle:8.7.2")
+        implementation("com.android.tools.build:gradle-api:8.7.2")
+        compileOnly("com.android.tools:common:31.7.2")
         implementation(gradleKotlinDsl())
         implementation(project(":kotlin-gradle-plugin-tcs-android"))
         implementation(project(":kotlin-tooling-metadata"))

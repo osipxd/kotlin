@@ -1,3 +1,5 @@
+// IGNORE_FIR_DIAGNOSTICS
+// RUN_PIPELINE_TILL: FRONTEND
 // MODULE: common
 // FILE: common.kt
 expect interface I

@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.fir.FirModuleData
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.references.FirControlFlowGraphReference
-import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.ConeSimpleKotlinType
 import org.jetbrains.kotlin.fir.types.FirTypeRef
@@ -38,7 +38,7 @@ abstract class FirValueParameter : FirVariable(), FirControlFlowGraphOwner {
     abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val containerSource: DeserializedContainerSource?
     abstract override val dispatchReceiverType: ConeSimpleKotlinType?
-    abstract override val contextReceivers: List<FirContextReceiver>
+    abstract override val contextReceivers: List<FirValueParameter>
     abstract override val name: Name
     abstract override val initializer: FirExpression?
     abstract override val delegate: FirExpression?
@@ -51,10 +51,11 @@ abstract class FirValueParameter : FirVariable(), FirControlFlowGraphOwner {
     abstract override val controlFlowGraphReference: FirControlFlowGraphReference?
     abstract override val symbol: FirValueParameterSymbol
     abstract val defaultValue: FirExpression?
-    abstract val containingFunctionSymbol: FirFunctionSymbol<*>
+    abstract val containingDeclarationSymbol: FirBasedSymbol<*>
     abstract val isCrossinline: Boolean
     abstract val isNoinline: Boolean
     abstract val isVararg: Boolean
+    abstract val valueParameterKind: FirValueParameterKind
 
     override fun <R, D> accept(visitor: FirVisitor<R, D>, data: D): R =
         visitor.visitValueParameter(this, data)
@@ -71,7 +72,7 @@ abstract class FirValueParameter : FirVariable(), FirControlFlowGraphOwner {
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
-    abstract override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>)
+    abstract override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>)
 
     abstract override fun replaceInitializer(newInitializer: FirExpression?)
 
@@ -94,6 +95,8 @@ abstract class FirValueParameter : FirVariable(), FirControlFlowGraphOwner {
     abstract override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirValueParameter
 
     abstract override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirValueParameter
+
+    abstract override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirValueParameter
 
     abstract override fun <D> transformInitializer(transformer: FirTransformer<D>, data: D): FirValueParameter
 

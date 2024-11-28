@@ -16,9 +16,6 @@ import org.jetbrains.kotlin.analysis.api.contracts.description.renderKaContractE
 import org.jetbrains.kotlin.analysis.api.projectStructure.*
 import org.jetbrains.kotlin.analysis.api.symbols.markers.KaNamedSymbol
 import org.jetbrains.kotlin.analysis.api.types.*
-import org.jetbrains.kotlin.analysis.api.types.KaStarTypeProjection
-import org.jetbrains.kotlin.analysis.api.types.KaTypeArgumentWithVariance
-import org.jetbrains.kotlin.analysis.api.types.KaTypeProjection
 import org.jetbrains.kotlin.analysis.api.utils.getApiKClassOf
 import org.jetbrains.kotlin.analysis.utils.printer.PrettyPrinter
 import org.jetbrains.kotlin.analysis.utils.printer.prettyPrint
@@ -83,6 +80,10 @@ public class DebugSymbolRenderer(
 
                 if (symbol is KaCallableSymbol) {
                     renderComputedValue("getContainingJvmClassName", printer, currentSymbolStack) { symbol.containingJvmClassName }
+                }
+
+                if (symbol is KaNamedFunctionSymbol) {
+                    renderComputedValue("canBeOperator", printer, currentSymbolStack) { symbol.canBeOperator() }
                 }
 
                 renderComputedValue("getContainingModule", printer, currentSymbolStack) { symbol.containingModule }
@@ -223,7 +224,7 @@ public class DebugSymbolRenderer(
             }
         }
 
-        if (symbol !in currentSymbolStack && (renderSymbolsFully || symbol is KaBackingFieldSymbol || symbol is KaPropertyAccessorSymbol || symbol is KaParameterSymbol)) {
+        if (symbol !in currentSymbolStack && (renderSymbolsFully || symbol is KaBackingFieldSymbol || symbol is KaPropertyAccessorSymbol || symbol is KaParameterSymbol || symbol is KaTypeParameterSymbol)) {
             renderSymbol(symbol, printer, currentSymbolStack)
             return
         }
@@ -346,7 +347,7 @@ public class DebugSymbolRenderer(
             is KaTypeProjection -> renderTypeProjection(value, printer, currentSymbolStack)
             is KaClassTypeQualifier -> renderTypeQualifier(value, printer, currentSymbolStack)
             is KaAnnotationValue -> renderAnnotationValue(value, printer)
-            is KaContractEffectDeclaration -> Context(this@KaSession, printer, this@DebugSymbolRenderer)
+            is KaContractEffectDeclaration -> Context(this@renderValue, printer, this@DebugSymbolRenderer)
                 .renderKaContractEffectDeclaration(value, endWithNewLine = false)
             is KaNamedAnnotationValue -> renderNamedConstantValue(value, printer, currentSymbolStack)
             is KaInitializerValue -> renderKtInitializerValue(value, printer)

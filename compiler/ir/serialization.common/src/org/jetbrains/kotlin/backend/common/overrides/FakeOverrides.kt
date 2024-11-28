@@ -21,8 +21,6 @@ import org.jetbrains.kotlin.backend.common.linkage.partial.PartialLinkageSupport
 import org.jetbrains.kotlin.backend.common.serialization.CompatibilityMode
 import org.jetbrains.kotlin.backend.common.serialization.DeclarationTable
 import org.jetbrains.kotlin.backend.common.serialization.GlobalDeclarationTable
-import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureFactory
-import org.jetbrains.kotlin.backend.common.serialization.signature.PublicIdSignatureComputer
 import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.builders.declarations.buildProperty
@@ -49,15 +47,17 @@ class FakeOverrideGlobalDeclarationTable(
 
 open class FakeOverrideDeclarationTable(
     mangler: KotlinMangler.IrMangler,
-    globalTable: FakeOverrideGlobalDeclarationTable = FakeOverrideGlobalDeclarationTable(mangler),
-    signatureSerializerFactory: (PublicIdSignatureComputer, DeclarationTable) -> IdSignatureFactory
-) : DeclarationTable(globalTable) {
-    override val globalDeclarationTable: FakeOverrideGlobalDeclarationTable = globalTable
-    override val signaturer: IdSignatureFactory = signatureSerializerFactory(globalTable.publicIdSignatureComputer, this)
+    globalDeclarationTable: FakeOverrideGlobalDeclarationTable = FakeOverrideGlobalDeclarationTable(mangler),
+) : DeclarationTable<FakeOverrideGlobalDeclarationTable>(globalDeclarationTable) {
 
     fun clear() {
-        this.table.clear()
+        table.clear()
         globalDeclarationTable.clear()
+    }
+
+    fun addDeserializedDeclarationAndSignature(declaration: IrDeclaration, signature: IdSignature) {
+        check(table[declaration] == null) { "Declaration table already has signature for ${declaration.render()}" }
+        table[declaration] = signature
     }
 }
 
@@ -79,7 +79,7 @@ private class IrLinkerFakeOverrideBuilderStrategy(
     val symbolTable: SymbolTable,
     private val irBuiltIns: IrBuiltIns,
     private val partialLinkageSupport: PartialLinkageSupportForLinker,
-    private val fakeOverrideDeclarationTable: DeclarationTable,
+    private val fakeOverrideDeclarationTable: FakeOverrideDeclarationTable,
     friendModules: Map<String, Collection<String>>,
     unimplementedOverridesStrategy: IrUnimplementedOverridesStrategy,
 ) : FakeOverrideBuilderStrategy(
@@ -142,7 +142,7 @@ private class IrLinkerFakeOverrideBuilderStrategy(
     }
 
     private fun composeSignature(declaration: IrDeclaration, manglerCompatibleMode: Boolean) =
-        fakeOverrideDeclarationTable.signaturer.composeSignatureForDeclaration(declaration, manglerCompatibleMode)
+        fakeOverrideDeclarationTable.signatureByDeclaration(declaration, manglerCompatibleMode, recordInSignatureClashDetector = false)
 
     private fun computeFunctionFakeOverrideSymbol(
         function: IrFunctionWithLateBinding,
@@ -251,9 +251,7 @@ class IrLinkerFakeOverrideProvider(
     friendModules: Map<String, Collection<String>>,
     private val partialLinkageSupport: PartialLinkageSupportForLinker,
     val platformSpecificClassFilter: FakeOverrideClassFilter = DefaultFakeOverrideClassFilter,
-    private val fakeOverrideDeclarationTable: DeclarationTable = FakeOverrideDeclarationTable(mangler) { builder, table ->
-        IdSignatureFactory(builder, table)
-    },
+    private val fakeOverrideDeclarationTable: FakeOverrideDeclarationTable = FakeOverrideDeclarationTable(mangler),
     externalOverridabilityConditions: List<IrExternalOverridabilityCondition> = emptyList(),
 ) {
     private val irFakeOverrideBuilder = IrFakeOverrideBuilder(
@@ -277,7 +275,7 @@ class IrLinkerFakeOverrideProvider(
     val fakeOverrideCandidates = mutableMapOf<IrClass, CompatibilityMode>()
 
     fun enqueueClass(clazz: IrClass, signature: IdSignature, compatibilityMode: CompatibilityMode) {
-        fakeOverrideDeclarationTable.assumeDeclarationSignature(clazz, signature)
+        fakeOverrideDeclarationTable.addDeserializedDeclarationAndSignature(clazz, signature)
         fakeOverrideCandidates[clazz] = compatibilityMode
     }
 

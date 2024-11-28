@@ -9,10 +9,7 @@
 package org.jetbrains.kotlin.fir.visitors
 
 import org.jetbrains.kotlin.fir.FirTargetElement
-import org.jetbrains.kotlin.fir.contracts.FirEffectDeclaration
-import org.jetbrains.kotlin.fir.contracts.FirLegacyRawContractDescription
-import org.jetbrains.kotlin.fir.contracts.FirRawContractDescription
-import org.jetbrains.kotlin.fir.contracts.FirResolvedContractDescription
+import org.jetbrains.kotlin.fir.contracts.*
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.references.*
@@ -95,6 +92,9 @@ abstract class FirDefaultVisitor<out R, in D> : FirVisitor<R, D>() {
     override fun visitAnonymousObjectExpression(anonymousObjectExpression: FirAnonymousObjectExpression, data: D): R =
         visitExpression(anonymousObjectExpression, data)
 
+    override fun visitTypeAlias(typeAlias: FirTypeAlias, data: D): R =
+        visitClassLikeDeclaration(typeAlias, data)
+
     override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: FirAnonymousFunctionExpression, data: D): R =
         visitExpression(anonymousFunctionExpression, data)
 
@@ -114,7 +114,7 @@ abstract class FirDefaultVisitor<out R, in D> : FirVisitor<R, D>() {
         visitDelegatedConstructorCall(multiDelegatedConstructorCall, data)
 
     override fun visitReceiverParameter(receiverParameter: FirReceiverParameter, data: D): R =
-        visitAnnotationContainer(receiverParameter, data)
+        visitDeclaration(receiverParameter, data)
 
     override fun visitScriptReceiverParameter(scriptReceiverParameter: FirScriptReceiverParameter, data: D): R =
         visitReceiverParameter(scriptReceiverParameter, data)
@@ -274,4 +274,7 @@ abstract class FirDefaultVisitor<out R, in D> : FirVisitor<R, D>() {
 
     override fun visitLegacyRawContractDescription(legacyRawContractDescription: FirLegacyRawContractDescription, data: D): R =
         visitContractDescription(legacyRawContractDescription, data)
+
+    override fun visitErrorContractDescription(errorContractDescription: FirErrorContractDescription, data: D): R =
+        visitContractDescription(errorContractDescription, data)
 }

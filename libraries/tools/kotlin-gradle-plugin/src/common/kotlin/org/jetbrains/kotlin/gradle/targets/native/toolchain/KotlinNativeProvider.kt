@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.gradle.targets.native.toolchain
 
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
@@ -14,12 +15,10 @@ import org.gradle.api.tasks.Internal
 import org.jetbrains.kotlin.gradle.internal.properties.nativeProperties
 import org.jetbrains.kotlin.gradle.plugin.KOTLIN_NATIVE_BUNDLE_CONFIGURATION_NAME
 import org.jetbrains.kotlin.gradle.plugin.PropertiesProvider.Companion.kotlinPropertiesProvider
-import org.jetbrains.kotlin.gradle.plugin.mpp.enabledOnCurrentHostForBinariesCompilation
 import org.jetbrains.kotlin.gradle.utils.NativeCompilerDownloader
 import org.jetbrains.kotlin.gradle.utils.property
 import org.jetbrains.kotlin.konan.target.Distribution
 import org.jetbrains.kotlin.konan.target.KonanTarget
-import java.io.File
 
 internal sealed class KotlinNativeProvider(project: Project) {
     @get:Internal
@@ -31,10 +30,13 @@ internal sealed class KotlinNativeProvider(project: Project) {
     @get:Internal
     val toolchainEnabled: Provider<Boolean> = project.nativeProperties.isToolchainEnabled
 
-    @get:Internal
     //Using DirectoryProperty causes the native directory to be included in the configuration cache input.
-    internal val bundleDirectory: Provider<String> = project.nativeProperties.actualNativeHomeDirectory.map { it.absolutePath }
+    @get:Internal
+    val bundleDirectory: DirectoryProperty = project.objects.directoryProperty()
+        .fileProvider(project.nativeProperties.actualNativeHomeDirectory)
+
 }
+
 /**
  * This Kotlin Native provider is a stub for the cases, when Kotlin Native tasks are not supported to be built.
  */
@@ -76,7 +78,7 @@ internal class KotlinNativeFromToolchainProvider(
                 project,
                 kotlinNativeCompilerConfiguration,
                 kotlinNativeVersion,
-                File(bundleDir),
+                bundleDir.asFile,
                 reinstallFlag,
                 konanTargets,
                 overriddenKonanHome.orNull
@@ -92,7 +94,7 @@ internal class KotlinNativeFromToolchainProvider(
                 if (toolchainEnabled.get() && enableDependenciesDownloading) {
                     kotlinNativeBundleBuildService.get()
                         .downloadNativeDependencies(
-                            File(bundleDir),
+                            bundleDir.asFile,
                             konanDataDir.orNull,
                             konanTargets,
                             project.logger
@@ -120,8 +122,8 @@ internal class KotlinNativeFromToolchainProvider(
         )
 }
 
-internal fun UsesKotlinNativeBundleBuildService.chooseKotlinNativeProvider(project: Project, konanTarget: KonanTarget): KotlinNativeProvider {
-    if (konanTarget.enabledOnCurrentHostForBinariesCompilation()) {
+internal fun UsesKotlinNativeBundleBuildService.chooseKotlinNativeProvider(enabledOnCurrenHost: Boolean, konanTarget: KonanTarget, ): KotlinNativeProvider {
+    if (enabledOnCurrenHost) {
         return KotlinNativeFromToolchainProvider(project, konanTarget, kotlinNativeBundleBuildService)
     } else {
         return NoopKotlinNativeProvider(project)
@@ -130,5 +132,5 @@ internal fun UsesKotlinNativeBundleBuildService.chooseKotlinNativeProvider(proje
 
 internal val KotlinNativeProvider.konanDistribution
     get() = bundleDirectory.map {
-        Distribution(it)
+        Distribution(it.asFile.absolutePath)
     }

@@ -3,7 +3,7 @@
 // ASSERTIONS_MODE: always-disable
 // WITH_STDLIB
 
-@file:Suppress("OPT_IN_USAGE_ERROR")
+@OptIn(kotlin.experimental.ExperimentalNativeApi::class)
 
 // CHECK-LABEL: define i32 @"kfun:#nonEmptySize(kotlin.IntArray){}kotlin.Int"
 // CHECK-NOT: call void @"kfun:kotlin.AssertionError#<init>(kotlin.Any?){}"

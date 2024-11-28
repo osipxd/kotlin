@@ -1739,6 +1739,68 @@ public class DiagnosticCompilerTestFirTestdataTestGenerated extends AbstractDiag
     }
 
     @Nested
+    @TestMetadata("compiler/fir/analysis-tests/testData/resolve/contextParameters")
+    @TestDataPath("$PROJECT_ROOT")
+    public class ContextParameters {
+      @Test
+      public void testAllFilesPresentInContextParameters() {
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/analysis-tests/testData/resolve/contextParameters"), Pattern.compile("^([^.]+)\\.kt$"), null, true);
+      }
+
+      @Test
+      @TestMetadata("callableReference.kt")
+      public void testCallableReference() {
+        runTest("compiler/fir/analysis-tests/testData/resolve/contextParameters/callableReference.kt");
+      }
+
+      @Test
+      @TestMetadata("contextLambda.kt")
+      public void testContextLambda() {
+        runTest("compiler/fir/analysis-tests/testData/resolve/contextParameters/contextLambda.kt");
+      }
+
+      @Test
+      @TestMetadata("smoke.kt")
+      public void testSmoke() {
+        runTest("compiler/fir/analysis-tests/testData/resolve/contextParameters/smoke.kt");
+      }
+
+      @Nested
+      @TestMetadata("compiler/fir/analysis-tests/testData/resolve/contextParameters/diagnostics")
+      @TestDataPath("$PROJECT_ROOT")
+      public class Diagnostics {
+        @Test
+        public void testAllFilesPresentInDiagnostics() {
+          KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/analysis-tests/testData/resolve/contextParameters/diagnostics"), Pattern.compile("^([^.]+)\\.kt$"), null, true);
+        }
+
+        @Test
+        @TestMetadata("contextParameterSyntaxWithoutLanguageFeature.kt")
+        public void testContextParameterSyntaxWithoutLanguageFeature() {
+          runTest("compiler/fir/analysis-tests/testData/resolve/contextParameters/diagnostics/contextParameterSyntaxWithoutLanguageFeature.kt");
+        }
+
+        @Test
+        @TestMetadata("nameClashes.kt")
+        public void testNameClashes() {
+          runTest("compiler/fir/analysis-tests/testData/resolve/contextParameters/diagnostics/nameClashes.kt");
+        }
+
+        @Test
+        @TestMetadata("subtyping.kt")
+        public void testSubtyping() {
+          runTest("compiler/fir/analysis-tests/testData/resolve/contextParameters/diagnostics/subtyping.kt");
+        }
+
+        @Test
+        @TestMetadata("unsupportedContextParameters.kt")
+        public void testUnsupportedContextParameters() {
+          runTest("compiler/fir/analysis-tests/testData/resolve/contextParameters/diagnostics/unsupportedContextParameters.kt");
+        }
+      }
+    }
+
+    @Nested
     @TestMetadata("compiler/fir/analysis-tests/testData/resolve/contracts")
     @TestDataPath("$PROJECT_ROOT")
     public class Contracts {
@@ -1984,6 +2046,12 @@ public class DiagnosticCompilerTestFirTestdataTestGenerated extends AbstractDiag
       }
 
       @Test
+      @TestMetadata("instanceAccessBeforeSuperCallErrorOnRed.kt")
+      public void testInstanceAccessBeforeSuperCallErrorOnRed() {
+        runTest("compiler/fir/analysis-tests/testData/resolve/diagnostics/instanceAccessBeforeSuperCallErrorOnRed.kt");
+      }
+
+      @Test
       @TestMetadata("interfaceWithSuperclass.kt")
       public void testInterfaceWithSuperclass() {
         runTest("compiler/fir/analysis-tests/testData/resolve/diagnostics/interfaceWithSuperclass.kt");
@@ -1993,6 +2061,12 @@ public class DiagnosticCompilerTestFirTestdataTestGenerated extends AbstractDiag
       @TestMetadata("javaInheritsPrivateJavaClass.kt")
       public void testJavaInheritsPrivateJavaClass() {
         runTest("compiler/fir/analysis-tests/testData/resolve/diagnostics/javaInheritsPrivateJavaClass.kt");
+      }
+
+      @Test
+      @TestMetadata("javaInheritsPrivateKtClass2.kt")
+      public void testJavaInheritsPrivateKtClass2() {
+        runTest("compiler/fir/analysis-tests/testData/resolve/diagnostics/javaInheritsPrivateKtClass2.kt");
       }
 
       @Test
@@ -2956,6 +3030,18 @@ public class DiagnosticCompilerTestFirTestdataTestGenerated extends AbstractDiag
       }
 
       @Test
+      @TestMetadata("kt72164.kt")
+      public void testKt72164() {
+        runTest("compiler/fir/analysis-tests/testData/resolve/extraCheckers/kt72164.kt");
+      }
+
+      @Test
+      @TestMetadata("kt72537.kt")
+      public void testKt72537() {
+        runTest("compiler/fir/analysis-tests/testData/resolve/extraCheckers/kt72537.kt");
+      }
+
+      @Test
       @TestMetadata("RedundantExplicitTypeChecker.kt")
       public void testRedundantExplicitTypeChecker() {
         runTest("compiler/fir/analysis-tests/testData/resolve/extraCheckers/RedundantExplicitTypeChecker.kt");
@@ -3410,6 +3496,12 @@ public class DiagnosticCompilerTestFirTestdataTestGenerated extends AbstractDiag
         @TestMetadata("Basic.kt")
         public void testBasic() {
           runTest("compiler/fir/analysis-tests/testData/resolve/extraCheckers/UselessCallOnNotNullChecker/Basic.kt");
+        }
+
+        @Test
+        @TestMetadata("isNullOrEmptyFromJava.kt")
+        public void testIsNullOrEmptyFromJava() {
+          runTest("compiler/fir/analysis-tests/testData/resolve/extraCheckers/UselessCallOnNotNullChecker/isNullOrEmptyFromJava.kt");
         }
 
         @Test
@@ -3955,6 +4047,22 @@ public class DiagnosticCompilerTestFirTestdataTestGenerated extends AbstractDiag
       @TestMetadata("TypeAliasExpansion.kt")
       public void testTypeAliasExpansion() {
         runTest("compiler/fir/analysis-tests/testData/resolve/multifile/TypeAliasExpansion.kt");
+      }
+    }
+
+    @Nested
+    @TestMetadata("compiler/fir/analysis-tests/testData/resolve/nestedTypeAliases")
+    @TestDataPath("$PROJECT_ROOT")
+    public class NestedTypeAliases {
+      @Test
+      public void testAllFilesPresentInNestedTypeAliases() {
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/analysis-tests/testData/resolve/nestedTypeAliases"), Pattern.compile("^([^.]+)\\.kt$"), null, true);
+      }
+
+      @Test
+      @TestMetadata("simple.kt")
+      public void testSimple() {
+        runTest("compiler/fir/analysis-tests/testData/resolve/nestedTypeAliases/simple.kt");
       }
     }
 
@@ -6270,6 +6378,18 @@ public class DiagnosticCompilerTestFirTestdataTestGenerated extends AbstractDiag
             @TestMetadata("coercedInvocationKind.kt")
             public void testCoercedInvocationKind() {
               runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/contracts/fromSource/bad/callsInPlace/coercedInvocationKind.kt");
+            }
+
+            @Test
+            @TestMetadata("contractAndImplicitTypeInterdependency1.kt")
+            public void testContractAndImplicitTypeInterdependency1() {
+              runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/contracts/fromSource/bad/callsInPlace/contractAndImplicitTypeInterdependency1.kt");
+            }
+
+            @Test
+            @TestMetadata("contractAndImplicitTypeInterdependency2.kt")
+            public void testContractAndImplicitTypeInterdependency2() {
+              runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/contracts/fromSource/bad/callsInPlace/contractAndImplicitTypeInterdependency2.kt");
             }
 
             @Test

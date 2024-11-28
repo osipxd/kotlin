@@ -13,12 +13,16 @@ import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.util.overrides
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlin.utils.filterIsInstanceAnd
 
+/**
+ * Calls `toString` for values of some types when concatenating strings.
+ */
 class JsStringConcatenationLowering(val context: CommonBackendContext) : FileLoweringPass {
     override fun lower(irFile: IrFile) {
         irFile.transformChildrenVoid(JsStringConcatenationTransformer(context))
@@ -38,10 +42,10 @@ private class JsStringConcatenationTransformer(val context: CommonBackendContext
              * in the class because it would complicate incremental compilation.
              *
              * Ignore [Long] and all its supertypes ([Any], [Comparable], [Number]) since [Long] has the valueOf() method.
-             * Ignore [Char] since it requires an explicit conversion to string.
+             * Ignore [Char] and [Array] since it requires an explicit conversion to string.
              */
             return when (classifier.signature) {
-                IdSignatureValues._boolean, IdSignatureValues.string, IdSignatureValues.array,
+                IdSignatureValues._boolean, IdSignatureValues.string,
                 IdSignatureValues._byte, IdSignatureValues._short, IdSignatureValues._int,
                 IdSignatureValues.uByte, IdSignatureValues.uShort, IdSignatureValues.uInt, IdSignatureValues.uLong,
                 IdSignatureValues._float, IdSignatureValues._double,

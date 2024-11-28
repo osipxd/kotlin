@@ -7,8 +7,8 @@ package org.jetbrains.kotlin.gradle
 
 import org.gradle.api.Action
 import org.gradle.util.GradleVersion
-import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension
-import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin
 import org.jetbrains.kotlin.gradle.testbase.*
 import org.jetbrains.kotlin.test.TestMetadata
 import org.junit.jupiter.api.DisplayName
@@ -70,9 +70,10 @@ class NodeJsGradlePluginIT : KGPBaseTest() {
             "subprojects-nodejs-setup",
             gradleVersion
         ) {
+            @Suppress("DEPRECATION")
             buildScriptInjection {
-                project.rootProject.plugins.withType(NodeJsRootPlugin::class.java, Action {
-                    project.rootProject.extensions.getByType(NodeJsRootExtension::class.java).version = "22.3.0"
+                project.rootProject.plugins.withType(NodeJsPlugin::class.java, Action {
+                    project.rootProject.extensions.getByType(NodeJsEnvSpec::class.java).version.set("22.3.0")
                 })
             }
 
@@ -83,6 +84,20 @@ class NodeJsGradlePluginIT : KGPBaseTest() {
             build(":app2:jsNodeDevelopmentRun") {
                 assertOutputContains("Hello with version: v22.1.0")
             }
+        }
+    }
+
+    @DisplayName("Node.js setup test with downloadBaseUrl = null")
+    @GradleTest
+    @TestMetadata("subprojects-nodejs-setup")
+    fun testSetupWithoutDownloadBaseUrl(gradleVersion: GradleVersion) {
+        project(
+            "nodejs-setup-with-user-repositories",
+            gradleVersion,
+            // we can remove this line, when the min version of Gradle be at least 8.1
+            dependencyManagement = DependencyManagement.DisabledDependencyManagement
+        ) {
+            build(":kotlinNodeJsSetup")
         }
     }
 }

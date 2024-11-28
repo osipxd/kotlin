@@ -17,16 +17,18 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationBase
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
+import org.jetbrains.kotlin.ir.visitors.IrTransformer
 
+/**
+ * Transforms nullability assertions on arguments according to the compiler settings.
+ */
 @PhaseDescription(
     name = "ArgumentNullabilityAssertions",
-    description = "Transform nullability assertions on arguments according to the compiler settings",
     // JvmStringConcatenationLowering may remove IMPLICIT_NOTNULL casts.
     prerequisite = [JvmStringConcatenationLowering::class]
 )
 internal class JvmArgumentNullabilityAssertionsLowering(context: JvmBackendContext) : FileLoweringPass,
-    IrElementTransformer<AssertionScope> {
+    IrTransformer<AssertionScope>() {
 
     enum class AssertionScope {
         Enabled, Disabled

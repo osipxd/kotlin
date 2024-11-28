@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.fir.backend
 
 import org.jetbrains.kotlin.GeneratedDeclarationKey
+import org.jetbrains.kotlin.KtFakeSourceElementKind
 import org.jetbrains.kotlin.KtSourceElement
 import org.jetbrains.kotlin.backend.common.extensions.IrGeneratedDeclarationsRegistrar
 import org.jetbrains.kotlin.descriptors.Modality
@@ -16,18 +17,19 @@ import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.*
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.utils.classId
+import org.jetbrains.kotlin.fir.declarations.utils.compilerPluginMetadata
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.builder.*
+import org.jetbrains.kotlin.fir.lazy.AbstractFir2IrLazyDeclaration
 import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.providers.getContainingFile
 import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
-import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.resolve.toRegularClassSymbol
+import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.serialization.FirAdditionalMetadataProvider
 import org.jetbrains.kotlin.fir.serialization.providedDeclarationsForMetadataService
-import org.jetbrains.kotlin.fir.types.ConeClassifierLookupTag
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitTypeRefImplWithoutSource
@@ -190,7 +192,7 @@ class Fir2IrIrGeneratedDeclarationsRegistrar(private val components: Fir2IrCompo
                                 coneTypeOrNull = this@buildValueParameter.returnTypeRef.coneType
                             }
                         }
-                        containingFunctionSymbol = firFunction.symbol
+                        containingDeclarationSymbol = firFunction.symbol
                         isCrossinline = it.isCrossinline
                         isNoinline = it.isNoinline
                         isVararg = it.isVararg
@@ -253,7 +255,7 @@ class Fir2IrIrGeneratedDeclarationsRegistrar(private val components: Fir2IrCompo
                                 coneTypeOrNull = this@buildValueParameter.returnTypeRef.coneType
                             }
                         }
-                        containingFunctionSymbol = firConstructor.symbol
+                        containingDeclarationSymbol = firConstructor.symbol
                         isCrossinline = it.isCrossinline
                         isNoinline = it.isNoinline
                         isVararg = it.isVararg
@@ -471,6 +473,32 @@ class Fir2IrIrGeneratedDeclarationsRegistrar(private val components: Fir2IrCompo
 
     private object GeneratedForMetadata : GeneratedDeclarationKey()
 
+    private val metadataExtensionsForDeclarations: MutableMap<FirDeclaration, MutableMap<String, ByteArray>> = mutableMapOf()
+
+    override fun addCustomMetadataExtension(
+        irDeclaration: IrDeclaration,
+        pluginId: String,
+        data: ByteArray,
+    ) {
+        val metadataSource = (irDeclaration as? IrMetadataSourceOwner)?.metadata
+            ?: error("No metadata source found for ${irDeclaration.render()}")
+        val firDeclaration = (metadataSource as? FirMetadataSource)?.fir
+            ?: error("No FIR declaration found for ${irDeclaration.render()}")
+        val extensionsPerPlugin = metadataExtensionsForDeclarations.getOrPut(firDeclaration) { mutableMapOf() }
+        val existed = extensionsPerPlugin.put(pluginId, data)
+        require(existed == null) {
+            "There is already metadata value for plugin $pluginId and ${irDeclaration.render()}"
+        }
+    }
+
+    override fun getCustomMetadataExtension(
+        irDeclaration: IrDeclaration,
+        pluginId: String,
+    ): ByteArray? {
+        val firDeclaration = (irDeclaration as? AbstractFir2IrLazyDeclaration<*>)?.fir as? FirDeclaration ?: return null
+        return firDeclaration.compilerPluginMetadata?.get(pluginId)
+    }
+
     private inner class Provider : FirAdditionalMetadataProvider() {
         override fun findGeneratedAnnotationsFor(declaration: FirDeclaration): List<FirAnnotation> {
             val irAnnotations = extractGeneratedIrDeclarations(declaration).takeUnless { it.isEmpty() } ?: return emptyList()
@@ -482,6 +510,12 @@ class Fir2IrIrGeneratedDeclarationsRegistrar(private val components: Fir2IrCompo
         }
 
         private fun extractGeneratedIrDeclarations(declaration: FirDeclaration): List<IrConstructorCall> {
+            when (declaration.origin) {
+                is FirDeclarationOrigin.Synthetic,
+                is FirDeclarationOrigin.Delegated
+                    -> return emptyList()
+                else -> {}
+            }
             val firFile = declaration.containingFile() ?: return emptyList()
             val fileFqName = firFile.packageFqName.child(Name.identifier(firFile.name)).asString()
             val source = declaration.source ?: return emptyList()
@@ -505,13 +539,14 @@ class Fir2IrIrGeneratedDeclarationsRegistrar(private val components: Fir2IrCompo
             return when (this) {
                 is FirClassLikeDeclaration -> runIf(!classId.isLocal) { classId.topmostParentClassId.toSymbol(session)?.fir }
                 is FirTypeParameter -> containingDeclarationSymbol.fir.topmostParent(session)
-                is FirValueParameter -> containingFunctionSymbol.fir.topmostParent(session)
+                is FirValueParameter -> containingDeclarationSymbol.fir.topmostParent(session)
                 is FirCallableDeclaration -> symbol.callableId.classId
                     ?.takeIf { !it.isLocal }
                     ?.topmostParentClassId
                     ?.toSymbol(session)
                     ?.fir
                 is FirScript -> this
+                is FirReceiverParameter -> containingDeclarationSymbol.fir.topmostParent(session)
                 else -> error("Unsupported declaration type: $this")
             } ?: this
         }
@@ -519,5 +554,9 @@ class Fir2IrIrGeneratedDeclarationsRegistrar(private val components: Fir2IrCompo
         @Suppress("RecursivePropertyAccessor")
         private val ClassId.topmostParentClassId: ClassId
             get() = parentClassId?.topmostParentClassId ?: this
+
+        override fun findMetadataExtensionsFor(declaration: FirDeclaration): Map<String, ByteArray> {
+            return metadataExtensionsForDeclarations[declaration].orEmpty()
+        }
     }
 }

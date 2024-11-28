@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.buildSimpleType
 import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.types.Variance
@@ -236,7 +237,7 @@ internal fun IrFunctionAccessExpression.getFunctionThatContainsDefaults(): IrFun
     fun IrValueParameter.lookup(): IrFunction? {
         return defaultValue?.let { this.parent as IrFunction }
             ?: (this.parent as? IrSimpleFunction)?.overriddenSymbols
-                ?.map { it.owner.valueParameters[this.index] }
+                ?.map { it.owner.valueParameters[this.indexInOldValueParameters] }
                 ?.firstNotNullOfOrNull { it.lookup() }
     }
 
@@ -256,9 +257,9 @@ internal fun IrValueParameter.getDefaultWithActualParameters(
         override fun visitGetValue(expression: IrGetValue): IrExpression {
             val parameter = expression.symbol.owner as? IrValueParameter ?: return super.visitGetValue(expression)
             if (parameter.parent != parameterOwner) return super.visitGetValue(expression)
-            val newParameter = when (parameter.index) {
+            val newParameter = when (parameter.indexInOldValueParameters) {
                 -1 -> newParent.dispatchReceiverParameter ?: newParent.extensionReceiverParameter
-                else -> actualParameters[parameter.index]
+                else -> actualParameters[parameter.indexInOldValueParameters]
             }
             return IrGetValueImpl(expression.startOffset, expression.endOffset, expression.type, newParameter!!.symbol)
         }

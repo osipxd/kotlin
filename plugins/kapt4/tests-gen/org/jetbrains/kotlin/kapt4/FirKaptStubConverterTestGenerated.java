@@ -48,6 +48,18 @@ public class FirKaptStubConverterTestGenerated extends AbstractFirKaptStubConver
   }
 
   @Test
+  @TestMetadata("annotationWithCompanion.kt")
+  public void testAnnotationWithCompanion() {
+    runTest("plugins/kapt3/kapt3-compiler/testData/converter/annotationWithCompanion.kt");
+  }
+
+  @Test
+  @TestMetadata("annotationWithEmptyTarget.kt")
+  public void testAnnotationWithEmptyTarget() {
+    runTest("plugins/kapt3/kapt3-compiler/testData/converter/annotationWithEmptyTarget.kt");
+  }
+
+  @Test
   @TestMetadata("annotationWithFqNames.kt")
   public void testAnnotationWithFqNames() {
     runTest("plugins/kapt3/kapt3-compiler/testData/converter/annotationWithFqNames.kt");
@@ -531,6 +543,12 @@ public class FirKaptStubConverterTestGenerated extends AbstractFirKaptStubConver
   @TestMetadata("kt43786.kt")
   public void testKt43786() {
     runTest("plugins/kapt3/kapt3-compiler/testData/converter/kt43786.kt");
+  }
+
+  @Test
+  @TestMetadata("kt47779.kt")
+  public void testKt47779() {
+    runTest("plugins/kapt3/kapt3-compiler/testData/converter/kt47779.kt");
   }
 
   @Test

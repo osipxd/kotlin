@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // LANGUAGE: -ProperFieldAccessGenerationForFieldAccessShadowedByKotlinProperty
 // ISSUE: KT-56386
 
@@ -17,7 +18,7 @@ public class A extends Y {}
 package base
 
 open class B : A() {
-    private val f = "FAIL"
+    private val <!PROPERTY_HIDES_JAVA_FIELD!>f<!> = "FAIL"
 }
 
 // FILE: C.java

@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.config
 
 import org.jetbrains.kotlin.config.LanguageFeature.Kind.*
+import org.jetbrains.kotlin.config.LanguageFeature.entries
 import org.jetbrains.kotlin.config.LanguageVersion.*
 import org.jetbrains.kotlin.utils.DescriptionAware
 import java.util.*
@@ -322,9 +323,7 @@ enum class LanguageFeature(
     SupportJavaErrorEnhancementOfArgumentsOfWarningLevelEnhanced(KOTLIN_2_1, kind = BUG_FIX), // KT-63209
     ProhibitPrivateOperatorCallInInline(KOTLIN_2_1, kind = BUG_FIX), // KT-65494
     ProhibitTypealiasAsCallableQualifierInImport(KOTLIN_2_1, kind = BUG_FIX), // KT-64350
-    ProhibitConstructorAndSupertypeOnTypealiasWithTypeProjection(KOTLIN_2_1, kind = BUG_FIX), // KT-60305
     JsExternalPropertyParameters(KOTLIN_2_1), // KT-65965
-    ErrorAboutDataClassCopyVisibilityChange(KOTLIN_2_1, kind = BUG_FIX), // KT-11914 Deprecation phase 2
     CorrectSpecificityCheckForSignedAndUnsigned(KOTLIN_2_1, kind = OTHER), // KT-35305
     AllowAccessToProtectedFieldFromSuperCompanion(KOTLIN_2_1), // KT-39868
     CheckLambdaAgainstTypeVariableContradictionInResolution(KOTLIN_2_1, kind = OTHER), // KT-58310
@@ -339,6 +338,7 @@ enum class LanguageFeature(
     ProhibitReturningIncorrectNullabilityValuesFromSamConstructorLambdaOfJdkInterfaces(KOTLIN_2_1, kind = BUG_FIX), // KT-57014
     ProhibitNothingAsCatchParameter(KOTLIN_2_1, kind = BUG_FIX), // KT-8322
     NullableNothingInReifiedPosition(KOTLIN_2_1, kind = UNSTABLE_FEATURE), // KT-54227, KT-67675
+    ElvisInferenceImprovementsIn21(KOTLIN_2_1, kind = OTHER), // KT-71751
 
     // It's not a fully blown LF, but mostly a way to manage potential unexpected semantic changes
     // See the single usage at org.jetbrains.kotlin.fir.types.ConeTypeApproximator.fastPathSkipApproximation
@@ -350,6 +350,7 @@ enum class LanguageFeature(
 
     // 2.2
 
+    ErrorAboutDataClassCopyVisibilityChange(KOTLIN_2_2, kind = BUG_FIX), // KT-11914 Deprecation phase 2
     BreakContinueInInlineLambdas(KOTLIN_2_2), // KT-1436
     UnstableSmartcastOnDelegatedProperties(KOTLIN_2_2, kind = BUG_FIX), // KT-57417
     ReferencesToSyntheticJavaProperties(KOTLIN_2_2), // KT-8575
@@ -359,10 +360,19 @@ enum class LanguageFeature(
     ForbidReifiedTypeParametersOnTypeAliases(KOTLIN_2_2, kind = BUG_FIX), // KT-70163
     ForbidProjectionsInAnnotationProperties(KOTLIN_2_2, kind = BUG_FIX), // KT-70002
     ForbidJvmAnnotationsOnAnnotationParameters(KOTLIN_2_2, kind = BUG_FIX), // KT-25861
+    ForbidFieldAnnotationsOnAnnotationParameters(KOTLIN_2_2, kind = BUG_FIX), // KT-70233
+    ForbidParenthesizedLhsInAssignments(KOTLIN_2_2, kind = BUG_FIX), // KT-70507
+    ProhibitConstructorAndSupertypeOnTypealiasWithTypeProjection(KOTLIN_2_2, kind = BUG_FIX), // KT-60305
+    // TODO: Remove org.jetbrains.kotlin.fir.resolve.calls.stages.ConstraintSystemForks together with this LF (KT-72961)
+    ConsiderForkPointsWhenCheckingContradictions(KOTLIN_2_2), // KT-68768
+    CallableReferenceOverloadResolutionInLambda(KOTLIN_2_2), // KT-73011
+    ForbidInferOfInvisibleTypeAsReifiedOrVararg(KOTLIN_2_2, kind = BUG_FIX), // KT-25513
 
     // 2.3
 
     ForbidCompanionInLocalInnerClass(KOTLIN_2_3, kind = BUG_FIX),
+    ForbidImplementationByDelegationWithDifferentGenericSignature(KOTLIN_2_3, kind = BUG_FIX), // KT-72140
+    ForbidJvmSerializableLambdaOnInlinedFunctionLiterals(KOTLIN_2_3, kind = BUG_FIX), // KT-71906
 
     // End of 2.* language features --------------------------------------------------
 
@@ -412,6 +422,7 @@ enum class LanguageFeature(
     FunctionalTypeWithExtensionAsSupertype(sinceVersion = null),
     JsAllowValueClassesInExternals(sinceVersion = null, kind = OTHER),
     ContextReceivers(sinceVersion = null),
+    ContextParameters(sinceVersion = null), // KT-72222
     ValueClasses(sinceVersion = null, kind = UNSTABLE_FEATURE),
     JavaSamConversionEqualsHashCode(sinceVersion = null, kind = UNSTABLE_FEATURE),
 
@@ -436,6 +447,8 @@ enum class LanguageFeature(
     ProperFieldAccessGenerationForFieldAccessShadowedByKotlinProperty(sinceVersion = null, kind = OTHER), // KT-56386
     WhenGuards(sinceVersion = null, kind = OTHER), // KT-13626
     MultiDollarInterpolation(sinceVersion = null, kind = OTHER), // KT-2425
+    IrInlinerBeforeKlibSerialization(sinceVersion = null, kind = UNSTABLE_FEATURE), // KT-69765
+    NestedTypeAliases(sinceVersion = null, kind = OTHER) // KT-45285
     ;
 
     init {

@@ -26,14 +26,15 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionReferenceImpl
-import org.jetbrains.kotlin.ir.expressions.impl.fromSymbolOwner
+import org.jetbrains.kotlin.ir.expressions.impl.IrRawFunctionReferenceImpl
 import org.jetbrains.kotlin.ir.objcinterop.getObjCMethodInfo
 import org.jetbrains.kotlin.ir.objcinterop.isObjCMetaClass
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.impl.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
+import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
 import org.jetbrains.kotlin.konan.ForeignExceptionMode
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -532,7 +533,7 @@ private fun KotlinStubs.generateCFunction(
     signature.extensionReceiverParameter?.let { callbackBuilder.addParameter(it, function.extensionReceiverParameter!!) }
 
     signature.valueParameters.forEach {
-        callbackBuilder.addParameter(it, function.valueParameters[it.index])
+        callbackBuilder.addParameter(it, function.valueParameters[it.indexInOldValueParameters])
     }
 
     return callbackBuilder.build(function, signature)
@@ -551,13 +552,11 @@ internal fun KotlinStubs.generateCFunctionPointer(
     )
     addKotlin(fakeFunction)
 
-    return IrFunctionReferenceImpl.fromSymbolOwner(
+    return IrRawFunctionReferenceImpl(
             expression.startOffset,
             expression.endOffset,
             expression.type,
-            fakeFunction.symbol,
-            typeArgumentsCount = 0,
-            reflectionTarget = null
+            fakeFunction.symbol
     )
 }
 
@@ -1126,7 +1125,7 @@ private class ObjCBlockPointerValuePassing(
                 ClassKind.CLASS,
                 Modality.FINAL,
         )
-        irClass.createParameterDeclarations()
+        irClass.createThisReceiverParameter()
 
         irClass.superTypes += stubs.irBuiltIns.anyType
         irClass.superTypes += functionType.makeNotNull()

@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     id("jps-compatible")
+    id("generated-sources")
 }
 
 dependencies {
@@ -12,7 +13,6 @@ dependencies {
     api(project(":js:js.ast"))
     api(project(":js:js.parser"))
     api(project(":js:js.serializer"))
-    api(project(":js:js.config"))
     compileOnly(intellijCore())
     compileOnly(libs.guava)
 }
@@ -21,3 +21,5 @@ sourceSets {
     "main" { projectDefault() }
     "test" {}
 }
+
+generatedConfigurationKeys("JSConfigurationKeys")

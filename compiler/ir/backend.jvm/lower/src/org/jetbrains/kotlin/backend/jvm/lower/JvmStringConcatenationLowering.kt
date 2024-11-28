@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.functions
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 
 private val IrClass.toStringFunction: IrSimpleFunction
@@ -121,7 +122,6 @@ private const val MAX_STRING_CONCAT_DEPTH = 23
  */
 @PhaseDescription(
     name = "StringConcatenation",
-    description = "Replace IrStringConcatenation with string builders",
     // FlattenStringConcatenationLowering consolidates string concatenation expressions.
     // ForLoopsLowering may produce IrStringConcatenations.
     prerequisite = [FlattenStringConcatenationLowering::class, ForLoopsLowering::class]

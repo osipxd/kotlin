@@ -49,7 +49,7 @@ open class D8Plugin : Plugin<Project> {
         }
 
         project.registerTask<CleanDataTask>("d8" + CleanDataTask.NAME_SUFFIX) {
-            it.cleanableStoreProvider = spec.produceEnv(project.providers).map { it.cleanableStore }
+            it.cleanableStoreProvider = spec.env.map { it.cleanableStore }
             it.group = TASKS_GROUP_NAME
             it.description = "Clean unused local d8 version"
         }
@@ -76,8 +76,7 @@ open class D8Plugin : Plugin<Project> {
     companion object {
         const val TASKS_GROUP_NAME: String = "d8"
 
-        // To prevent Kotlin build from failing (due to `-Werror`), only internalize after upgrade of bootstrap version
-//        @InternalKotlinGradlePluginApi
+        @InternalKotlinGradlePluginApi
         fun apply(project: Project): D8RootExtension {
             project.plugins.apply(D8Plugin::class.java)
             return project.extensions.getByName(EXTENSION_NAME) as D8RootExtension

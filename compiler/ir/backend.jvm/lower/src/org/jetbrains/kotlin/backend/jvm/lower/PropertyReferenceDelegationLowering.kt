@@ -20,17 +20,33 @@ import org.jetbrains.kotlin.ir.builders.declarations.buildVariable
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCompositeImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrPropertyReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrPropertyReferenceImplWithShape
 import org.jetbrains.kotlin.ir.symbols.impl.IrAnonymousInitializerSymbolImpl
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.Name
 
-@PhaseDescription(
-    name = "PropertyReferenceDelegation",
-    description = "Optimize `val x by ::y`: there is no need to construct a KProperty instance"
-)
+/**
+ * Optimizes `val x by ::y`: instead of constructing a `KProperty` instance and calling `getValue`/`setValue` operators, generates calls
+ * to the getter/setter of the referenced property directly. If the property reference has a bound receiver which is non-trivial
+ * (its computation might lead to side effects), we compute the receiver once and store it in a field.
+ *
+ * Also, generates a `$delegate` method that returns the delegate anyway. This method is supposed to only be used from kotlin-reflect
+ * ([kotlin.reflect.KProperty0.getDelegate]).
+ *
+ * For example:
+ *
+ *     var x by f()::y
+ *
+ * becomes
+ *
+ *     var x
+ *         field = f()
+ *         get() = field.y()
+ *         set(value) { field.y = value }
+ *     fun getX$delegate() = x$field::y
+ */
+@PhaseDescription(name = "PropertyReferenceDelegation")
 internal class PropertyReferenceDelegationLowering(val context: JvmBackendContext) : FileLoweringPass {
     override fun lower(irFile: IrFile) {
         irFile.transform(PropertyReferenceDelegationTransformer(context), null)
@@ -144,19 +160,15 @@ private class PropertyReferenceDelegationTransformer(val context: JvmBackendCont
             body = context.createJvmIrBuilder(symbol).run {
                 val boundReceiver = backingField?.let { irGetField(dispatchReceiverParameter?.let(::irGet), it) }
                     ?: receiver?.remapReceiver(originalThis, dispatchReceiverParameter)
-                irExprBody(with(delegate) {
-                    val origin = PropertyReferenceLowering.REFLECTED_PROPERTY_REFERENCE
-                    IrPropertyReferenceImplWithShape(
-                        startOffset, endOffset, type, symbol,
-                        targetHasDispatchReceiver, targetHasExtensionReceiver,
-                        typeArgumentsCount, field, getter, setter, origin
-                    )
-                }.apply {
-                    when {
-                        delegate.dispatchReceiver != null -> dispatchReceiver = boundReceiver
-                        delegate.extensionReceiver != null -> extensionReceiver = boundReceiver
+                irExprBody(
+                    delegate.deepCopyWithSymbols().apply {
+                        origin = PropertyReferenceLowering.REFLECTED_PROPERTY_REFERENCE
+                        when {
+                            delegate.dispatchReceiver != null -> dispatchReceiver = boundReceiver
+                            delegate.extensionReceiver != null -> extensionReceiver = boundReceiver
+                        }
                     }
-                })
+                )
             }
         }
         // When the receiver is inlined, it can have side effects in form of class initialization, so it should be evaluated here.

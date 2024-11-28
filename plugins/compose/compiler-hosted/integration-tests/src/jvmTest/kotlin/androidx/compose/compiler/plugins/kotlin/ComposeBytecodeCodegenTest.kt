@@ -19,6 +19,7 @@ package androidx.compose.compiler.plugins.kotlin
 import org.junit.Assume.assumeFalse
 import org.junit.Test
 import kotlin.test.Ignore
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -724,5 +725,116 @@ class ComposeBytecodeCodegenTest(useFir: Boolean) : AbstractCodegenTest(useFir) 
                 value class ComposableContent(val content: @Composable () -> Unit)
             """
         )
+    }
+
+    // regression test for b/339322843
+    @Test
+    fun testPropertyReferenceInDelegate() {
+        testCompile(
+            """
+                import androidx.compose.runtime.*
+                import kotlin.reflect.KProperty
+
+                object MaterialTheme {
+                    val background: Int = 0
+                }
+                
+                fun interface ThemeToken<T> {
+
+                    @Composable
+                    @ReadOnlyComposable
+                    fun MaterialTheme.resolve(): T
+                
+                    @Composable
+                    @ReadOnlyComposable
+                    operator fun getValue(thisRef: Any?, property: KProperty<*>) = MaterialTheme.resolve()
+                }
+                
+                @get:Composable
+                val background by ThemeToken { background }
+            """
+        )
+    }
+
+    @Test
+    fun testNoRepeatingLineNumbersInLambda() {
+        validateBytecode(
+            """
+                import androidx.compose.runtime.*
+
+                @Composable fun App() {}
+
+                class Activity {
+                    fun setContent(content: @Composable () -> Unit) {}
+                    
+                    fun onCreate() {
+                        setContent {
+                            println()
+                            App()
+                        }
+                    }
+                }
+            """,
+            validate = { bytecode ->
+                val classesRegex = Regex("final class (.*?) \\{[\\S\\s]*?^}", RegexOption.MULTILINE)
+                val matches = classesRegex.findAll(bytecode)
+                val lambdaClass = matches
+                    .single { it.groups[1]?.value?.startsWith("test/ComposableSingletons%TestKt%lambda%") == true }
+                    .value
+                val invokeRegex = Regex("public final invoke([\\s\\S]*?)LOCALVARIABLE")
+                val invokeMethod = invokeRegex.find(lambdaClass)?.value ?: error("Could not find invoke method in $lambdaClass")
+                val lineNumbers = invokeMethod.lines()
+                    .mapNotNull {
+                        it.takeIf { it.contains("LINENUMBER") }
+                    }
+                    .joinToString("\n")
+
+                assertEquals(
+                    """
+                    LINENUMBER 19 L3
+                    LINENUMBER 20 L5
+                    LINENUMBER 21 L6
+                    """.trimIndent(),
+                    lineNumbers.trimIndent()
+                )
+            }
+        )
+    }
+
+    // regression test for b/376148043
+    @Test
+    fun testUpdatingLambdaText() {
+        val oldBytecode = compileBytecode(
+            """
+                  import androidx.compose.runtime.*
+
+                  @Composable fun composableFun3() {
+                    val a = { }
+                  }
+                  @Composable fun composableFun4() {
+                    val a = { } 
+                  }
+            """,
+            className = "TestClass",
+        )
+
+        val newBytecode = compileBytecode(
+            """
+                  import androidx.compose.runtime.*
+
+                  @Composable fun composableFun3() {
+                    val a = { "hello" }
+                  }
+                  @Composable fun composableFun4() {
+                    val a = { } 
+                  }
+            """,
+            className = "TestClass",
+        )
+
+        val function4Regex = Regex("composableFun4[\\s\\S]*?LOCALVARIABLE")
+        val function4 = function4Regex.find(newBytecode)?.value ?: error("Could not find function4 in new bytecode")
+        val oldFunction4 = function4Regex.find(oldBytecode)?.value ?: error("Could not find function4 in old bytecide")
+        assertEquals(oldFunction4, function4)
     }
 }

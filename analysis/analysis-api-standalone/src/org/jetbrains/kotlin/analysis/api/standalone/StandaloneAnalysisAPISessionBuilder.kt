@@ -13,6 +13,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.util.concurrency.AppExecutorUtil
+import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.platform.KotlinPlatformSettings
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinAnnotationsResolverFactory
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclarationProviderFactory
@@ -46,7 +48,6 @@ import org.jetbrains.kotlin.analysis.api.standalone.base.services.LLStandaloneFi
 import org.jetbrains.kotlin.analysis.low.level.api.fir.api.services.LLFirElementByPsiElementChooser
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleProviderBuilder
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildProjectStructureProvider
-import org.jetbrains.kotlin.analysis.project.structure.impl.KaSourceModuleImpl
 import org.jetbrains.kotlin.analysis.project.structure.impl.buildKtModuleProviderByCompilerConfiguration
 import org.jetbrains.kotlin.analysis.project.structure.impl.getPsiFilesFromPaths
 import org.jetbrains.kotlin.analysis.project.structure.impl.getSourceFilePaths
@@ -197,6 +198,7 @@ public class StandaloneAnalysisAPISessionBuilder(
         )
     }
 
+    @OptIn(KaExperimentalApi::class)
     public fun build(): StandaloneAnalysisAPISession {
         StandaloneProjectFactory.registerServicesForProjectEnvironment(
             kotlinCoreProjectEnvironment,
@@ -215,8 +217,7 @@ public class StandaloneAnalysisAPISessionBuilder(
         return StandaloneAnalysisAPISession(kotlinCoreProjectEnvironment) {
             projectStructureProvider.allModules.mapNotNull { ktModule ->
                 if (ktModule !is KaSourceModule) return@mapNotNull null
-                check(ktModule is KaSourceModuleImpl)
-                ktModule to ktModule.sourceRoots.filterIsInstance<PsiFile>()
+                ktModule to ktModule.psiRoots.filterIsInstance<PsiFile>()
             }.toMap()
         }
     }
@@ -262,4 +263,23 @@ public inline fun buildStandaloneAnalysisAPISession(
         unitTestMode,
         classLoader
     ).apply(init).build()
+}
+
+/**
+ * Disposes global resources which would persist after unloading Analysis API and IJ platform classes.
+ *
+ * **Important:** Once this function has been called, Analysis API *and* IntelliJ platform classes should not be used anymore. The classes
+ * should either be unloaded or the whole program should be shut down.
+ *
+ * You don't need to use this endpoint right before your program shuts down. The purpose of this function is rather to dispose global
+ * resources which would persist after unloading Analysis API and IJ platform classes. For example, an IJ platform class may be registered
+ * with a JDK class. If Analysis API & IJ platform classes are unloaded, this global registration may keep alive the old class loader.
+ *
+ * Note: Everything in Standalone is experimental, but this endpoint is likely to change in the *near future*. Please consult with the
+ * Analysis API team if you want to use this. (We'll want to know about your use case.)
+ */
+@Suppress("UnstableApiUsage")
+@KaExperimentalApi
+public fun disposeGlobalStandaloneApplicationServices() {
+    AppExecutorUtil.shutdownApplicationScheduledExecutorService()
 }

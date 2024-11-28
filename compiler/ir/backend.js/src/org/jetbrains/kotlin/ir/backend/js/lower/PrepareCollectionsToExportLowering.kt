@@ -118,22 +118,8 @@ class PrepareCollectionsToExportLowering(private val context: JsIrBackendContext
             declarations.add(companionObject)
 
             companionObject.parent = this
-            companionObject.thisReceiver = context.irFactory.createValueParameter(
-                startOffset = startOffset,
-                endOffset = endOffset,
-                origin = FACTORY_FOR_KOTLIN_COLLECTIONS,
-                name = SpecialNames.THIS,
-                type = companionObject.typeWith(),
-                isAssignable = false,
-                symbol = IrValueParameterSymbolImpl(),
-                varargElementType = null,
-                isCrossinline = false,
-                isNoinline = false,
-                isHidden = false,
-            ).also { field ->
-                field.parent = companionObject
-            }
-
+            companionObject.createThisReceiverParameter()
+            companionObject.thisReceiver!!.origin = FACTORY_FOR_KOTLIN_COLLECTIONS
         }
 
         val factoryMethod = context.irFactory.createSimpleFunction(
@@ -218,6 +204,9 @@ class PrepareCollectionsToExportLowering(private val context: JsIrBackendContext
     private data class FactoryMethod(val name: String, val callee: IrSimpleFunctionSymbol)
 }
 
+/**
+ * Removes `@JsImplicitExport` from unused collections if there is no strict-mode for TypeScript.
+ */
 class RemoveImplicitExportsFromCollections(private val context: JsIrBackendContext) : DeclarationTransformer {
     private val strictImplicitExport = context.configuration.getBoolean(JSConfigurationKeys.GENERATE_STRICT_IMPLICIT_EXPORT)
     private val jsImplicitExportCtor by lazy(LazyThreadSafetyMode.NONE) {

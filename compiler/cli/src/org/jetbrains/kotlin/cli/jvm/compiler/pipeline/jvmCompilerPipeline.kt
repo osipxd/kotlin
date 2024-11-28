@@ -53,7 +53,6 @@ import org.jetbrains.kotlin.fir.backend.utils.extractFirDeclarations
 import org.jetbrains.kotlin.fir.pipeline.*
 import org.jetbrains.kotlin.fir.resolve.providers.FirSymbolProvider
 import org.jetbrains.kotlin.fir.session.IncrementalCompilationContext
-import org.jetbrains.kotlin.fir.session.environment.AbstractProjectEnvironment
 import org.jetbrains.kotlin.fir.session.environment.AbstractProjectFileSearchScope
 import org.jetbrains.kotlin.ir.backend.jvm.serialization.JvmIrMangler
 import org.jetbrains.kotlin.load.kotlin.MetadataFinderFactory
@@ -97,9 +96,7 @@ fun convertAnalyzedFirToIr(
     val kaptMode = configuration.getBoolean(JVMConfigurationKeys.SKIP_BODIES)
 
     val irGenerationExtensions = if (!kaptMode) {
-        (environment.projectEnvironment as? VfsBasedProjectEnvironment)?.project?.let {
-            IrGenerationExtension.getInstances(it)
-        } ?: emptyList()
+        IrGenerationExtension.getInstances(environment.projectEnvironment.project)
     } else {
         emptyList()
     }
@@ -158,7 +155,7 @@ fun generateCodeFromIr(
         input.configuration,
         input.configuration.get(CLIConfigurationKeys.PHASE_CONFIG),
     )
-    val project = (environment.projectEnvironment as VfsBasedProjectEnvironment).project
+    val project = environment.projectEnvironment.project
 
     val dummyBindingContext = NoScopeRecordCliBindingTrace(project).bindingContext
 
@@ -177,8 +174,6 @@ fun generateCodeFromIr(
         input.configuration[JVMConfigurationKeys.OUTPUT_DIRECTORY]
     ).onIndependentPartCompilationEnd(
         createOutputFilesFlushingCallbackIfPossible(input.configuration)
-    ).isIrBackend(
-        true
     ).jvmBackendClassResolver(
         FirJvmBackendClassResolver(input.components)
     ).diagnosticReporter(
@@ -215,7 +210,7 @@ fun generateCodeFromIr(
 
 fun createIncrementalCompilationScope(
     configuration: CompilerConfiguration,
-    projectEnvironment: AbstractProjectEnvironment,
+    projectEnvironment: VfsBasedProjectEnvironment,
     incrementalExcludesScope: AbstractProjectFileSearchScope?
 ): AbstractProjectFileSearchScope? {
     if (!needCreateIncrementalCompilationScope(configuration)) return null
@@ -234,7 +229,7 @@ private fun needCreateIncrementalCompilationScope(configuration: CompilerConfigu
 
 fun createContextForIncrementalCompilation(
     configuration: CompilerConfiguration,
-    projectEnvironment: AbstractProjectEnvironment,
+    projectEnvironment: VfsBasedProjectEnvironment,
     sourceScope: AbstractProjectFileSearchScope,
     previousStepsSymbolProviders: List<FirSymbolProvider>,
     incrementalCompilationScope: AbstractProjectFileSearchScope?
@@ -335,9 +330,9 @@ fun createProjectEnvironment(
         CliJavaModuleResolver(classpathRootsResolver.javaModuleGraph, javaModules, javaModuleFinder.systemModules.toList(), project)
     )
 
-    val finderFactory = CliVirtualFileFinderFactory(rootsIndex, releaseTarget != null)
-    project.registerService(MetadataFinderFactory::class.java, finderFactory)
-    project.registerService(VirtualFileFinderFactory::class.java, finderFactory)
+    val fileFinderFactory = CliVirtualFileFinderFactory(rootsIndex, releaseTarget != null)
+    project.registerService(VirtualFileFinderFactory::class.java, fileFinderFactory)
+    project.registerService(MetadataFinderFactory::class.java, CliMetadataFinderFactory(fileFinderFactory))
 
     project.setupHighestLanguageLevel()
 

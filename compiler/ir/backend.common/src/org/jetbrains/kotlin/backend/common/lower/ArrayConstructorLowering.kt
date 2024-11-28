@@ -6,8 +6,8 @@
 package org.jetbrains.kotlin.backend.common.lower
 
 import org.jetbrains.kotlin.backend.common.BodyLoweringPass
-import org.jetbrains.kotlin.backend.common.CommonBackendContext
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+import org.jetbrains.kotlin.backend.common.LoweringContext
 import org.jetbrains.kotlin.backend.common.ir.asInlinable
 import org.jetbrains.kotlin.backend.common.ir.inline
 import org.jetbrains.kotlin.backend.common.phaser.PhaseDescription
@@ -20,24 +20,24 @@ import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.util.OperatorNameConventions
 
-@PhaseDescription(
-    name = "ArrayConstructor",
-    description = "Transform `Array(size) { index -> value }` into a loop"
-)
-class ArrayConstructorLowering(val context: CommonBackendContext) : BodyLoweringPass {
+/**
+ * Transforms `Array(size) { index -> value }` into a loop.
+ */
+@PhaseDescription(name = "ArrayConstructor")
+class ArrayConstructorLowering(private val context: LoweringContext) : BodyLoweringPass {
     override fun lower(irBody: IrBody, container: IrDeclaration) {
         irBody.transformChildrenVoid(ArrayConstructorTransformer(context, container as IrSymbolOwner))
     }
 }
 
 private class ArrayConstructorTransformer(
-    val context: CommonBackendContext,
+    val context: LoweringContext,
     val container: IrSymbolOwner
 ) : IrElementTransformerVoidWithContext() {
 
     // Array(size, init) -> Array(size)
     companion object {
-        internal fun arrayInlineToSizeConstructor(context: CommonBackendContext, irConstructor: IrConstructor): IrFunctionSymbol? {
+        internal fun arrayInlineToSizeConstructor(context: LoweringContext, irConstructor: IrConstructor): IrFunctionSymbol? {
             val clazz = irConstructor.constructedClass.symbol
             return when {
                 irConstructor.valueParameters.size != 2 -> null

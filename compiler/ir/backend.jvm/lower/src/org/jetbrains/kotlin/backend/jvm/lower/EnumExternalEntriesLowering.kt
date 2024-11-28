@@ -26,13 +26,15 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
 import org.jetbrains.kotlin.ir.types.typeWith
-import org.jetbrains.kotlin.ir.util.createImplicitParameterDeclarationWithWrappedDescriptor
+import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
 import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 
 /**
+ * Replaces '.entries' on Java and pre-compiled Kotlin enums with access to entries in generated $EntriesMapping.
+ *
  * When this lowering encounters call to `Enum.entries` where `Enum` is either Java enum or enum pre-compiled
  * with previous version of Kotlin, it generates `FileName$EntriesMapping` where it stores
  * package-private `entries` static field that is used as a replacement of missing one.
@@ -58,10 +60,7 @@ import org.jetbrains.kotlin.name.SpecialNames
  *
  * There's similar code which handles the `enumEntries<Enum>()` intrinsic code generation in `EnumEntriesIntrinsicMappingsCacheImpl`.
  */
-@PhaseDescription(
-    name = "EnumExternalEntries",
-    description = "Replaces '.entries' on Java and pre-compiled Kotlin enums with access to entries in generated \$EntriesMapping "
-)
+@PhaseDescription(name = "EnumExternalEntries")
 internal class EnumExternalEntriesLowering(private val context: JvmBackendContext) :
     FileLoweringPass, IrElementTransformerVoidWithContext() {
     override fun lower(irFile: IrFile) {
@@ -80,7 +79,7 @@ internal class EnumExternalEntriesLowering(private val context: JvmBackendContex
                 name = Name.identifier("EntriesMappings")
                 origin = JvmLoweredDeclarationOrigin.ENUM_MAPPINGS_FOR_ENTRIES
             }.apply {
-                createImplicitParameterDeclarationWithWrappedDescriptor()
+                createThisReceiverParameter()
             }
         }
 

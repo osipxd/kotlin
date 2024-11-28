@@ -27,12 +27,16 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.util.OperatorNameConventions
 import org.jetbrains.kotlin.utils.findIsInstanceAnd
 import org.jetbrains.kotlin.utils.memoryOptimizedMap
 import org.jetbrains.kotlin.utils.memoryOptimizedPlus
 
+/**
+ * Replaces SAM conversions with instances of interface-implementing classes.
+ */
 abstract class SingleAbstractMethodLowering(val context: CommonBackendContext) : FileLoweringPass, IrElementTransformerVoidWithContext() {
     // SAM wrappers are cached, either in the file class (if it exists), or in a top-level enclosing class.
     // In the latter case, the names of SAM wrappers depend on the order of classes in the file. For example:
@@ -180,7 +184,7 @@ abstract class SingleAbstractMethodLowering(val context: CommonBackendContext) :
             visibility = wrapperVisibility
             setSourceRange(createFor)
         }.apply {
-            createImplicitParameterDeclarationWithWrappedDescriptor()
+            createThisReceiverParameter()
             superTypes = listOf(superType) memoryOptimizedPlus getAdditionalSupertypes(superType)
             parent = enclosingContainer!!
         }

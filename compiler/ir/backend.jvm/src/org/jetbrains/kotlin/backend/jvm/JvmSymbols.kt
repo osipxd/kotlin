@@ -8,6 +8,7 @@
 package org.jetbrains.kotlin.backend.jvm
 
 import org.jetbrains.kotlin.backend.common.ir.Symbols
+import org.jetbrains.kotlin.backend.common.ir.addDispatchReceiver
 import org.jetbrains.kotlin.backend.common.ir.addExtensionReceiver
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.codegen.coroutines.INVOKE_SUSPEND_METHOD_NAME
@@ -30,7 +31,6 @@ import org.jetbrains.kotlin.ir.expressions.impl.fromSymbolOwner
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.IrEnumEntrySymbolImpl
 import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 import org.jetbrains.kotlin.name.FqName
@@ -44,8 +44,7 @@ import java.lang.invoke.MethodType
 
 class JvmSymbols(
     private val context: JvmBackendContext,
-    symbolTable: SymbolTable
-) : Symbols(context.irBuiltIns, symbolTable) {
+) : Symbols(context.irBuiltIns) {
     private val storageManager = LockBasedStorageManager(this::class.java.simpleName)
     private val irFactory = context.irFactory
 
@@ -110,7 +109,7 @@ class JvmSymbols(
                 "kotlin.internal" -> kotlinInternalPackage
                 else -> error("Other packages are not supported yet: $fqName")
             }
-            createImplicitParameterDeclarationWithWrappedDescriptor()
+            createThisReceiverParameter()
             block(this)
         }.symbol
 
@@ -161,7 +160,7 @@ class JvmSymbols(
             name = Name.identifier("Kotlin")
         }.apply {
             parent = klass
-            createImplicitParameterDeclarationWithWrappedDescriptor()
+            createThisReceiverParameter()
         })
     }
 
@@ -803,6 +802,9 @@ class JvmSymbols(
             origin = IrDeclarationOrigin.IR_BUILTINS_STUB
         }.apply {
             parent = kotlinJvmInternalPackage
+            addDispatchReceiver {
+                type = irBuiltIns.anyNType
+            }
             addValueParameter("owner", irBuiltIns.stringType)
             addValueParameter("name", irBuiltIns.stringType)
             addValueParameter("descriptor", irBuiltIns.stringType)
@@ -1108,10 +1110,7 @@ class JvmSymbols(
             val irClass = this
             parent = javaLangAnnotationPackage
             javaLangAnnotationPackage.addChild(this)
-            thisReceiver = buildValueParameter(this) {
-                name = Name.identifier("\$this")
-                type = IrSimpleTypeImpl(irClass.symbol, false, emptyList(), emptyList())
-            }
+            createThisReceiverParameter()
         }
 
         private fun buildAnnotationConstructor(annotationClass: IrClass): IrConstructor =

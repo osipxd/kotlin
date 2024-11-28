@@ -5,7 +5,7 @@
 
 package org.jetbrains.kotlin.ir.inline
 
-import org.jetbrains.kotlin.backend.common.CommonBackendContext
+import org.jetbrains.kotlin.backend.common.LoweringContext
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
@@ -14,8 +14,11 @@ import org.jetbrains.kotlin.ir.expressions.IrFunctionReference
 import org.jetbrains.kotlin.ir.util.isInlineArrayConstructor
 import org.jetbrains.kotlin.ir.util.isInlineParameter
 
-abstract class CommonInlineCallableReferenceToLambdaPhase(
-    context: CommonBackendContext,
+/**
+ * Transforms all callable references (including defaults) to inline lambdas, marks inline lambdas for later passes.
+ */
+open class CommonInlineCallableReferenceToLambdaPhase(
+    context: LoweringContext,
     inlineFunctionResolver: InlineFunctionResolver
 ) : InlineCallableReferenceToLambdaPhase(context, inlineFunctionResolver) {
     fun lower(function: IrFunction) = function.accept(this, function.parent)
@@ -38,7 +41,7 @@ abstract class CommonInlineCallableReferenceToLambdaPhase(
         super.visitFunctionReference(expression, data)
 
         val owner = expression.symbol.owner
-        if (!owner.isInlineArrayConstructor(context.irBuiltIns)) return expression
+        if (!owner.isInlineArrayConstructor()) return expression
 
         return expression.transformToLambda(data)
     }

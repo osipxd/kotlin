@@ -68,7 +68,7 @@ dependencies {
     testRuntimeOnly("com.jetbrains.intellij.platform:lang:$intellijVersion") { isTransitive = false }
     testRuntimeOnly("com.jetbrains.intellij.platform:lang-impl:$intellijVersion") { isTransitive = false }
     testRuntimeOnly("com.jetbrains.intellij.platform:util-ex:$intellijVersion") { isTransitive = false }
-    testRuntimeOnly("com.google.code.gson:gson:2.8.9")
+    testRuntimeOnly(libs.gson)
     testRuntimeOnly(intellijJDom())
     testRuntimeOnly(libs.kotlinx.coroutines.core.jvm)
 
@@ -80,6 +80,7 @@ dependencies {
     }
 
     testImplementation("org.projectlombok:lombok:1.18.16")
+    testImplementation(libs.kotlinx.serialization.json)
 }
 
 sourceSets {
@@ -142,4 +143,36 @@ testsJar {}
 tasks.withType<KotlinCompilationTask<*>>().configureEach {
     compilerOptions.apiVersion.value(KotlinVersion.KOTLIN_1_8).finalizeValueOnRead()
     compilerOptions.languageVersion.value(KotlinVersion.KOTLIN_1_8).finalizeValueOnRead()
+}
+
+/**
+ * Dependency Security Overrides
+ *
+ * Forces specific versions of transitive dependencies to address known vulnerabilities:
+ *
+ * Affected Library:
+ * └── io.netty
+ *    ├── netty-buffer:* → 4.1.115.Final
+ *    └── netty-codec-http2:* → 4.1.115.Final
+ *
+ * Mitigated Vulnerabilities:
+ * - CVE-2024-47535: Network security vulnerability
+ * - CVE-2024-29025: Remote code execution risk
+ * - CVE-2023-4586: Information disclosure vulnerability
+ * - CVE-2023-34462: Potential denial of service
+ *
+ * This configuration overrides versions regardless of the declaring dependency.
+ */
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "io.netty" &&
+            listOf(
+                "netty-buffer",
+                "netty-codec-http2",
+            ).contains(requested.name)
+        ) {
+            useVersion("4.1.115.Final")
+            because("CVE-2024-47535, CVE-2024-29025, CVE-2023-4586, CVE-2023-34462")
+        }
+    }
 }

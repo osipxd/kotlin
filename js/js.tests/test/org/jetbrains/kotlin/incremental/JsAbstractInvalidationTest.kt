@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.ir.backend.js.ic.*
 import org.jetbrains.kotlin.ir.backend.js.getJsPhases
 import org.jetbrains.kotlin.ir.backend.js.transformers.irToJs.*
 import org.jetbrains.kotlin.js.config.JSConfigurationKeys
-import org.jetbrains.kotlin.js.testOld.V8IrJsTestChecker
+import org.jetbrains.kotlin.js.testOld.V8JsTestChecker
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.serialization.js.ModuleKind
 import org.jetbrains.kotlin.test.DebugMode
@@ -155,7 +155,7 @@ abstract class JsAbstractInvalidationTest(
 
         private fun verifyJsCode(stepId: Int, mainModuleName: String, jsFiles: List<String>) {
             try {
-                V8IrJsTestChecker.checkWithTestFunctionArgs(
+                V8JsTestChecker.checkWithTestFunctionArgs(
                     files = jsFiles,
                     testModuleName = "./$mainModuleName${projectInfo.moduleKind.extension}",
                     testPackageName = null,
@@ -194,16 +194,14 @@ abstract class JsAbstractInvalidationTest(
         }
 
         private fun getPhaseConfig(configuration: CompilerConfiguration, stepId: Int): PhaseConfig {
-            val jsPhases = getJsPhases(configuration)
-
             if (DebugMode.fromSystemProperty("kotlin.js.debugMode") < DebugMode.SUPER_DEBUG) {
-                return PhaseConfig(jsPhases)
+                return PhaseConfig()
             }
 
+            val jsPhases = getJsPhases(configuration)
             return PhaseConfig(
-                jsPhases,
-                dumpToDirectory = buildDir.resolve("irdump").resolve("step-$stepId").path,
-                toDumpStateAfter = jsPhases.toPhaseMap().values.toSet()
+                toDumpStateAfter = jsPhases.toPhaseMap().values.toSet(),
+                dumpToDirectory = buildDir.resolve("irdump").resolve("step-$stepId").path
             )
         }
 

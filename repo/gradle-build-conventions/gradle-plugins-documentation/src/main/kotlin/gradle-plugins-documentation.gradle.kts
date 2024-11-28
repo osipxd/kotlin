@@ -1,13 +1,26 @@
 import de.undercouch.gradle.tasks.download.Download
 import gradle.publishGradlePluginsJavadoc
 import org.jetbrains.dokka.gradle.DokkaMultiModuleFileLayout
+import org.jetbrains.dokka.gradle.DokkaTaskPartial
 
 plugins {
     id("org.jetbrains.dokka")
     base
 }
 
-val documentationExtension = extensions.create<PluginsApiDocumentationExtension>("pluginsApiDocumentation")
+val templateConfig = Pair(
+    "org.jetbrains.dokka.base.DokkaBase",
+    "{ \"templatesDir\": \"${project.rootDir.resolve("build/api-reference/templates").also { it.mkdirs() }}\" }"
+)
+
+val documentationExtension = extensions.create<PluginsApiDocumentationExtension>(
+    "pluginsApiDocumentation",
+    { project: Project ->
+        project.tasks.withType<DokkaTaskPartial>().configureEach {
+            pluginsMapConfiguration.put(templateConfig.first, templateConfig.second)
+        }
+    }
+)
 
 dependencies {
     dokkaPlugin(versionCatalogs.named("libs").findLibrary("dokka-versioningPlugin").get())
@@ -17,18 +30,33 @@ dependencies {
 val downloadTask = tasks.register<Download>("downloadTemplates") {
     src(documentationExtension.templatesArchiveUrl)
     dest(layout.buildDirectory.file("templateDist.zip"))
+    onlyIf(
+        "Kotlinlang Dokka template is not working in the standalone mode: KT-73082"
+    ) {
+        false
+    }
+
     onlyIfModified(true)
     overwrite(false)
 }
 
 val unzipTemplates = tasks.register<Copy>("unzipTemplates") {
     dependsOn(downloadTask)
+    onlyIf(
+        "Kotlinlang Dokka template is not working in the standalone mode: KT-73082"
+    ) {
+        false
+    }
+
+    val dirPrefix = documentationExtension.templatesArchivePrefixToRemove
     from(
         zipTree(downloadTask.map { it.dest })
             .matching {
                 include(documentationExtension.templatesArchiveSubDirectoryPattern.get())
             }
-    )
+    ).eachFile {
+        path = path.removePrefix(dirPrefix.get())
+    }
     into(layout.buildDirectory.dir("template"))
 }
 
@@ -52,14 +80,13 @@ tasks.register<org.jetbrains.dokka.gradle.DokkaMultiModuleTask>("dokkaKotlinlang
     )
 
     dependsOn(unzipTemplates)
-    pluginsMapConfiguration.put(
-        "org.jetbrains.dokka.base.DokkaBase",
-        "{ \"templatesDir\": \"${unzipTemplates.map { it.destinationDir }.get()}\" }"
-    )
+    pluginsMapConfiguration.put(templateConfig.first, templateConfig.second)
+
+    // Documentation: https://github.com/Kotlin/dokka/tree/1.9.20/dokka-subprojects/plugin-versioning
     pluginsMapConfiguration.put(
         "org.jetbrains.dokka.versioning.VersioningPlugin",
         documentationExtension.documentationOldVersions.map { olderVersionsDir ->
-            "{ \"version\":\"$version\", \"olderVersionsDir\":\"${olderVersionsDir.asFile}\" }"
+            "{ \"version\":\"$version\", \"olderVersionsDir\":\"${olderVersionsDir.asFile.also { it.mkdirs() }}\" }"
         }
     )
 

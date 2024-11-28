@@ -96,10 +96,10 @@ internal class ExecutableBuilder(
         )
 }
 
-internal val AbstractNativeSimpleTest.buildDir: File get() = testRunSettings.get<Binaries>().testBinariesDir
+val AbstractNativeSimpleTest.buildDir: File get() = testRunSettings.get<Binaries>().testBinariesDir
 val AbstractNativeSimpleTest.targets: KotlinNativeTargets get() = testRunSettings.get()
 
-internal fun TestCompilationArtifact.KLIB.asLibraryDependency() =
+fun TestCompilationArtifact.KLIB.asLibraryDependency() =
     ExistingDependency(this, TestCompilationDependencyType.Library)
 
 internal fun TestCompilationArtifact.KLIB.asIncludedLibraryDependency() =
@@ -111,10 +111,10 @@ internal fun TestCompilationArtifact.KLIB.asFriendLibraryDependency() =
 internal fun TestCompilationArtifact.KLIBStaticCache.asStaticCacheDependency() =
     ExistingDependency(this, TestCompilationDependencyType.LibraryStaticCache)
 
-internal fun AbstractNativeSimpleTest.compileToLibrary(sourcesDir: File, vararg dependencies: TestCompilationArtifact.KLIB) =
+fun AbstractNativeSimpleTest.compileToLibrary(sourcesDir: File, vararg dependencies: TestCompilationArtifact.KLIB) =
     compileToLibrary(sourcesDir, buildDir, *dependencies)
 
-internal fun AbstractNativeSimpleTest.compileToLibrary(testCase: TestCase, vararg dependencies: TestCompilationDependency<*>) =
+fun AbstractNativeSimpleTest.compileToLibrary(testCase: TestCase, vararg dependencies: TestCompilationDependency<*>) =
     compileToLibrary(testCase, buildDir, dependencies.asList())
 
 internal fun AbstractNativeSimpleTest.compileToLibrary(
@@ -134,7 +134,7 @@ internal fun AbstractNativeSimpleTest.compileToLibrary(
     return compilationResult.resultingArtifact
 }
 
-internal fun AbstractNativeSimpleTest.cinteropToLibrary(
+fun AbstractNativeSimpleTest.cinteropToLibrary(
     targets: KotlinNativeTargets,
     defFile: File,
     outputDir: File,
@@ -195,7 +195,7 @@ internal fun AbstractNativeSimpleTest.compileToExecutableInOneStage(
 }
 
 // WARNING: compiles in one-stage mode (sources->executable) even when `mode=TWO_STAGE_MULTI_MODULE`
-internal fun AbstractNativeSimpleTest.compileToExecutableInOneStage(testCase: TestCase, vararg dependencies: TestCompilationDependency<*>) =
+fun AbstractNativeSimpleTest.compileToExecutableInOneStage(testCase: TestCase, vararg dependencies: TestCompilationDependency<*>) =
     compileToExecutableInOneStage(testCase, true, dependencies.asList())
 
 internal fun AbstractNativeSimpleTest.compileToStaticCache(
@@ -247,7 +247,7 @@ fun AbstractNativeSimpleTest.generateTestCaseWithSingleModule(
     }
 }
 
-internal fun AbstractNativeSimpleTest.generateTestCaseWithSingleFile(
+fun AbstractNativeSimpleTest.generateTestCaseWithSingleFile(
     sourceFile: File,
     moduleName: String = sourceFile.name,
     freeCompilerArgs: TestCompilerArgs = TestCompilerArgs.EMPTY,
@@ -349,7 +349,7 @@ private fun AbstractNativeSimpleTest.compileToExecutableInOneStage(
     return compilation.result
 }
 
-internal fun getLibraryArtifact(testCase: TestCase, outputDir: File, packed: Boolean = true) =
+fun getLibraryArtifact(testCase: TestCase, outputDir: File, packed: Boolean = true) =
     TestCompilationArtifact.KLIB(outputDir.resolve(testCase.modules.first().name + if (packed) ".klib" else ""))
 
 private fun AbstractNativeSimpleTest.getExecutableArtifact() =
@@ -358,7 +358,7 @@ private fun AbstractNativeSimpleTest.getExecutableArtifact() =
 private fun directiveValues(testDataFileContents: String, directive: String) =
     InTextDirectivesUtils.findListWithPrefixes(testDataFileContents, "// $directive: ")
 
-internal fun AbstractNativeSimpleTest.muteTestIfNecessary(testDataFile: File) = muteTestIfNecessary(FileUtil.loadFile(testDataFile))
+fun AbstractNativeSimpleTest.muteTestIfNecessary(testDataFile: File) = muteTestIfNecessary(FileUtil.loadFile(testDataFile))
 internal fun AbstractNativeSimpleTest.muteTestIfNecessary(testDataFileContents: String) {
     val pipelineType = testRunSettings.get<PipelineType>()
     val mutedWhenValues = directiveValues(testDataFileContents, TestDirectives.MUTED_WHEN.name)

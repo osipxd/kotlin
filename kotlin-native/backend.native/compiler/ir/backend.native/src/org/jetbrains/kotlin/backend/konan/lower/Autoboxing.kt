@@ -29,6 +29,8 @@ import org.jetbrains.kotlin.ir.symbols.impl.IrPropertySymbolImpl
 import org.jetbrains.kotlin.ir.transformStatement
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
+import org.jetbrains.kotlin.ir.util.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.visitors.*
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.addToStdlib.getOrSetIfNull
@@ -104,10 +106,6 @@ private class AutoboxingTransformer(val context: Context) : AbstractValueUsageTr
         val skipTypeCheck = forceSkipTypeCheck || !insertSafeCasts || (this as? IrTypeOperatorCall)?.operator == IrTypeOperator.CAST
         val actualType = when (this) {
             is IrGetField -> this.symbol.owner.type
-            is IrCall -> when (this.symbol) {
-                symbols.reinterpret -> this.getTypeArgument(1)!!
-                else -> this.callTarget.returnType
-            }
             is IrTypeOperatorCall -> when (this.operator) {
                 IrTypeOperator.CAST -> context.irBuiltIns.anyNType
                 IrTypeOperator.IMPLICIT_CAST -> if (insertSafeCasts) this.type else context.irBuiltIns.anyNType
@@ -122,21 +120,6 @@ private class AutoboxingTransformer(val context: Context) : AbstractValueUsageTr
             this.adaptIfNecessary(actualType, type, skipTypeCheck)
     }
 
-    private val IrFunctionAccessExpression.target: IrFunction
-        get() = when (this) {
-            is IrCall -> this.callTarget
-            is IrDelegatingConstructorCall -> this.symbol.owner
-            is IrConstructorCall -> this.symbol.owner
-            is IrEnumConstructorCall -> compilationException("IrEnumConstructorCall is not supported here", this)
-        }
-
-    private val IrCall.callTarget: IrFunction
-        get() = if (this.isVirtualCall) {
-            symbol.owner
-        } else {
-            symbol.owner.target
-        }
-
     override fun IrExpression.useAsDispatchReceiver(expression: IrFunctionAccessExpression): IrExpression {
         val target = expression.target
         return useAs(target.dispatchReceiverParameter!!.type,
@@ -150,7 +133,7 @@ private class AutoboxingTransformer(val context: Context) : AbstractValueUsageTr
 
     override fun IrExpression.useAsValueArgument(expression: IrFunctionAccessExpression,
                                                  parameter: IrValueParameter): IrExpression {
-        return this.useAsArgument(expression.target.valueParameters[parameter.index])
+        return this.useAsArgument(expression.target.valueParameters[parameter.indexInOldValueParameters])
     }
 
     /**
@@ -205,7 +188,7 @@ private class AutoboxingTransformer(val context: Context) : AbstractValueUsageTr
             else this
 
             irBuilders.peek()!!.at(this)
-                    .irCall(conversion).apply { this.putValueArgument(parameter.index, argument) }
+                    .irCall(conversion).apply { this.putValueArgument(parameter.indexInOldValueParameters, argument) }
         }
     }
 
@@ -489,7 +472,7 @@ private class InlineClassTransformer(private val context: Context) : IrBuildingT
             }
 
             val parameterMapping = result.valueParameters.associateBy {
-                irConstructor.valueParameters[it.index].symbol
+                irConstructor.valueParameters[it.indexInOldValueParameters].symbol
             }
 
             (irConstructor.body as IrBlockBody).statements.forEach { statement ->

@@ -16,9 +16,10 @@ abstract class SirClass : SirDeclarationContainer(), SirNamedDeclaration {
     abstract override val visibility: SirVisibility
     abstract override val documentation: String?
     abstract override var parent: SirDeclarationParent
-    abstract override val attributes: MutableList<SirAttribute>
+    abstract override val attributes: List<SirAttribute>
     abstract override val name: String
     abstract override val declarations: List<SirDeclaration>
     abstract val superClass: SirType?
+    abstract val protocols: List<SirProtocol>
     abstract val modality: SirModality
 }

@@ -5,8 +5,8 @@
 
 package org.jetbrains.kotlin.backend.common.lower
 
+import org.jetbrains.kotlin.backend.common.LoweringContext
 import org.jetbrains.kotlin.backend.common.BodyLoweringPass
-import org.jetbrains.kotlin.backend.common.CommonBackendContext
 import org.jetbrains.kotlin.backend.common.capturedFields
 import org.jetbrains.kotlin.backend.common.descriptors.synthesizedString
 import org.jetbrains.kotlin.backend.common.runOnFilePostfix
@@ -57,15 +57,14 @@ val BOUND_VALUE_PARAMETER by IrDeclarationOriginImpl.Synthetic
 val BOUND_RECEIVER_PARAMETER by IrDeclarationOriginImpl.Synthetic
 
 /*
-  Local functions raised in LocalDeclarationLowering continue to refer to
-  type parameters no longer visible to them.
-  We add new type parameters to their declarations, which
-  makes JVM accept those declarations. The generated IR is still
-  semantically incorrect (TODO: needs further fix), but code generation seems
-  to proceed nevertheless.
+ * Moves local declarations into nearest declaration container.
+ *
+ * Note that local functions raised here continue to refer to type parameters no longer visible to them. We add new type parameters
+ * to their declarations, which makes JVM accept those declarations. The generated IR is still semantically incorrect, but code generation
+ * seems to proceed nevertheless.
 */
 open class LocalDeclarationsLowering(
-    val context: CommonBackendContext,
+    val context: LoweringContext,
     val localNameSanitizer: (String) -> String = { it },
     val visibilityPolicy: VisibilityPolicy = VisibilityPolicy.DEFAULT,
     val suggestUniqueNames: Boolean = true, // When `true` appends a `$#index` suffix to lifted declaration names
@@ -462,7 +461,7 @@ open class LocalDeclarationsLowering(
             ): T =
                 apply {
                     for (p in newTarget.valueParameters) {
-                        putValueArgument(p.index, transform(p))
+                        putValueArgument(p.indexInOldValueParameters, transform(p))
                     }
                 }
 
@@ -474,7 +473,7 @@ open class LocalDeclarationsLowering(
                     val oldParameter = newParameterToOld[newValueParameterDeclaration]
 
                     if (oldParameter != null) {
-                        oldExpression.getValueArgument(oldParameter.index)
+                        oldExpression.getValueArgument(oldParameter.indexInOldValueParameters)
                     } else {
                         // The callee expects captured value as argument.
                         val capturedValueSymbol =
@@ -537,9 +536,23 @@ open class LocalDeclarationsLowering(
                 )
             }
 
+            override fun visitRawFunctionReference(expression: IrRawFunctionReference): IrExpression {
+                expression.transformChildrenVoid(this)
+
+                val oldFunction = expression.symbol.owner
+                val newFunction = oldFunction.transformed
+                if (newFunction != null) {
+                    require(newFunction.valueParameters.size == oldFunction.valueParameters.size) {
+                        "Capturing variables is not supported for raw function references"
+                    }
+                    expression.symbol = newFunction.symbol
+                }
+                return expression
+            }
+
             override fun visitDeclarationReference(expression: IrDeclarationReference): IrExpression {
                 if (expression.symbol.owner in transformedDeclarations) {
-                    TODO()
+                    TODO("Unsupported reference type ${expression::class} for local declaration")
                 }
                 return super.visitDeclarationReference(expression)
             }
@@ -659,6 +672,10 @@ open class LocalDeclarationsLowering(
                 createLiftedDeclaration(it)
             }
 
+            // After lifting local functions, local functions created for unbound symbols are duplicates of the lifted local functions.
+            // They cause exceptions, because they do not have function bodies. We have to clean them up here.
+            container.fileOrNull?.let { cleanUpLocalFunctionsForUnboundSymbols(it) }
+
             localClasses.values.forEach {
                 it.declaration.visibility = visibilityPolicy.forClass(it.declaration, it.inInlineFunctionScope)
                 it.closure.capturedValues.associateTo(it.capturedValueToField) { capturedValue ->
@@ -668,6 +685,23 @@ open class LocalDeclarationsLowering(
 
             localClassConstructors.values.forEach {
                 createTransformedConstructorDeclaration(it)
+            }
+        }
+
+        /**
+         * This function removes [IrFunction]s created by `Fir2IrDeclarationStorage.fillUnboundSymbols()` to handle the code fragment
+         * in the middle of code compiler of `KaCompilerFacility`. This function assumes two things about such [IrFunction]
+         *  1. It is added to [IrClass] with [IrDeclarationOrigin.FILE_CLASS], [IrDeclarationOrigin.JVM_MULTIFILE_CLASS],
+         *   or [IrDeclarationOrigin.SYNTHETIC_FILE_CLASS], so [IrDeclarationParent.isFacadeClass] is `true`.
+         *  2. It has [IrDeclarationOrigin.FILLED_FOR_UNBOUND_SYMBOL] for its origin.
+         */
+        private fun cleanUpLocalFunctionsForUnboundSymbols(irFile: IrFile) {
+            val fileClass = irFile.declarations.singleOrNull { it is IrClass && it.isFacadeClass } as? IrClass ?: return
+
+            // Drop local functions with `IrDeclarationOrigin.FILLED_FOR_UNBOUND_SYMBOL`.
+            fileClass.declarations.removeAll { declaration ->
+                declaration is IrFunction && declaration.origin == IrDeclarationOrigin.FILLED_FOR_UNBOUND_SYMBOL
+                        && declaration.visibility == DescriptorVisibilities.LOCAL
             }
         }
 
@@ -781,7 +815,7 @@ open class LocalDeclarationsLowering(
                     startOffset = p.startOffset
                     endOffset = p.endOffset
                     origin =
-                        if (p is IrValueParameter && p.index < 0 && newDeclaration is IrConstructor) BOUND_RECEIVER_PARAMETER
+                        if (p is IrValueParameter && p.indexInOldValueParameters < 0 && newDeclaration is IrConstructor) BOUND_RECEIVER_PARAMETER
                         else BOUND_VALUE_PARAMETER
                     name = suggestNameForCapturedValue(p, generatedNames, isExplicitLocalFunction = isExplicitLocalFunction)
                     type = localFunctionContext.remapType(p.type)

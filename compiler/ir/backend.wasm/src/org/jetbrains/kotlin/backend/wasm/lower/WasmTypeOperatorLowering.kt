@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
 import org.jetbrains.kotlin.backend.common.lower.irNot
 import org.jetbrains.kotlin.backend.wasm.WasmBackendContext
 import org.jetbrains.kotlin.backend.wasm.ir2wasm.getRuntimeClass
+import org.jetbrains.kotlin.backend.wasm.ir2wasm.isExternalType
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.backend.js.utils.erasedUpperBound
@@ -25,6 +26,7 @@ import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 
 
@@ -326,7 +328,15 @@ class WasmBaseTypeOperatorTransformer(val context: WasmBackendContext) : IrEleme
     }
 
     private fun generateIsSubClass(argument: IrExpression, toType: IrType): IrExpression {
+        if (toType.isAny()) {
+            return builder.irTrue()
+        }
+
         val fromType = argument.type
+        if (isExternalType(fromType) != isExternalType(toType)) {
+            return builder.irFalse()
+        }
+
         val fromTypeErased = fromType.getRuntimeClass(context.irBuiltIns)
         val toTypeErased = toType.getRuntimeClass(context.irBuiltIns)
         if (fromTypeErased.isSubclassOf(toTypeErased)) {

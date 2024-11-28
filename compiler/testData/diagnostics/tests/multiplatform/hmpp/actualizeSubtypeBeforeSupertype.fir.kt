@@ -1,3 +1,5 @@
+// IGNORE_FIR_DIAGNOSTICS
+// RUN_PIPELINE_TILL: FRONTEND
 // MODULE: common
 // TARGET_PLATFORM: Common
 expect class A() : B

@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // RENDER_DIAGNOSTICS_MESSAGES
 // DIAGNOSTICS: -UNUSED_PARAMETER -UNUSED_VARIABLE -UNUSED_ANONYMOUS_PARAMETER
 
@@ -12,7 +13,7 @@ annotation class Ann
 fun <@Ann R : @Ann Any> f3(a: Array<@Ann R>): Array<@Ann R?> =  null!!
 
 fun test2(a: @Ann Array<in @Ann Int>) {
-    val r: Array<in Int?> = f3(<!ARGUMENT_TYPE_MISMATCH("kotlin.Array<@Ann() R>; @Ann() kotlin.Array<CapturedType(in @Ann() kotlin.Int)>")!>a<!>)
+    val r: Array<in Int?> = f3(<!ARGUMENT_TYPE_MISMATCH("kotlin.Array<@Ann() R (of fun <R : @Ann() Any> f3)>; @Ann() kotlin.Array<CapturedType(in @Ann() kotlin.Int)>")!>a<!>)
 }
 
 

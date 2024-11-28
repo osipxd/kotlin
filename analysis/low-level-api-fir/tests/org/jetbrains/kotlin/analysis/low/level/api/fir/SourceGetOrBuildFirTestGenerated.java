@@ -516,9 +516,45 @@ public class SourceGetOrBuildFirTestGenerated extends AbstractSourceGetOrBuildFi
     }
 
     @Test
+    @TestMetadata("qualifiedReferenceSelector.kt")
+    public void testQualifiedReferenceSelector() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/calls/qualifiedReferenceSelector.kt");
+    }
+
+    @Test
     @TestMetadata("qualifiedWholeCall.kt")
     public void testQualifiedWholeCall() {
       runTest("analysis/low-level-api-fir/testData/getOrBuildFir/calls/qualifiedWholeCall.kt");
+    }
+
+    @Test
+    @TestMetadata("qualifiedWholeReferenceSelector.kt")
+    public void testQualifiedWholeReferenceSelector() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/calls/qualifiedWholeReferenceSelector.kt");
+    }
+
+    @Test
+    @TestMetadata("safeQualifiedCallSelector.kt")
+    public void testSafeQualifiedCallSelector() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/calls/safeQualifiedCallSelector.kt");
+    }
+
+    @Test
+    @TestMetadata("safeQualifiedReferenceSelector.kt")
+    public void testSafeQualifiedReferenceSelector() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/calls/safeQualifiedReferenceSelector.kt");
+    }
+
+    @Test
+    @TestMetadata("safeQualifiedWholeCall.kt")
+    public void testSafeQualifiedWholeCall() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/calls/safeQualifiedWholeCall.kt");
+    }
+
+    @Test
+    @TestMetadata("safeQualifiedWholeReferenceSelector.kt")
+    public void testSafeQualifiedWholeReferenceSelector() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/calls/safeQualifiedWholeReferenceSelector.kt");
     }
 
     @Test
@@ -922,6 +958,66 @@ public class SourceGetOrBuildFirTestGenerated extends AbstractSourceGetOrBuildFi
     }
 
     @Test
+    @TestMetadata("thisExpression_anonymous_reference.kt")
+    public void testThisExpression_anonymous_reference() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_anonymous_reference.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_anonymous_this.kt")
+    public void testThisExpression_anonymous_this() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_anonymous_this.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_arrayAccessConvention_reference.kt")
+    public void testThisExpression_arrayAccessConvention_reference() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_arrayAccessConvention_reference.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_arrayAccessConvention_this.kt")
+    public void testThisExpression_arrayAccessConvention_this() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_arrayAccessConvention_this.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_plusAssignWithArrayGetConvention_reference.kt")
+    public void testThisExpression_plusAssignWithArrayGetConvention_reference() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_plusAssignWithArrayGetConvention_reference.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_plusAssignWithArrayGetConvention_this.kt")
+    public void testThisExpression_plusAssignWithArrayGetConvention_this() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_plusAssignWithArrayGetConvention_this.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_plusAssign_reference.kt")
+    public void testThisExpression_plusAssign_reference() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_plusAssign_reference.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_plusAssign_this.kt")
+    public void testThisExpression_plusAssign_this() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_plusAssign_this.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_regular_reference.kt")
+    public void testThisExpression_regular_reference() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_regular_reference.kt");
+    }
+
+    @Test
+    @TestMetadata("thisExpression_regular_this.kt")
+    public void testThisExpression_regular_this() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/thisExpression_regular_this.kt");
+    }
+
+    @Test
     @TestMetadata("throwExpression.kt")
     public void testThrowExpression() {
       runTest("analysis/low-level-api-fir/testData/getOrBuildFir/expressions/throwExpression.kt");
@@ -1093,6 +1189,18 @@ public class SourceGetOrBuildFirTestGenerated extends AbstractSourceGetOrBuildFi
     @TestMetadata("javaClassLiteral.kt")
     public void testJavaClassLiteral() {
       runTest("analysis/low-level-api-fir/testData/getOrBuildFir/invalidCode/javaClassLiteral.kt");
+    }
+
+    @Test
+    @TestMetadata("labelMultiple.kt")
+    public void testLabelMultiple() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/invalidCode/labelMultiple.kt");
+    }
+
+    @Test
+    @TestMetadata("labelUnderscore.kt")
+    public void testLabelUnderscore() {
+      runTest("analysis/low-level-api-fir/testData/getOrBuildFir/invalidCode/labelUnderscore.kt");
     }
 
     @Test

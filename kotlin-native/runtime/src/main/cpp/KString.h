@@ -7,47 +7,51 @@
 
 #include "Common.h"
 #include "Memory.h"
+#include "Natives.h"
 #include "Types.h"
 #include "TypeInfo.h"
 
-#ifdef __cplusplus
+// The encoding of this data is undefined unless it is known how the string was constructed,
+// in which case it can be `reinterpret_cast`ed to the appropriate type.
+static inline char* StringRawData(KRef kstring) {
+    return reinterpret_cast<char*>(CharArrayAddressOfElementAt(kstring->array(), 0));
+}
+
+static inline const char* StringRawData(KConstRef kstring) {
+    return reinterpret_cast<const char*>(CharArrayAddressOfElementAt(kstring->array(), 0));
+}
+
+static inline size_t StringRawSize(KConstRef kstring) {
+    return kstring->array()->count_ * sizeof(KChar);
+}
+
 extern "C" {
-#endif
 
 OBJ_GETTER(CreateStringFromCString, const char* cstring);
 OBJ_GETTER(CreateStringFromUtf8, const char* utf8, uint32_t lengthBytes);
+OBJ_GETTER(CreateStringFromUtf8OrThrow, const char* utf8, uint32_t lengthBytes);
+OBJ_GETTER(CreateStringFromUtf16, const KChar* utf16, uint32_t lengthChars);
+
+// The string returned by this method contains undefined data; users should fill the array
+// returned by `StringRawData`, which is guaranteed to have a size of `lengthChars * 2`.
+OBJ_GETTER(CreateUninitializedUtf16String, uint32_t lengthChars);
+
 char* CreateCStringFromString(KConstRef kstring);
 void DisposeCString(char* cstring);
-ObjHeader* CreatePermanentStringFromCString(const char* nullTerminatedUTF8);
-void FreePermanentStringForTests(ArrayHeader* header);  // to make ASAN happy, in hostRuntimeTests call FreePermanentStringForTests() after CreatePermanentStringFromCString()
 
-OBJ_GETTER(StringFromUtf8Buffer, const char* start, size_t size);
+KRef CreatePermanentStringFromCString(const char* nullTerminatedUTF8);
+// In real-world uses, permanent strings created by `CreatePermanentStringFromCString` are referenced until termination
+// and don't need to be deallocated. To make address sanitizer not complain about "memory leaks" in hostRuntimeTests,
+// though, they should be deallocated using this function.
+void FreePermanentStringForTests(KConstRef header);
 
-#ifdef __cplusplus
-}
-#endif
+} // extern "C"
 
-template <typename T>
-int binarySearchRange(const T* array, int arrayLength, T needle) {
-  int bottom = 0;
-  int top = arrayLength - 1;
-  int middle = -1;
-  T value = 0;
-  while (bottom <= top) {
-    middle = (bottom + top) / 2;
-    value = array[middle];
-    if (needle > value)
-      bottom = middle + 1;
-    else if (needle == value)
-      return middle;
-    else
-      top = middle - 1;
-  }
-  return middle - (needle < value ? 1 : 0);
-}
+enum class KStringConversionMode { UNCHECKED, CHECKED, REPLACE_INVALID };
 
 namespace kotlin {
 
-std::string to_string(KString kstring);
+template <KStringConversionMode mode>
+std::string to_string(KConstRef kstring, size_t start = 0, size_t size = std::string::npos) noexcept(mode != KStringConversionMode::CHECKED);
 
 }

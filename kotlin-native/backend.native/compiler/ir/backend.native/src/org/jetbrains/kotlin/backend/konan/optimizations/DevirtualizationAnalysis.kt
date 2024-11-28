@@ -24,17 +24,20 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.IrVariableImpl
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
+import org.jetbrains.kotlin.ir.irAttribute
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.impl.IrVariableSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.util.explicitParameters
 import org.jetbrains.kotlin.ir.util.*
-import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
+import org.jetbrains.kotlin.ir.visitors.IrTransformer
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.name.Name
 import java.util.*
+
+internal var IrCall.devirtualizedCallSite: DevirtualizationAnalysis.DevirtualizedCallSite? by irAttribute(followAttributeOwner = true)
 
 object DevirtualizationUnfoldFactors {
     /**
@@ -107,7 +110,7 @@ internal object DevirtualizationAnalysis {
                 }
             }
 
-            override fun visitFunctionReference(expression: IrFunctionReference) {
+            override fun visitRawFunctionReference(expression: IrRawFunctionReference) {
                 expression.acceptChildrenVoid(this)
 
                 val function = expression.symbol.owner
@@ -222,52 +225,6 @@ internal object DevirtualizationAnalysis {
         }
         private fun IntArray.getEdge(v: Int, id: Int) = this[this[v] + id]
         private fun IntArray.edgeCount(v: Int) = this[v + 1] - this[v]
-
-        interface TypeHierarchy {
-            val allTypes: Array<DataFlowIR.Type>
-
-            fun inheritorsOf(type: DataFlowIR.Type): BitSet
-        }
-
-        object EmptyTypeHierarchy : TypeHierarchy {
-            override val allTypes: Array<DataFlowIR.Type> = emptyArray()
-
-            override fun inheritorsOf(type: DataFlowIR.Type): BitSet {
-                return BitSet()
-            }
-        }
-
-        inner class TypeHierarchyImpl(override val allTypes: Array<DataFlowIR.Type>) : TypeHierarchy {
-            private val typesSubTypes = Array(allTypes.size) { mutableListOf<DataFlowIR.Type>() }
-            private val allInheritors = Array(allTypes.size) { BitSet() }
-
-            init {
-                val visited = BitSet()
-
-                fun processType(type: DataFlowIR.Type) {
-                    if (visited[type.index]) return
-                    visited.set(type.index)
-                    type.superTypes
-                            .forEach { superType ->
-                                val subTypes = typesSubTypes[superType.index]
-                                subTypes += type
-                                processType(superType)
-                            }
-                }
-
-                allTypes.forEach { processType(it) }
-            }
-
-            override fun inheritorsOf(type: DataFlowIR.Type): BitSet {
-                val typeId = type.index
-                val inheritors = allInheritors[typeId]
-                if (!inheritors.isEmpty || type == DataFlowIR.Type.Virtual) return inheritors
-                inheritors.set(typeId)
-                for (subType in typesSubTypes[typeId])
-                    inheritors.or(inheritorsOf(subType))
-                return inheritors
-            }
-        }
 
         private fun DataFlowIR.Type.calleeAt(callSite: DataFlowIR.Node.VirtualCall) = when (callSite) {
             is DataFlowIR.Node.VtableCall ->
@@ -422,23 +379,35 @@ internal object DevirtualizationAnalysis {
         private fun DataFlowIR.Node.VirtualCall.debugString() =
                 irCallSite?.let { ir2stringWhole(it).trimEnd() } ?: this.toString()
 
-        fun analyze(): AnalysisResult {
+        // To properly place devirtualized call sites to IR call sites and use them after inlining.
+        private fun resetCallSitesAttributeOwnerIds() {
+            irModule.acceptChildrenVoid(object : IrElementVisitorVoid {
+                override fun visitElement(element: IrElement) {
+                    element.acceptChildrenVoid(this)
+                }
+
+                override fun visitCall(expression: IrCall) {
+                    expression.acceptChildrenVoid(this)
+
+                    expression.attributeOwnerId = expression
+                }
+            })
+        }
+
+        fun analyze() {
+            resetCallSitesAttributeOwnerIds()
+
             val functions = moduleDFG.functions
             assert(DataFlowIR.Type.Virtual !in symbolTable.classMap.values) {
                 "DataFlowIR.Type.Virtual cannot be in symbolTable.classMap"
             }
-            val allDeclaredTypes = listOf(DataFlowIR.Type.Virtual) +
-                    symbolTable.classMap.values +
-                    symbolTable.primitiveMap.values
-            val allTypes = Array<DataFlowIR.Type>(allDeclaredTypes.size) { DataFlowIR.Type.Virtual }
-            for (type in allDeclaredTypes)
-                allTypes[type.index] = type
-            val typeHierarchy = TypeHierarchyImpl(allTypes)
+            val typeHierarchy = moduleDFG.symbolTable.typeHierarchy
+            val allTypes = typeHierarchy.allTypes
             val rootSet = computeRootSet(context, irModule, moduleDFG)
 
             val nodesMap = mutableMapOf<DataFlowIR.Node, Node>()
 
-            val (instantiatingClasses, directEdges, reversedEdges) = buildConstraintGraph(nodesMap, functions, typeHierarchy, rootSet)
+            val (instantiatingClasses, directEdges, reversedEdges) = buildConstraintGraph(nodesMap, functions, rootSet)
 
             context.logMultiple {
                 +"FULL CONSTRAINT GRAPH"
@@ -649,15 +618,16 @@ internal object DevirtualizationAnalysis {
                     }
                     context.log { "" }
 
-                    result[virtualCall] = DevirtualizedCallSite(virtualCall.callee,
+                    val devirtualizedCallSite = DevirtualizedCallSite(virtualCall.callee,
                             possibleReceivers.map { possibleReceiverType ->
                                 val callee = possibleReceiverType.calleeAt(virtualCall)
                                 if (callee is DataFlowIR.FunctionSymbol.Declared && callee.symbolTableIndex < 0)
                                     error("Function ${possibleReceiverType}.$callee cannot be called virtually," +
                                             " but actually is at call site: ${virtualCall.debugString()}")
                                 DevirtualizedCallee(possibleReceiverType, callee)
-                            }) to function.symbol
-
+                            })
+                    result[virtualCall] = devirtualizedCallSite to function.symbol
+                    virtualCall.irCallSite?.devirtualizedCallSite = devirtualizedCallSite
                 }
             }
 
@@ -687,8 +657,6 @@ internal object DevirtualizationAnalysis {
                     }
                 }
             }
-
-            return AnalysisResult(result.asSequence().associateBy({ it.key }, { it.value.first }), typeHierarchy)
         }
 
         /*
@@ -747,10 +715,9 @@ internal object DevirtualizationAnalysis {
         // and by that we're only holding references to two out of three of them.
         private fun buildConstraintGraph(nodesMap: MutableMap<DataFlowIR.Node, Node>,
                                          functions: Map<DataFlowIR.FunctionSymbol, DataFlowIR.Function>,
-                                         typeHierarchy: TypeHierarchyImpl,
                                          rootSet: List<DataFlowIR.FunctionSymbol>
         ): ConstraintGraphBuildResult {
-            val precursor = buildConstraintGraphPrecursor(nodesMap, functions, typeHierarchy, rootSet)
+            val precursor = buildConstraintGraphPrecursor(nodesMap, functions, rootSet)
             return ConstraintGraphBuildResult(precursor.instantiatingClasses, precursor.directEdges,
                     buildReversedEdges(precursor.directEdges, precursor.reversedEdgesCount))
         }
@@ -780,10 +747,9 @@ internal object DevirtualizationAnalysis {
 
         private fun buildConstraintGraphPrecursor(nodesMap: MutableMap<DataFlowIR.Node, Node>,
                                                   functions: Map<DataFlowIR.FunctionSymbol, DataFlowIR.Function>,
-                                                  typeHierarchy: TypeHierarchyImpl,
                                                   rootSet: List<DataFlowIR.FunctionSymbol>
         ): ConstraintGraphPrecursor {
-            val constraintGraphBuilder = ConstraintGraphBuilder(nodesMap, functions, typeHierarchy, rootSet, true)
+            val constraintGraphBuilder = ConstraintGraphBuilder(nodesMap, functions, rootSet, true)
             constraintGraphBuilder.build()
             val bagOfEdges = constraintGraphBuilder.bagOfEdges
             val directEdgesCount = constraintGraphBuilder.directEdgesCount
@@ -817,10 +783,10 @@ internal object DevirtualizationAnalysis {
 
         private inner class ConstraintGraphBuilder(val functionNodesMap: MutableMap<DataFlowIR.Node, Node>,
                                                    val functions: Map<DataFlowIR.FunctionSymbol, DataFlowIR.Function>,
-                                                   val typeHierarchy: TypeHierarchyImpl,
                                                    val rootSet: List<DataFlowIR.FunctionSymbol>,
                                                    val useTypes: Boolean) {
 
+            private val typeHierarchy = moduleDFG.symbolTable.typeHierarchy
             private val allTypes = typeHierarchy.allTypes
             private val variables = mutableMapOf<DataFlowIR.Node.Variable, Node>()
             private val typesVirtualCallSites = Array(allTypes.size) { mutableListOf<ConstraintGraphVirtualCall>() }
@@ -1286,6 +1252,10 @@ internal object DevirtualizationAnalysis {
                             constraintGraph.voidNode
                         }
 
+                        is DataFlowIR.Node.SaveCoroutineState -> {
+                            constraintGraph.voidNode
+                        }
+
                         is DataFlowIR.Node.Variable ->
                             node.values.map { edgeToConstraintNode(it) }.let { values ->
                                 ordinaryNode { "TempVar\$${function.symbol}" }.also { node ->
@@ -1332,15 +1302,12 @@ internal object DevirtualizationAnalysis {
 
     class DevirtualizedCallSite(val callee: DataFlowIR.FunctionSymbol, val possibleCallees: List<DevirtualizedCallee>)
 
-    class AnalysisResult(val devirtualizedCallSites: Map<DataFlowIR.Node.VirtualCall, DevirtualizedCallSite>,
-                         val typeHierarchy: DevirtualizationAnalysisImpl.TypeHierarchy)
-
     fun run(context: Context, irModule: IrModuleFragment, moduleDFG: ModuleDFG) =
             DevirtualizationAnalysisImpl(context, irModule, moduleDFG).analyze()
 
-    fun devirtualize(irModule: IrModuleFragment, context: Context,
-                     devirtualizedCallSites: Map<IrCall, DevirtualizedCallSite>,
+    fun devirtualize(irModule: IrModuleFragment, moduleDFG: ModuleDFG, generationState: NativeGenerationState,
                      maxVTableUnfoldFactor: Int, maxITableUnfoldFactor: Int) {
+        val context = generationState.context
         val symbols = context.ir.symbols
         val nativePtrEqualityOperatorSymbol = symbols.areEqualByValue[PrimitiveBinaryType.POINTER]!!
         val isSubtype = symbols.isSubtype
@@ -1468,10 +1435,11 @@ internal object DevirtualizationAnalysis {
             }
         }
 
+        val changedDeclarations = mutableSetOf<IrDeclaration>()
         var callSitesCount = 0
         var devirtualizedCallSitesCount = 0
         var actuallyDevirtualizedCallSitesCount = 0
-        irModule.transformChildren(object : IrElementTransformer<IrDeclarationParent?> {
+        irModule.transformChildren(object : IrTransformer<IrDeclarationParent?>() {
             override fun visitDeclaration(declaration: IrDeclarationBase, data: IrDeclarationParent?) =
                     super.visitDeclaration(declaration, declaration as? IrDeclarationParent ?: data)
 
@@ -1480,7 +1448,7 @@ internal object DevirtualizationAnalysis {
 
                 if (expression.superQualifierSymbol == null && expression.symbol.owner.isOverridable)
                     ++callSitesCount
-                val devirtualizedCallSite = devirtualizedCallSites[expression] ?: return expression
+                val devirtualizedCallSite = expression.devirtualizedCallSite ?: return expression
                 val possibleCallees = devirtualizedCallSite.possibleCallees
                         .groupBy { it.callee }
                         .entries.map { entry -> entry.key to entry.value.map { it.receiverType }.distinct() }
@@ -1496,12 +1464,12 @@ internal object DevirtualizationAnalysis {
                     return expression
                 }
                 ++actuallyDevirtualizedCallSitesCount
+                changedDeclarations.add(caller as IrDeclaration)
 
                 val startOffset = expression.startOffset
                 val endOffset = expression.endOffset
-                val function = expression.symbol.owner
-                val type = function.returnType
-                val irBuilder = context.createIrBuilder((caller as IrDeclaration).symbol, startOffset, endOffset)
+                val type = callee.returnType
+                val irBuilder = context.createIrBuilder(caller.symbol, startOffset, endOffset)
                 irBuilder.run {
                     return when {
                         possibleCallees.isEmpty() -> irBlock(expression) {
@@ -1643,6 +1611,13 @@ internal object DevirtualizationAnalysis {
                 }
             }
         }, null)
+
+        for (declaration in changedDeclarations) {
+            val rebuiltFunction = FunctionDFGBuilder(generationState, moduleDFG.symbolTable).build(declaration)
+            val functionSymbol = moduleDFG.symbolTable.mapFunction(declaration)
+            moduleDFG.functions[functionSymbol] = rebuiltFunction
+        }
+
         context.logMultiple {
             +"Devirtualized: ${devirtualizedCallSitesCount * 100.0 / callSitesCount}%"
             +"Actually devirtualized: ${actuallyDevirtualizedCallSitesCount * 100.0 / callSitesCount}%"

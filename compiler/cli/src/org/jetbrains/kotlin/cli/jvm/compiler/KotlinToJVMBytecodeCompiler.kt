@@ -28,7 +28,6 @@ import org.jetbrains.kotlin.cli.jvm.config.*
 import org.jetbrains.kotlin.cli.jvm.config.ClassicFrontendSpecificJvmConfigurationKeys.JAVA_CLASSES_TRACKER
 import org.jetbrains.kotlin.codegen.ClassBuilderFactories
 import org.jetbrains.kotlin.codegen.CodegenFactory
-import org.jetbrains.kotlin.codegen.DefaultCodegenFactory
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.config.*
 import org.jetbrains.kotlin.config.CommonConfigurationKeys.LOOKUP_TRACKER
@@ -140,7 +139,7 @@ object KotlinToJVMBytecodeCompiler {
             } else {
                 // K2/LT only, backend is always JVM-based
                 val wholeModule = (backendInput as JvmIrCodegenFactory.JvmIrBackendInput).irModuleFragment
-                val moduleCopy = IrModuleFragmentImpl(wholeModule.descriptor, wholeModule.irBuiltins)
+                val moduleCopy = IrModuleFragmentImpl(wholeModule.descriptor)
                 wholeModule.files.filterTo(moduleCopy.files) { file ->
                     file.fileEntry.name in module.getSourceFiles()
                 }
@@ -287,10 +286,7 @@ object KotlinToJVMBytecodeCompiler {
 
     private fun convertToIr(environment: KotlinCoreEnvironment, result: AnalysisResult): Pair<CodegenFactory, CodegenFactory.BackendInput> {
         val configuration = environment.configuration
-        val codegenFactory =
-            if (configuration.getBoolean(JVMConfigurationKeys.IR)) JvmIrCodegenFactory(
-                configuration, configuration.get(CLIConfigurationKeys.PHASE_CONFIG)
-            ) else DefaultCodegenFactory
+        val codegenFactory = JvmIrCodegenFactory(configuration, configuration.get(CLIConfigurationKeys.PHASE_CONFIG))
 
         val input = CodegenFactory.IrConversionInput(
             environment.project,
@@ -318,6 +314,7 @@ object KotlinToJVMBytecodeCompiler {
         val codegenFactory = JvmIrCodegenFactory(configuration, phaseConfig)
         return codegenFactory to JvmIrCodegenFactory.JvmIrBackendInput(
             irModuleFragment,
+            irBuiltIns,
             symbolTable,
             phaseConfig,
             components.irProviders,
@@ -428,12 +425,6 @@ object KotlinToJVMBytecodeCompiler {
         performanceManager?.notifyGenerationStarted()
 
         state.beforeCompile()
-
-        if (sourceFiles != null) {
-            state.oldBEInitTrace(sourceFiles)
-        }
-
-        ProgressIndicatorAndCompilationCanceledStatus.checkCanceled()
 
         performanceManager?.notifyIRLoweringStarted()
         return codegenFactory.invokeLowerings(state, backendInput)

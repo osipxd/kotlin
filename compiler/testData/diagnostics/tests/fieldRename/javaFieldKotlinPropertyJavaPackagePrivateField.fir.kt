@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // FILE: base/A.java
 
 package base;
@@ -11,7 +12,7 @@ public class A {
 package base
 
 open class B : A() {
-    private val f = "FAIL"
+    private val <!PROPERTY_HIDES_JAVA_FIELD!>f<!> = "FAIL"
 }
 
 // FILE: C.java

@@ -20,10 +20,10 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.config.LanguageVersion
 import org.jetbrains.kotlin.incremental.LocalFileKotlinClass
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
-import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmMetadataVersion
+import org.jetbrains.kotlin.metadata.deserialization.MetadataVersion
 import org.jetbrains.kotlin.metadata.jvm.deserialization.ModuleMapping
 import org.jetbrains.kotlin.test.MockLibraryUtil
-import org.jetbrains.kotlin.utils.toMetadataVersion
+import org.jetbrains.kotlin.util.toMetadataVersion
 import org.jetbrains.org.objectweb.asm.*
 import org.jetbrains.org.objectweb.asm.tree.ClassNode
 import java.io.ByteArrayInputStream
@@ -62,6 +62,10 @@ abstract class AbstractCompileKotlinAgainstCustomBinariesTest : AbstractKotlinCo
             if (expectedFirFile != null && languageVersion.usesK2 && expectedFirFile.exists()) expectedFirFile.name else expectedFileName,
             additionalSources
         )
+    }
+
+    protected open fun muteForK1(test: () -> Unit) {
+        test()
     }
 
     protected open fun muteForK2(test: () -> Unit) {
@@ -357,9 +361,9 @@ abstract class AbstractCompileKotlinAgainstCustomBinariesTest : AbstractKotlinCo
 
             val moduleFile = File(tmpdir.absolutePath, "META-INF/main.kotlin_module").readBytes()
             val versionNumber = ModuleMapping.readVersionNumber(DataInputStream(ByteArrayInputStream(moduleFile)))!!
-            val moduleVersion = JvmMetadataVersion(*versionNumber)
+            val moduleVersion = MetadataVersion(*versionNumber)
             if (languageVersion == LanguageVersion.KOTLIN_2_0) {
-                assertEquals("Actual version: $moduleVersion", JvmMetadataVersion(1, 9, 9999), moduleVersion)
+                assertEquals("Actual version: $moduleVersion", MetadataVersion(1, 9, 9999), moduleVersion)
             } else {
                 assertEquals("Actual version: $moduleVersion", expectedMajor, moduleVersion.major)
                 assertEquals("Actual version: $moduleVersion", expectedMinor, moduleVersion.minor)
@@ -481,8 +485,8 @@ abstract class AbstractCompileKotlinAgainstCustomBinariesTest : AbstractKotlinCo
         assertEquals("ABCAB", result)
     }
 
-    fun testContextualDeclarationUse() {
-        val library = compileLibrary("library", additionalOptions = listOf(CommonCompilerArguments::contextReceivers.cliArgument))
+    fun testContextualDeclarationUse() = muteForK1 {
+        val library = compileLibrary("library", additionalOptions = listOf(CommonCompilerArguments::contextParameters.cliArgument))
         compileKotlin("contextualDeclarationUse.kt", tmpdir, listOf(library), additionalOptions = listOf(CommonCompilerArguments::skipPrereleaseCheck.cliArgument))
     }
 

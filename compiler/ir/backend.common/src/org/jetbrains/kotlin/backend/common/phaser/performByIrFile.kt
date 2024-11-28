@@ -16,12 +16,11 @@ import java.util.concurrent.atomic.AtomicReference
 
 fun <Context : CommonBackendContext> performByIrFile(
     name: String,
-    description: String,
     lower: List<CompilerPhase<Context, IrFile, IrFile>>,
     supportParallel: Boolean,
 ): SameTypeNamedCompilerPhase<Context, IrModuleFragment> =
     SameTypeNamedCompilerPhase(
-        name, description, emptySet(), PerformByIrFilePhase(lower, supportParallel), emptySet(), emptySet(), emptySet(),
+        name, emptySet(), PerformByIrFilePhase(lower, supportParallel), emptySet(), emptySet(), emptySet(),
         setOf(getIrDumper()), nlevels = 1,
     )
 
@@ -110,6 +109,6 @@ private class PerformByIrFilePhase<Context : CommonBackendContext>(
         return input
     }
 
-    override fun getNamedSubphases(startDepth: Int): List<Pair<Int, AbstractNamedCompilerPhase<Context, *, *>>> =
+    override fun getNamedSubphases(startDepth: Int): List<Pair<Int, NamedCompilerPhase<Context, *, *>>> =
         lower.flatMap { it.getNamedSubphases(startDepth) }
 }

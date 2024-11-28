@@ -26,7 +26,9 @@ import org.jetbrains.kotlin.utils.mapToSetOrEmpty
 // Use it in application sessions for loading classes from Java files listed on the command line.
 // For library and incremental compilation sessions use `KotlinDeserializedJvmSymbolsProvider`
 // in order to load Kotlin classes as well.
-//Also used in IDE for loading java classes separately from stub based kotlin classes
+// Also used in IDE for loading java classes separately from stub based kotlin classes
+// This symbol provider should not have access to any extension provider (`FirDeclarationGenerationExtension`);
+// otherwise it could provoke infinity recursion because an extension provider may check if a Java class is already existed
 open class JavaSymbolProvider(
     session: FirSession,
     override val javaFacade: FirJavaFacade,
@@ -65,7 +67,7 @@ open class JavaSymbolProvider(
     @OptIn(FirSymbolProviderInternals::class)
     override fun getTopLevelPropertySymbolsTo(destination: MutableList<FirPropertySymbol>, packageFqName: FqName, name: Name) {}
 
-    override fun getPackage(fqName: FqName): FqName? = javaFacade.getPackage(fqName)
+    override fun hasPackage(fqName: FqName): Boolean = javaFacade.hasPackage(fqName)
 
     override val symbolNamesProvider: FirSymbolNamesProvider = object : FirSymbolNamesProviderWithoutCallables() {
         override val hasSpecificClassifierPackageNamesComputation: Boolean get() = false

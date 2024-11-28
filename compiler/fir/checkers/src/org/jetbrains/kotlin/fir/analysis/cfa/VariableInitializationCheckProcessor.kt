@@ -358,11 +358,13 @@ private fun FirBasedSymbol<*>.getDebugFqName(): FqName {
     return when (val fir = this.fir) {
         is FirFile -> fir.packageFqName.child(Name.identifier(fir.name))
         is FirScript -> fir.symbol.fqName
+        is FirReplSnippet -> FqName.topLevel(fir.name)
         is FirClassLikeDeclaration -> fir.symbol.classId.asSingleFqName()
         is FirTypeParameter -> fir.containingDeclarationSymbol.getDebugFqName().child(fir.name)
         is FirAnonymousInitializer -> fir.containingDeclarationSymbol.getDebugFqName().child(Name.special("<init>"))
         is FirCallableDeclaration -> fir.symbol.callableId.asFqNameForDebugInfo()
         is FirCodeFragment -> FqName.topLevel(Name.special("<fragment>"))
         is FirDanglingModifierList -> FqName.topLevel(Name.special("<dangling>"))
+        is FirReceiverParameter -> FqName.topLevel(Name.special("<extension-receiver-parameter>"))
     }
 }

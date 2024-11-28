@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinGlobalSourc
 import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModuleOutOfBlockModificationListener
 import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModuleStateModificationKind
 import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModuleStateModificationListener
+import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinGlobalScriptModuleStateModificationListener
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinModuleDependentsProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaDanglingFileModule
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaLibraryModule
@@ -79,6 +80,13 @@ class LLFirSessionInvalidationService(private val project: Project) {
         }
     }
 
+    internal class LLKotlinGlobalScriptModuleStateModificationListener(val project: Project) :
+        KotlinGlobalScriptModuleStateModificationListener {
+        override fun onModification() {
+            getInstance(project).invalidateScriptSessions()
+        }
+    }
+
     private val sessionCache: LLFirSessionCache by lazy {
         LLFirSessionCache.getInstance(project)
     }
@@ -122,6 +130,8 @@ class LLFirSessionInvalidationService(private val project: Project) {
         }
     }
 
+    private fun invalidateScriptSessions() = sessionCache.removeAllScriptSessions()
+
     /**
      * Invalidates all cached sessions. If [includeLibraryModules] is `true`, also invalidates sessions for libraries.
      *
@@ -136,7 +146,7 @@ class LLFirSessionInvalidationService(private val project: Project) {
         // Invalidating anchor modules before all source sessions has the advantage that `invalidate`'s session existence check will work,
         // so we do not have to invalidate dependent sessions if the anchor module does not exist in the first place.
         if (!includeLibraryModules) {
-            val anchorModules = KotlinAnchorModuleProvider.getInstance(project)?.getAllAnchorModules()
+            val anchorModules = KotlinAnchorModuleProvider.getInstance(project)?.getAllAnchorModulesIfComputed()
             anchorModules?.forEach(::invalidate)
         }
 

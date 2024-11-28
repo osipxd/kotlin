@@ -7,13 +7,13 @@ package org.jetbrains.kotlin.backend.common.serialization
 
 import org.jetbrains.kotlin.backend.common.serialization.encodings.*
 import org.jetbrains.kotlin.backend.common.serialization.proto.IrSimpleTypeNullability
-import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities.INTERNAL
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrFileEntry
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.utils.filterIsInstanceAnd
 import org.jetbrains.kotlin.utils.addToStdlib.applyIf
+import org.jetbrains.kotlin.utils.addToStdlib.runIf
 import java.io.File
 import org.jetbrains.kotlin.backend.common.serialization.proto.FieldAccessCommon as ProtoFieldAccessCommon
 import org.jetbrains.kotlin.backend.common.serialization.proto.FileEntry as ProtoFileEntry
@@ -108,21 +109,45 @@ import org.jetbrains.kotlin.backend.common.serialization.proto.MemberAccessCommo
 import org.jetbrains.kotlin.backend.common.serialization.proto.NullableIrExpression as ProtoNullableIrExpression
 
 open class IrFileSerializer(
-    private val declarationTable: DeclarationTable,
-    private val compatibilityMode: CompatibilityMode,
-    private val languageVersionSettings: LanguageVersionSettings,
-    private val bodiesOnlyForInlines: Boolean = false,
-    private val normalizeAbsolutePaths: Boolean = false,
-    private val publicAbiOnly: Boolean = false,
-    private val sourceBaseDirs: Collection<String>
+    private val settings: IrSerializationSettings,
+    private val declarationTable: DeclarationTable<*>,
 ) {
     private val loopIndex = hashMapOf<IrLoop, Int>()
     private var currentLoopIndex = 0
 
-    // The same type can be used multiple times in a file
-    // so use this index to store type data only once.
-    private val protoTypeMap = hashMapOf<IrTypeKey, Int>()
-    protected val protoTypeArray = arrayListOf<ProtoType>()
+    /**
+     * The abstraction that represents all [ProtoType]s to be serialized in the current [IrFile].
+     *
+     * It writes every protobuf 'type' entity to a byte array and ensures that there is no other 'type'
+     * entity that has been already added with exactly the same bytes. In other words, ensures that
+     * all types added to [ProtoTypeArray] are indeed unique. This is useful when serializing a mix
+     * of bound and unbound IR, when there are two equivalent [IrType]s referencing different symbols
+     * (bound and unbound) - the situation that the serializer otherwise is not able to recognize
+     * and therefore serializes them as two distinct types.
+     */
+    protected class ProtoTypeArray {
+        private class UniqueType(val protoType: ProtoType) {
+            val byteArray: ByteArray = protoType.toByteArray()
+
+            private val memoizedHashCode = byteArray.contentHashCode()
+            override fun hashCode() = memoizedHashCode
+
+            override fun equals(other: Any?) =
+                other is UniqueType && other.memoizedHashCode == memoizedHashCode && other.byteArray contentEquals byteArray
+        }
+
+        // Use `LinkedHashMap` to keep only unique types but preserve the insertion order.
+        private val uniqueTypes: MutableMap<UniqueType, /* ordered index */ Int> = linkedMapOf()
+
+        val protoTypes: List<ProtoType> get() = uniqueTypes.keys.map { it.protoType }
+        val byteArrays: List<ByteArray> get() = uniqueTypes.keys.map { it.byteArray }
+
+        fun addAndGetIndex(protoType: ProtoType) = uniqueTypes.getOrPut(UniqueType(protoType)) { uniqueTypes.size }
+    }
+
+    /** The same type can be used multiple times in a file, so use this map to store the unique index by a deduplication key. */
+    private val protoTypeMap = hashMapOf<IrTypeDeduplicationKey, /* unique type index */ Int>()
+    protected val protoTypeArray = ProtoTypeArray()
 
     private val protoStringMap = hashMapOf<String, Int>()
     protected val protoStringArray = arrayListOf<String>()
@@ -203,13 +228,6 @@ open class IrFileSerializer(
 
     private fun serializeName(name: Name): Int = serializeString(name.toString())
 
-    /* ------- IdSignature ------------------------------------------------------ */
-
-    private fun protoIdSignature(declaration: IrDeclaration, recordInSignatureClashDetector: Boolean): Int {
-        val idSig = declarationTable.signatureByDeclaration(declaration, compatibilityMode.legacySignaturesForPrivateAndLocalDeclarations, recordInSignatureClashDetector)
-        return idSignatureSerializer.protoIdSignature(idSig)
-    }
-
     /* ------- IrSymbols -------------------------------------------------------- */
 
     companion object {
@@ -256,15 +274,24 @@ open class IrFileSerializer(
     }
 
     private fun serializeIrSymbol(symbol: IrSymbol, isDeclared: Boolean = false): Long {
-        val symbolKind = protoSymbolKind(symbol)
+        val signature: IdSignature = runIf(settings.reuseExistingSignaturesForSymbols) { symbol.signature }
+            ?: when (symbol) {
+                is IrFileSymbol -> IdSignature.FileSignature(symbol) // TODO: special signature for files?
+                else -> {
+                    val declaration = symbol.owner as? IrDeclaration
+                        ?: error("Expected IrDeclaration: ${symbol.owner.render()}")
 
-        val signatureId = when {
-            symbol is IrFileSymbol -> idSignatureSerializer.protoIdSignature(IdSignature.FileSignature(symbol)) // TODO: special signature for files?
-            else -> {
-                val declaration = symbol.owner as? IrDeclaration ?: error("Expected IrDeclaration: ${symbol.owner.render()}")
-                protoIdSignature(declaration, recordInSignatureClashDetector = isDeclared)
+                    // Compute the signature:
+                    declarationTable.signatureByDeclaration(
+                        declaration,
+                        settings.compatibilityMode.legacySignaturesForPrivateAndLocalDeclarations,
+                        recordInSignatureClashDetector = isDeclared
+                    )
+                }
             }
-        }
+
+        val signatureId = idSignatureSerializer.protoIdSignature(signature)
+        val symbolKind = protoSymbolKind(symbol)
 
         return BinarySymbolData.encode(symbolKind, signatureId)
     }
@@ -354,37 +381,53 @@ open class IrFileSerializer(
         return proto.build()
     }
 
-    enum class IrTypeKind {
+    private enum class IrTypeKind {
         SIMPLE,
         DYNAMIC,
         ERROR,
     }
 
-    enum class IrTypeArgumentKind {
+    private enum class IrTypeArgumentKind {
         STAR,
         PROJECTION
     }
 
-    // This is just IrType repacked as a data class, good to address a hash map.
-    data class IrTypeKey(
+    /**
+     * This is just an [IrType] repacked as a data class, good to address a hash map.
+     *
+     * Note: This key does not guarantee the uniqueness of IR types for several reasons:
+     * - [IrTypeDeduplicationKey.classifier] is a symbol of a classifier in a type. In the case of a mix of
+     *   bound IR produced by Fir2Ir and unbound IR obtained through deserialization of inline function
+     *   body, there can be two symbols (one bound without a signature and another unbound but with a signature)
+     *   both pointing effectively to the same declaration.
+     * - [IrTypeDeduplicationKey.annotations] is just a list of [IrConstructorCall]s that cannot be
+     *   fully compared: The [IrConstructorCallImpl.equals] function resolves to [Any.equals], which
+     *   compares only object references.
+     * - [IrTypeDeduplicationKey.abbreviation] is just another IR node: [IrTypeAbbreviation]. And it also
+     *   cannot be fully compared.
+     *
+     * However, [IrTypeDeduplicationKey] can be used as a good approximation to store lesser number of records
+     * in [protoTypeMap] and overall speed-up the process of types serialization.
+     */
+    private data class IrTypeDeduplicationKey(
         val kind: IrTypeKind,
         val classifier: IrClassifierSymbol?,
         val nullability: SimpleTypeNullability?,
-        val arguments: List<IrTypeArgumentKey>?,
+        val arguments: List<IrTypeArgumentDeduplicationKey>?,
         val annotations: List<IrConstructorCall>,
         val abbreviation: IrTypeAbbreviation?
     )
 
-    data class IrTypeArgumentKey(
+    private data class IrTypeArgumentDeduplicationKey(
         val kind: IrTypeArgumentKind,
         val variance: Variance?,
-        val type: IrTypeKey?
+        val type: IrTypeDeduplicationKey?
     )
 
-    private val IrType.toIrTypeKey: IrTypeKey
+    private val IrType.toIrTypeDeduplicationKey: IrTypeDeduplicationKey
         get() {
             val type = this
-            return IrTypeKey(
+            return IrTypeDeduplicationKey(
                 kind = when (this) {
                     is IrSimpleType -> IrTypeKind.SIMPLE
                     is IrDynamicType -> IrTypeKind.DYNAMIC
@@ -392,25 +435,24 @@ open class IrFileSerializer(
                 },
                 classifier = type.classifierOrNull,
                 nullability = (type as? IrSimpleType)?.nullability,
-                arguments = (type as? IrSimpleType)?.arguments?.map { it.toIrTypeArgumentKey },
+                arguments = (type as? IrSimpleType)?.arguments?.map { it.toIrTypeArgumentDeduplicationKey },
                 annotations = type.annotations,
                 abbreviation = (type as? IrSimpleType)?.abbreviation
             )
         }
 
-    private val IrTypeArgument.toIrTypeArgumentKey: IrTypeArgumentKey
-        get() = IrTypeArgumentKey(
+    private val IrTypeArgument.toIrTypeArgumentDeduplicationKey: IrTypeArgumentDeduplicationKey
+        get() = IrTypeArgumentDeduplicationKey(
             kind = when (this) {
                 is IrStarProjection -> IrTypeArgumentKind.STAR
                 is IrTypeProjection -> IrTypeArgumentKind.PROJECTION
             },
             variance = (this as? IrTypeProjection)?.variance,
-            type = (this as? IrTypeProjection)?.type?.toIrTypeKey
+            type = (this as? IrTypeProjection)?.type?.toIrTypeDeduplicationKey
         )
 
-    private fun serializeIrType(type: IrType) = protoTypeMap.getOrPut(type.toIrTypeKey) {
-        protoTypeArray.add(serializeIrTypeData(type))
-        protoTypeArray.size - 1
+    private fun serializeIrType(type: IrType) = protoTypeMap.getOrPut(type.toIrTypeDeduplicationKey) {
+        protoTypeArray.addAndGetIndex(serializeIrTypeData(type))
     }
 
     /* -------------------------------------------------------------------------- */
@@ -766,10 +808,10 @@ open class IrFileSerializer(
     private fun serializeVarargElement(element: IrVarargElement): ProtoVarargElement {
         val proto = ProtoVarargElement.newBuilder()
         when (element) {
-            is IrExpression
-            -> proto.expression = serializeExpression(element)
-            is IrSpreadElement
-            -> proto.spreadElement = serializeSpreadElement(element)
+            is IrExpression,
+                -> proto.expression = serializeExpression(element)
+            is IrSpreadElement,
+                -> proto.spreadElement = serializeSpreadElement(element)
             else -> error("Unknown vararg element kind")
         }
         return proto.build()
@@ -1011,7 +1053,10 @@ open class IrFileSerializer(
     private fun serializeIrDeclarationBase(declaration: IrDeclaration, flags: Long?): ProtoDeclarationBase {
         return with(ProtoDeclarationBase.newBuilder()) {
             symbol = serializeIrSymbol((declaration as IrSymbolOwner).symbol, isDeclared = true)
-            coordinates = if (publicAbiOnly && !isInsideInline) 0L else serializeCoordinates(declaration.startOffset, declaration.endOffset)
+            coordinates = if (settings.publicAbiOnly && !isInsideInline)
+                0L
+            else
+                serializeCoordinates(declaration.startOffset, declaration.endOffset)
             addAllAnnotation(serializeAnnotations(declaration.annotations))
             flags?.let { setFlags(it) }
             originName = serializeIrDeclarationOrigin(declaration.origin)
@@ -1074,7 +1119,7 @@ open class IrFileSerializer(
             proto.addValueParameter(serializeIrValueParameter(it))
         }
 
-        if (!bodiesOnlyForInlines || function.isInline || (publicAbiOnly && isInsideInline)) {
+        if (!settings.bodiesOnlyForInlines || function.isInline || (settings.publicAbiOnly && isInsideInline)) {
             function.body?.let { proto.body = serializeIrStatementBody(it) }
         }
         isInsideInline = isInsideInlineBefore
@@ -1135,7 +1180,7 @@ open class IrFileSerializer(
         val proto = ProtoField.newBuilder()
             .setBase(serializeIrDeclarationBase(field, FieldFlags.encode(field)))
             .setNameType(serializeNameAndType(field.name, field.type))
-        if (!(bodiesOnlyForInlines &&
+        if (!(settings.bodiesOnlyForInlines &&
                     (field.parent as? IrDeclarationWithVisibility)?.visibility != DescriptorVisibilities.LOCAL &&
                     (field.initializer?.expression !is IrConst))
         ) {
@@ -1162,7 +1207,7 @@ open class IrFileSerializer(
 
     private fun serializeIrClass(clazz: IrClass): ProtoClass {
         val proto = ProtoClass.newBuilder()
-            .setBase(serializeIrDeclarationBase(clazz, ClassFlags.encode(clazz, languageVersionSettings)))
+            .setBase(serializeIrDeclarationBase(clazz, ClassFlags.encode(clazz, settings.languageVersionSettings)))
             .setName(serializeName(clazz.name))
 
 
@@ -1222,7 +1267,12 @@ open class IrFileSerializer(
 
     private fun serializeIrErrorDeclaration(errorDeclaration: IrErrorDeclaration): ProtoErrorDeclaration {
         val proto = ProtoErrorDeclaration.newBuilder()
-            .setCoordinates(if (publicAbiOnly) 0L else serializeCoordinates(errorDeclaration.startOffset, errorDeclaration.endOffset))
+            .setCoordinates(
+                if (settings.publicAbiOnly)
+                    0L
+                else
+                    serializeCoordinates(errorDeclaration.startOffset, errorDeclaration.endOffset)
+            )
         return proto.build()
     }
 
@@ -1279,10 +1329,11 @@ open class IrFileSerializer(
 
 // ---------- Top level ------------------------------------------------------
 
-    private fun serializeFileEntry(entry: IrFileEntry, includeLineStartOffsets: Boolean = true): ProtoFileEntry = ProtoFileEntry.newBuilder()
-        .setName(entry.matchAndNormalizeFilePath())
-        .applyIf(includeLineStartOffsets) { addAllLineStartOffset(entry.lineStartOffsetsForSerialization) }
-        .build()
+    private fun serializeFileEntry(entry: IrFileEntry, includeLineStartOffsets: Boolean = true): ProtoFileEntry =
+        ProtoFileEntry.newBuilder()
+            .setName(entry.matchAndNormalizeFilePath())
+            .applyIf(includeLineStartOffsets) { addAllLineStartOffset(entry.lineStartOffsetsForSerialization) }
+            .build()
 
     open fun backendSpecificExplicitRoot(node: IrAnnotationContainer): Boolean = false
     open fun backendSpecificExplicitRootExclusion(node: IrAnnotationContainer): Boolean = false
@@ -1291,7 +1342,8 @@ open class IrFileSerializer(
     open fun backendSpecificMetadata(irFile: IrFile): FileBackendSpecificMetadata? = null
 
     private fun skipIfPrivate(declaration: IrDeclaration) =
-        publicAbiOnly && (declaration as? IrDeclarationWithVisibility)?.let { !it.visibility.isPublicAPI && it.visibility != INTERNAL } == true
+        settings.publicAbiOnly
+                && (declaration as? IrDeclarationWithVisibility)?.let { !it.visibility.isPublicAPI && it.visibility != INTERNAL } == true
                 // Always keep private interfaces and type aliases as they can be part of public type hierarchies.
                 && (declaration as? IrClass)?.isInterface != true && declaration !is IrTypeAlias
 
@@ -1299,7 +1351,7 @@ open class IrFileSerializer(
         val parent = member.parent
         require(parent is IrClass)
         if (backendSpecificSerializeAllMembers(parent)) return true
-        if (bodiesOnlyForInlines && member is IrAnonymousInitializer && parent.visibility != DescriptorVisibilities.LOCAL)
+        if (settings.bodiesOnlyForInlines && member is IrAnonymousInitializer && parent.visibility != DescriptorVisibilities.LOCAL)
             return false
         if (skipIfPrivate(member)) {
             return false
@@ -1347,7 +1399,9 @@ open class IrFileSerializer(
         }
     }
 
-    fun serializeIrFile(file: IrFile): SerializedIrFile = declarationTable.inFile(file) {
+    fun <T> inFile(file: IrFile, block: () -> T): T = declarationTable.inFile(file, block)
+
+    fun serializeIrFile(file: IrFile): SerializedIrFile = inFile(file) {
         val topLevelDeclarations = mutableListOf<SerializedDeclaration>()
 
         val proto = ProtoFile.newBuilder()
@@ -1366,7 +1420,11 @@ open class IrFileSerializer(
             }
 
             val byteArray = serializeDeclaration(it).toByteArray()
-            val idSig = declarationTable.signatureByDeclaration(it, compatibilityMode.legacySignaturesForPrivateAndLocalDeclarations, recordInSignatureClashDetector = false)
+            val idSig = declarationTable.signatureByDeclaration(
+                it,
+                settings.compatibilityMode.legacySignaturesForPrivateAndLocalDeclarations,
+                recordInSignatureClashDetector = false
+            )
             require(idSig == idSig.topLevelSignature()) { "IdSig: $idSig\ntopLevel: ${idSig.topLevelSignature()}" }
             require(!idSig.isPackageSignature()) { "IsSig: $idSig\nDeclaration: ${it.render()}" }
 
@@ -1377,7 +1435,12 @@ open class IrFileSerializer(
             proto.addDeclarationId(sigIndex)
         }
 
-        proto.setFileEntry(serializeFileEntry(file.fileEntry, includeLineStartOffsets = !(publicAbiOnly && protoBodyArray.isEmpty())))
+        proto.setFileEntry(
+            serializeFileEntry(
+                file.fileEntry,
+                includeLineStartOffsets = !(settings.publicAbiOnly && protoBodyArray.isEmpty())
+            )
+        )
 
         // TODO: is it Konan specific?
 
@@ -1395,7 +1458,7 @@ open class IrFileSerializer(
             fileData = proto.build().toByteArray(),
             fqName = file.packageFqName.asString(),
             path = file.path,
-            types = IrMemoryArrayWriter(protoTypeArray.map { it.toByteArray() }).writeIntoMemory(),
+            types = IrMemoryArrayWriter(protoTypeArray.byteArrays).writeIntoMemory(),
             signatures = IrMemoryArrayWriter(protoIdSignatureArray.map { it.toByteArray() }).writeIntoMemory(),
             strings = IrMemoryStringWriter(protoStringArray).writeIntoMemory(),
             bodies = IrMemoryArrayWriter(protoBodyArray.map { it.toByteArray() }).writeIntoMemory(),
@@ -1409,7 +1472,7 @@ open class IrFileSerializer(
         val file = File(fileName)
         val path = file.toPath()
 
-        for (base in sourceBaseDirs) {
+        for (base in settings.sourceBaseDirs) {
             if (path.startsWith(base)) {
                 return file.toRelativeString(File(base))
             }
@@ -1423,7 +1486,7 @@ open class IrFileSerializer(
             return it.replace(File.separatorChar, '/')
         }
 
-        if (!normalizeAbsolutePaths) return name
+        if (!settings.normalizeAbsolutePaths) return name
 
         return name.replace(File.separatorChar, '/')
 

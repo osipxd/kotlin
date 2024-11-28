@@ -10,9 +10,9 @@ import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.PRESETS_DEPRECATION_MESSAGE_SUFFIX
 import org.jetbrains.kotlin.gradle.dsl.KotlinSourceSetConvention.isAccessedByKotlinSourceSetConventionAt
-import org.jetbrains.kotlin.gradle.dsl.NativeTargetShortcutTrace
 import org.jetbrains.kotlin.gradle.internal.KOTLIN_BUILD_TOOLS_API_IMPL
 import org.jetbrains.kotlin.gradle.internal.KOTLIN_MODULE_GROUP
+import org.jetbrains.kotlin.gradle.internal.properties.NativeProperties
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.gradle.plugin.diagnostics.ToolingDiagnostic.Severity
 import org.jetbrains.kotlin.gradle.plugin.sources.android.multiplatformAndroidSourceSetLayoutV1
 import org.jetbrains.kotlin.gradle.plugin.sources.android.multiplatformAndroidSourceSetLayoutV2
 import org.jetbrains.kotlin.gradle.utils.prettyName
+import org.jetbrains.kotlin.tooling.core.KotlinToolingVersion
 import org.jetbrains.kotlin.utils.addToStdlib.flatGroupBy
 import java.io.File
 
@@ -63,6 +64,19 @@ object KotlinToolingDiagnostics {
                         .onlyIf(changedKotlinNativeHomeProperty != null)
         )
     }
+
+    object NewNativeVersionDiagnostic : ToolingDiagnosticFactory(WARNING) {
+        operator fun invoke(nativeVersion: KotlinToolingVersion?, kotlinVersion: KotlinToolingVersion) = build(
+            "'$nativeVersion' Kotlin Native is being used with an older '$kotlinVersion' Kotlin. Please adjust versions to avoid incompatibilities."
+        )
+    }
+
+    object OldNativeVersionDiagnostic : ToolingDiagnosticFactory(WARNING) {
+        operator fun invoke(nativeVersion: KotlinToolingVersion?, kotlinVersion: KotlinToolingVersion) = build(
+            "'$nativeVersion' Kotlin Native is being used with an newer '$kotlinVersion' Kotlin. Please adjust versions to avoid incompatibilities."
+        )
+    }
+
 
     object DeprecatedJvmWithJavaPresetDiagnostic : ToolingDiagnosticFactory(ERROR) {
         operator fun invoke() = build(
@@ -393,7 +407,7 @@ object KotlinToolingDiagnostics {
 
     abstract class JsLikeEnvironmentNotChosenExplicitly(
         private val environmentName: String,
-        private val targetType: String
+        private val targetType: String,
     ) : ToolingDiagnosticFactory(WARNING) {
         operator fun invoke(availableEnvironments: List<String>) = build(
             """
@@ -943,20 +957,21 @@ object KotlinToolingDiagnostics {
             )
     }
 
+    object KonanHomeConflictDeclaration : ToolingDiagnosticFactory(WARNING) {
+        operator fun invoke(konanDataDirPropertyValue: File?, kotlinNativeHomeProperty: String?): ToolingDiagnostic =
+            build(
+                """
+                Both ${NativeProperties.KONAN_DATA_DIR.name}=${konanDataDirPropertyValue} and ${NativeProperties.NATIVE_HOME.name}=${kotlinNativeHomeProperty} are declared.
+                The ${NativeProperties.KONAN_DATA_DIR.name}=${konanDataDirPropertyValue} path will be given the highest priority.
+                """.trimIndent()
+            )
+    }
+
     object NoComposeCompilerPluginAppliedWarning : ToolingDiagnosticFactory(WARNING) {
         operator fun invoke(): ToolingDiagnostic =
             build(
                 "The Compose compiler plugin is now a part of Kotlin, please apply the 'org.jetbrains.kotlin.plugin.compose' Gradle plugin " +
                         "to enable it. Learn more about this at https://kotl.in/compose-plugin"
-            )
-    }
-
-    object DeprecatedKotlinAbiSnapshotDiagnostic : ToolingDiagnosticFactory(WARNING) {
-        operator fun invoke(): ToolingDiagnostic =
-            build(
-                "'${PropertiesProvider.PropertyNames.KOTLIN_ABI_SNAPSHOT}' property is deprecated and will be removed soon.\n" +
-                        "By default this type of incremental compilation will not be supported.\n" +
-                        "Please remove '${PropertiesProvider.PropertyNames.KOTLIN_ABI_SNAPSHOT}' usages from 'gradle.properties' file.\n"
             )
     }
 
@@ -971,7 +986,7 @@ object KotlinToolingDiagnostics {
 
     object DeprecatedInKMPJavaPluginsDiagnostic : ToolingDiagnosticFactory(WARNING) {
         operator fun invoke(pluginId: String): ToolingDiagnostic {
-            val pluginString = when(pluginId) {
+            val pluginString = when (pluginId) {
                 "application" -> "'$pluginId' (also applies 'java' plugin)"
                 "java-library" -> "'$pluginId' (also applies 'java' plugin)"
                 else -> "'$pluginId'"
@@ -1013,12 +1028,45 @@ object KotlinToolingDiagnostics {
         )
     }
 
-    object ProjectIsolationIncompatibleWithIncludedBuildsWithOldKotlinVersion: ToolingDiagnosticFactory(WARNING) {
+    object ProjectIsolationIncompatibleWithIncludedBuildsWithOldKotlinVersion : ToolingDiagnosticFactory(WARNING) {
         operator fun invoke(dependency: String, includedProjectPath: String): ToolingDiagnostic = build(
             """
                 Dependency '$dependency' resolved into included build project '$includedProjectPath'. 
                 However Kotlin Multiplatform can't process such dependency with enabled Project Isolation support.
                 Please consider upgrading Kotlin Version to the latest one in '$includedProjectPath' project.                               
+            """.trimIndent()
+        )
+    }
+
+    object AndroidPublicationNotConfigured : ToolingDiagnosticFactory(WARNING) {
+        operator fun invoke(
+            componentName: String,
+            publicationName: String,
+        ): ToolingDiagnostic = build(
+            """
+                Android Publication '$publicationName' for variant '$componentName' was not configured properly:
+                
+                To avoid this warning, please create and configure Android publication variant with name '$componentName'.
+                Example:
+
+                    android {
+                        publishing {
+                            singleVariant("$componentName") {}
+                        }
+                    }
+                    
+                See https://kotl.in/oe70nr for more details
+            """.trimIndent(),
+            throwable = Throwable()
+        )
+    }
+
+    object KotlinCompilerEmbeddableIsPresentInClasspath : ToolingDiagnosticFactory(WARNING) {
+        operator fun invoke(): ToolingDiagnostic = build(
+            """
+                The artifact `org.jetbrains.kotlin:kotlin-compiler-embeddable` is present in the build classpath along Kotlin Gradle plugin.
+                This may lead to unpredictable and inconsistent behavior.
+                For more details, see: https://kotl.in/gradle/internal-compiler-symbols
             """.trimIndent()
         )
     }

@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.gradle.plugin.diagnostics.KotlinToolingDiagnostics
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.AppleTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.appleTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftexport.SwiftExportDSLConstants
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftexport.SwiftExportConstants
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftexport.SwiftExportExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftexport.internal.SwiftExportedModule
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftexport.tasks.BuildSPMSwiftExportPackage
@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink
 import org.jetbrains.kotlin.gradle.unitTests.utils.applyEmbedAndSignEnvironment
 import org.jetbrains.kotlin.gradle.util.*
+import org.jetbrains.kotlin.gradle.utils.exclude
 import org.jetbrains.kotlin.gradle.utils.lowerCamelCaseName
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -220,47 +221,48 @@ class SwiftExportUnitTests {
         val subProject2 = projects[2]
         val subProject3 = projects[3]
 
-        val projectCompileTask = project.tasks.getByName("compileKotlinIosSimulatorArm64")
-        val subProject1CompileTask = subProject1.tasks.getByName("compileKotlinIosSimulatorArm64")
-        val subProject2CompileTask = subProject2.tasks.getByName("compileKotlinIosSimulatorArm64")
-        val subProject3CompileTask = subProject3.tasks.getByName("compileKotlinIosSimulatorArm64")
+        val linkTask = project.tasks.getByName("linkSwiftExportBinaryDebugStaticIosSimulatorArm64") as KotlinNativeLink
+        val projectLibraries = linkTask.libraries
+            .exclude(linkTask.excludeOriginalPlatformLibraries)
+            .filter { it.name.contains("stdlib").not() }
 
-        val projectCompileTaskDependencies = projectCompileTask.taskDependencies.getDependencies(null)
-        assert(projectCompileTaskDependencies.contains(subProject1CompileTask))
-        assert(projectCompileTaskDependencies.contains(subProject2CompileTask))
-        assert(projectCompileTaskDependencies.contains(subProject3CompileTask))
+        val mainProjectLibrary = project.layout.buildDirectory
+            .file("classes/kotlin/iosSimulatorArm64/main/klib/shared").get().asFile
+
+        val subProject1Library = subProject1.layout.buildDirectory
+            .file("classes/kotlin/iosSimulatorArm64/main/klib/subproject").get().asFile
+
+        val subProject2Library = subProject2.layout.buildDirectory
+            .file("classes/kotlin/iosSimulatorArm64/main/klib/anotherproject").get().asFile
+
+        val subProject3Library = subProject3.layout.buildDirectory
+            .file("classes/kotlin/iosSimulatorArm64/main/klib/miniproject").get().asFile
+
+        assertEquals(
+            hashSetOf(
+                mainProjectLibrary,
+                subProject1Library,
+                subProject2Library,
+                subProject3Library
+            ),
+            projectLibraries.files
+        )
     }
 
     @Test
     fun `test swift export exported modules`() {
         val projects = multiModuleSwiftExportProject {
-            export("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
-
-            binaries {
-                linkTaskProvider.configure {
-                    freeCompilerArgs += "-opt-in=some.value"
-                }
-            }
+            export("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
         }
 
         projects.forEach { it.evaluate() }
         val project = projects.first()
 
-        val embedSwiftExportTask = project.tasks.getByName("embedSwiftExportForXcode")
-        val buildType = embedSwiftExportTask.inputs.properties["type"] as NativeBuildType
-        val arm64SimLib = project.multiplatformExtension.iosSimulatorArm64().binaries.findStaticLib(
-            SwiftExportDSLConstants.SWIFT_EXPORT_LIBRARY_PREFIX,
-            buildType
-        )
-
-        assertNotNull(arm64SimLib)
-        assertEquals(arm64SimLib.freeCompilerArgs.single(), "-opt-in=some.value")
-
         val swiftExportTask = project.tasks.withType(SwiftExportTask::class.java).single()
-        val actualModules = swiftExportTask.parameters.swiftModules.get()
+        val actualModules = swiftExportTask.parameters.swiftModules.getOrElse(emptyList())
 
         val expectedModules = buildSmartList<SwiftExportModuleForAssertion> {
-            add(SwiftExportModuleForAssertion("Subproject", "subproject"))
+            add(SwiftExportModuleForAssertion("Subproject", "subproject-iosSimulatorArm64Main.klib"))
             add(SwiftExportModuleForAssertion("KotlinxCoroutinesCore", "kotlinx-coroutines-core.klib"))
         }
 
@@ -289,7 +291,7 @@ class SwiftExportUnitTests {
         project.evaluate()
 
         val swiftExportTask = project.tasks.withType(SwiftExportTask::class.java).single()
-        val actualModules = swiftExportTask.parameters.swiftModules.get()
+        val actualModules = swiftExportTask.parameters.swiftModules.getOrElse(emptyList())
 
         val expectedModules = buildSmartList<SwiftExportModuleForAssertion> {
             add(SwiftExportModuleForAssertion("Decompose", "decompose.klib"))
@@ -315,7 +317,7 @@ class SwiftExportUnitTests {
         project.evaluate()
 
         val swiftExportTask = project.tasks.withType(SwiftExportTask::class.java).single()
-        val actualModules = swiftExportTask.parameters.swiftModules.get()
+        val actualModules = swiftExportTask.parameters.swiftModules.getOrElse(emptyList())
 
         val expectedModules = buildSmartList<SwiftExportModuleForAssertion> {
             add(SwiftExportModuleForAssertion("Decompose", "decompose.klib"))
@@ -341,14 +343,14 @@ class SwiftExportUnitTests {
                 }
             },
             swiftExport = {
-                export("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
+                export("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             }
         )
 
         project.evaluate()
 
         val swiftExportTask = project.tasks.withType(SwiftExportTask::class.java).single()
-        val actualModules = swiftExportTask.parameters.swiftModules.get()
+        val actualModules = swiftExportTask.parameters.swiftModules.getOrElse(emptyList())
 
         val expectedModules = buildSmartList<SwiftExportModuleForAssertion> {
             add(SwiftExportModuleForAssertion("KotlinxCoroutinesCore", "kotlinx-coroutines-core.klib"))
@@ -360,7 +362,7 @@ class SwiftExportUnitTests {
         )
 
         val kotlinXCoroutines = actualModules.single()
-        assertContains("/1.9.0-RC/", kotlinXCoroutines.artifact.path)
+        assertContains("/1.9.0/", kotlinXCoroutines.artifact.path)
         assertNotContains("/1.8.0/", kotlinXCoroutines.artifact.path)
     }
 
@@ -371,7 +373,7 @@ class SwiftExportUnitTests {
                 iosSimulatorArm64()
 
                 sourceSets.commonMain.dependencies {
-                    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
+                    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
                 }
             },
             swiftExport = {
@@ -394,7 +396,7 @@ class SwiftExportUnitTests {
         )
 
         val kotlinXCoroutines = actualModules.single()
-        assertContains("/1.9.0-RC/", kotlinXCoroutines.artifact.path)
+        assertContains("/1.9.0/", kotlinXCoroutines.artifact.path)
         assertNotContains("/1.8.0/", kotlinXCoroutines.artifact.path)
     }
 
@@ -405,7 +407,7 @@ class SwiftExportUnitTests {
                 iosSimulatorArm64()
 
                 sourceSets.commonMain.dependencies {
-                    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
+                    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
                 }
             },
             swiftExport = {
@@ -428,7 +430,7 @@ class SwiftExportUnitTests {
         )
 
         val kotlinXCoroutines = actualModules.single()
-        assertContains("/1.9.0-RC/", kotlinXCoroutines.artifact.path)
+        assertContains("/1.9.0/", kotlinXCoroutines.artifact.path)
     }
 
     @Test
@@ -463,14 +465,57 @@ class SwiftExportUnitTests {
 
         project.assertContainsDiagnostic(KotlinToolingDiagnostics.ExperimentalFeatureWarning)
     }
+
+    @Test
+    fun `test swift export custom settings`() {
+        val customSettings = mapOf("SWIFT_EXPORT_CUSTOM_SETTING" to "CUSTOM_VALUE")
+        val project = swiftExportProject {
+            configure {
+                settings.set(customSettings)
+            }
+        }
+        project.evaluate()
+
+        val swiftExportTask = project.tasks.withType(SwiftExportTask::class.java).single()
+        val taskSettings = swiftExportTask.parameters.swiftExportSettings.get()
+
+        assertEquals(taskSettings, customSettings)
+    }
+
+    @Test
+    fun `test swift export custom compiler options`() {
+        val project = swiftExportProject(
+            multiplatform = {
+                iosSimulatorArm64()
+
+                compilerOptions {
+                    freeCompilerArgs.add("-opt-in=some.value")
+                }
+            }
+        )
+        project.evaluate()
+
+        val embedSwiftExportTask = project.tasks.getByName("embedSwiftExportForXcode")
+        val buildType = embedSwiftExportTask.inputs.properties["type"] as NativeBuildType
+        val arm64SimLib = project.multiplatformExtension.iosSimulatorArm64().binaries.findStaticLib(
+            SwiftExportConstants.SWIFT_EXPORT_BINARY,
+            buildType
+        )
+
+        assertNotNull(arm64SimLib)
+        assertEquals(arm64SimLib.freeCompilerArgs.single(), "-opt-in=some.value")
+
+        val linkTask = project.tasks.getByName("linkSwiftExportBinaryDebugStaticIosSimulatorArm64") as KotlinNativeLink
+        assertEquals(arm64SimLib, linkTask.binary)
+    }
 }
 
 private fun multiModuleSwiftExportProject(
     mainProjectName: String = "shared",
     subprojects: List<String> = listOf("subproject"),
-    code: SwiftExportExtension.() -> Unit = {},
+    multiplatform: KotlinMultiplatformExtension.() -> Unit = { iosSimulatorArm64() },
+    swiftExport: SwiftExportExtension.() -> Unit = {},
 ): List<ProjectInternal> {
-    val multiplatform: KotlinMultiplatformExtension.() -> Unit = { iosSimulatorArm64() }
     val project = buildProject(
         projectBuilder = {
             withName(mainProjectName)
@@ -482,7 +527,7 @@ private fun multiModuleSwiftExportProject(
     val projectDependencies = subprojects.map { project.subProject(it, multiplatform) }
     project.setupForSwiftExport(multiplatform = multiplatform) {
         projectDependencies.forEach { export(it) }
-        code()
+        swiftExport()
     }
 
     return listOf(project) + projectDependencies

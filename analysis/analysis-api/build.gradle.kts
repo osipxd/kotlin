@@ -24,6 +24,10 @@ dependencies {
     api(intellijCore())
     api(libs.intellij.asm)
     api(libs.guava)
+
+    testApi(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 kotlin {
@@ -45,12 +49,9 @@ apiValidation {
     )
 }
 
-tasks.withType<KotlinJvmCompile>().configureEach {
-    compilerOptions.freeCompilerArgs.add("-Xcontext-receivers")
-}
-
 testsJar()
 
-projectTest {
+projectTest(jUnitMode = JUnitMode.JUnit5) {
     workingDir = rootDir
+    useJUnitPlatform()
 }

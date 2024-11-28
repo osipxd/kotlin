@@ -1,4 +1,5 @@
-// LANGUAGE: +ProperUninitializedEnumEntryAccessAnalysis
+// RUN_PIPELINE_TILL: FRONTEND
+// LANGUAGE: -ProperUninitializedEnumEntryAccessAnalysis
 // ISSUE: KT-68451
 // WITH_STDLIB
 

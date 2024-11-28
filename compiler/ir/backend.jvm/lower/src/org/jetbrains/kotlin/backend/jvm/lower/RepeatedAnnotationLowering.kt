@@ -28,10 +28,28 @@ import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 
-@PhaseDescription(
-    name = "RepeatedAnnotation",
-    description = "Enclose repeated annotations in a container annotation, generating a container class if needed"
-)
+/**
+ * Encloses repeated annotations in a container annotation, generating a container class if needed.
+ * See the [Repeatable annotations KEEP](https://github.com/Kotlin/KEEP/blob/master/proposals/repeatable-annotations.md).
+ *
+ * For example:
+ *
+ *     @Repeatable annotation class A
+ *
+ *     @A @A @A
+ *     fun f() {}
+ *
+ * becomes
+ *
+ *     @Repeatable annotation class A {
+ *         @kotlin.jvm.internal.RepeatableContainer
+ *         annotation class Container(val value: Array<A>)
+ *     }
+ *
+ *     @A.Container(value = [A(), A(), A()])
+ *     fun f() {}
+ */
+@PhaseDescription(name = "RepeatedAnnotation")
 internal class RepeatedAnnotationLowering(private val context: JvmBackendContext) : FileLoweringPass, IrElementVisitorVoid {
     override fun lower(irFile: IrFile) {
         irFile.acceptVoid(this)

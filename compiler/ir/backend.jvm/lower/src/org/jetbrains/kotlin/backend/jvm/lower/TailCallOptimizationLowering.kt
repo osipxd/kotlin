@@ -19,19 +19,19 @@ import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.isFunctionInlining
 import org.jetbrains.kotlin.ir.util.isSuspend
 import org.jetbrains.kotlin.ir.util.parentAsClass
-import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
+import org.jetbrains.kotlin.ir.visitors.IrTransformer
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-// Find all tail-calls inside suspend function. We should add IrReturn before them, so the codegen will generate
-// code which is understandable by old BE's tail-call optimizer.
-@PhaseDescription(
-    name = "TailCallOptimization",
-    description = "Add or move returns to suspension points on tail-call positions"
-)
+/**
+ * Adds or moves returns to suspension points on tail-call positions.
+ *
+ * This is needed so that the codegen would be able to generate code which is understandable by the old backend's tail-call optimizer.
+ */
+@PhaseDescription(name = "TailCallOptimization")
 internal class TailCallOptimizationLowering(private val context: JvmBackendContext) : FileLoweringPass {
     override fun lower(irFile: IrFile) {
-        irFile.transformChildren(object : IrElementTransformer<TailCallOptimizationData?> {
+        irFile.transformChildren(object : IrTransformer<TailCallOptimizationData?>() {
             override fun visitSimpleFunction(declaration: IrSimpleFunction, data: TailCallOptimizationData?) =
                 super.visitSimpleFunction(declaration, if (declaration.isSuspend) TailCallOptimizationData(declaration) else null)
 

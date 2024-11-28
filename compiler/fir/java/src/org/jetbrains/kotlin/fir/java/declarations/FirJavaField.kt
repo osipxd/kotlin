@@ -23,7 +23,6 @@ import org.jetbrains.kotlin.fir.types.ConeSimpleKotlinType
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.fir.visitors.FirTransformer
 import org.jetbrains.kotlin.fir.visitors.FirVisitor
-import org.jetbrains.kotlin.fir.visitors.transformInplace
 import org.jetbrains.kotlin.fir.visitors.transformSingle
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedContainerSource
@@ -42,7 +41,6 @@ class FirJavaField @FirImplementationDetail constructor(
     private val originalStatus: FirResolvedDeclarationStatusImpl,
     override val isVar: Boolean,
     private val annotationList: FirJavaAnnotationList,
-    override val typeParameters: MutableList<FirTypeParameterRef>,
     lazyInitializer: Lazy<FirExpression?>,
     lazyHasConstantInitializer: Lazy<Boolean>,
     override val dispatchReceiverType: ConeSimpleKotlinType?,
@@ -89,7 +87,10 @@ class FirJavaField @FirImplementationDetail constructor(
         }
     }
 
-    override val contextReceivers: List<FirContextReceiver>
+    override val typeParameters: List<FirTypeParameterRef>
+        get() = emptyList()
+
+    override val contextReceivers: List<FirValueParameter>
         get() = emptyList()
 
     override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirField {
@@ -115,6 +116,10 @@ class FirJavaField @FirImplementationDetail constructor(
     }
 
     override fun <D> transformReceiverParameter(transformer: FirTransformer<D>, data: D): FirField {
+        return this
+    }
+
+    override fun <D> transformContextReceivers(transformer: FirTransformer<D>, data: D): FirField {
         return this
     }
 
@@ -153,7 +158,6 @@ class FirJavaField @FirImplementationDetail constructor(
     }
 
     override fun <D> transformTypeParameters(transformer: FirTransformer<D>, data: D): FirField {
-        typeParameters.transformInplace(transformer, data)
         return this
     }
 
@@ -181,7 +185,7 @@ class FirJavaField @FirImplementationDetail constructor(
 
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: FirControlFlowGraphReference?) {}
 
-    override fun replaceContextReceivers(newContextReceivers: List<FirContextReceiver>) {
+    override fun replaceContextReceivers(newContextReceivers: List<FirValueParameter>) {
         error("Body cannot be replaced for FirJavaField")
     }
 
@@ -210,7 +214,6 @@ internal class FirJavaFieldBuilder : FirFieldBuilder() {
             status as FirResolvedDeclarationStatusImpl,
             isVar,
             annotationList,
-            typeParameters,
             lazyInitializer ?: lazyOf(initializer),
             lazyHasConstantInitializer,
             dispatchReceiverType,

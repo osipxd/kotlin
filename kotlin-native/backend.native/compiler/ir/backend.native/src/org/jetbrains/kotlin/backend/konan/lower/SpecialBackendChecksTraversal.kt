@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.name.FqName
@@ -152,7 +153,7 @@ private class BackendChecker(
     private fun IrConstructor.overridesConstructor(other: IrConstructor) =
             this.valueParameters.size == other.valueParameters.size &&
                     this.valueParameters.all {
-                        val otherParameter = other.valueParameters[it.index]
+                        val otherParameter = other.valueParameters[it.indexInOldValueParameters]
                         it.name == otherParameter.name && it.type == otherParameter.type
                     }
 
@@ -315,7 +316,7 @@ private class BackendChecker(
                 checkCanGenerateObjCCall(
                         method = initMethod,
                         call = expression,
-                        arguments = initMethod.valueParameters.map { expression.getValueArgument(it.index) }
+                        arguments = initMethod.valueParameters.map { expression.getValueArgument(it.indexInOldValueParameters) }
                 )
             }
         }
@@ -327,7 +328,7 @@ private class BackendChecker(
         val callee = expression.symbol.owner
         val initMethod = callee.getObjCInitMethod()
         if (initMethod != null) {
-            val arguments = callee.valueParameters.map { expression.getValueArgument(it.index) }
+            val arguments = callee.valueParameters.map { expression.getValueArgument(it.indexInOldValueParameters) }
 
             checkCanGenerateObjCCall(
                     method = initMethod,
@@ -392,7 +393,7 @@ private class BackendChecker(
                     outerFunction!!.annotations.hasAnnotation(FqName("kotlin.native.internal.ExportForCppRuntime"))
 
             if (!useKotlinDispatch) {
-                val arguments = callee.valueParameters.map { expression.getValueArgument(it.index) }
+                val arguments = callee.valueParameters.map { expression.getValueArgument(it.indexInOldValueParameters) }
 
                 if (expression.superQualifierSymbol?.owner?.isObjCMetaClass() == true)
                     reportError(expression, "Super calls to Objective-C meta classes are not supported yet")
@@ -697,9 +698,9 @@ private fun BackendChecker.checkCanGenerateObjCCall(
 private fun BackendChecker.checkParameter(it: IrValueParameter, functionParameter: IrValueParameter,
                                           isObjCMethod: Boolean, location: IrElement) {
     val typeLocation = if (isObjCMethod)
-        TypeLocation.ObjCMethodParameter(it.index, functionParameter)
+        TypeLocation.ObjCMethodParameter(it.indexInOldValueParameters, functionParameter)
     else
-        TypeLocation.FunctionPointerParameter(it.index, location)
+        TypeLocation.FunctionPointerParameter(it.indexInOldValueParameters, location)
 
     if (functionParameter.isVararg)
         reportError(typeLocation.element, if (isObjCMethod) {
@@ -722,7 +723,7 @@ private fun BackendChecker.checkCanGenerateCFunction(
     }
 
     signature.valueParameters.forEach {
-        checkParameter(it, function.valueParameters[it.index], isObjCMethod, location)
+        checkParameter(it, function.valueParameters[it.indexInOldValueParameters], isObjCMethod, location)
     }
 }
 

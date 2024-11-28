@@ -24,6 +24,7 @@ fun KonanTarget.defFiles() = familyDefFiles(family).map { DefFile(it, this) }
 fun defFileToLibName(target: String, name: String) = "$target-$name"
 
 private fun interopTaskName(libName: String, targetName: String) = "compileKonan${libName.capitalized}${targetName.capitalized}"
+private fun cacheTaskName(target: String, name: String) = "${defFileToLibName(target, name)}Cache"
 
 private abstract class CompilePlatformLibsSemaphore : BuildService<BuildServiceParameters.None>
 private abstract class CachePlatformLibsSemaphore : BuildService<BuildServiceParameters.None>
@@ -70,11 +71,13 @@ enabledTargets(platformManager).forEach { target ->
             group = BasePlugin.BUILD_GROUP
             description = "Build the Kotlin/Native platform library '$libName' for '$target'"
 
-            this.compilerDistribution.set(nativeDistribution)
-            dependsOn(":kotlin-native:${targetName}CrossDist")
             updateDefFileTasksPerFamily[target.family]?.let { dependsOn(it) }
 
-            this.konanTarget.set(target)
+            // Requires Native distribution with compiler JARs and stdlib klib.
+            this.compilerDistribution.set(nativeDistribution)
+            dependsOn(":kotlin-native:distStdlib")
+
+            this.target.set(targetName)
             this.outputDirectory.set(
                     layout.buildDirectory.dir("konan/libs/$targetName/${fileNamePrefix}${df.name}")
             )
@@ -91,38 +94,49 @@ enabledTargets(platformManager).forEach { target ->
             )
             if (target.family.isAppleFamily) {
                 // Platform Libraries for Apple targets use modules. Use shared cache for them.
-                this.compilerOpts.addAll(
-                        "-fmodules-cache-path=${project.layout.buildDirectory.dir("clangModulesCache").get().asFile}"
-                )
+                // Keep the path relative to hit the build cache.
+                val fmodulesCache = project.layout.buildDirectory.dir("clangModulesCache").get().asFile.toRelativeString(project.layout.projectDirectory.asFile)
+                this.extraOpts.addAll("-compiler-option", "-fmodules-cache-path=$fmodulesCache")
             }
 
             usesService(compilePlatformLibsSemaphore)
         }
 
         val klibInstallTask = tasks.register(libName, Sync::class.java) {
+            // During the execution of the `:kotlin-native:publish` task, the `:kotlin-native:bundleRegular` subtask
+            // traverses the `nativeDistribution` root directory (`kotlin-native/dist/`) to create the bundle.
+            // At the same time, the `nativeDistribution` root directory might be populated with `platformLibs` by the
+            // `bundlePrebuilt` subtask, which is also triggered by calling `:kotlin-native:publish`.
+            //
+            // This behavior can result in "Comparison method violates its general contract!" errors because Gradle
+            // traverses a **sorted** file list that is being concurrently modified, violating the sorting contract.
+            // To prevent this issue, we ensure that the installation of `platformLibs` does not occur while
+            // `bundleRegular` is traversing the directory.
+            mustRunAfter(":kotlin-native:bundleRegular")
+
             from(libTask)
             into(nativeDistribution.map { it.platformLib(name = artifactName, target = targetName) })
         }
         installTasks.add(klibInstallTask)
 
         if (target.name in cacheableTargetNames) {
-            val cacheTask = tasks.register("${libName}Cache", KonanCacheTask::class.java) {
-                notCompatibleWithConfigurationCache("project used in execution time")
-                this.target = targetName
-                originalKlib.fileProvider(libTask.map { it.outputs.files.singleFile })
-                klibUniqName = artifactName
-                cacheRoot = nativeDistribution.get().cachesRoot.asFile.absolutePath
+            val cacheTask = tasks.register(cacheTaskName(targetName, df.name), KonanCacheTask::class.java) {
+                val dist = nativeDistribution
 
-                this.compilerDistribution.set(nativeDistribution)
-                dependsOn(":kotlin-native:${targetName}StdlibCache")
+                // Requires Native distribution with stdlib klib and its cache for `targetName`.
+                this.compilerDistribution.set(dist)
+                dependsOn(":kotlin-native:${targetName}CrossDist")
+                inputs.dir(dist.map { it.stdlibCache(targetName) }) // manually depend on the contents of stdlib cache
 
-                // Make it depend on platform libraries defined in def files and their caches
-                df.config.depends.map {
-                    defFileToLibName(targetName, it)
-                }.forEach {
-                    dependsOn(it)
-                    dependsOn("${it}Cache")
+                // Also, all the depended upon platform libs must have installed their klibs and caches into the native distribution above.
+                df.config.depends.forEach { dep ->
+                    inputs.dir(tasks.named<KonanCacheTask>(cacheTaskName(targetName, dep)).map { it.outputDirectory })
+                    inputs.dir(tasks.named<Sync>(defFileToLibName(targetName, dep)).map { it.destinationDir })
                 }
+
+                this.klib.fileProvider(libTask.map { it.outputs.files.singleFile })
+                this.target.set(targetName)
+                this.outputDirectory.set(dist.map { it.cache(name = artifactName, target = targetName) })
 
                 usesService(cachePlatformLibsSemaphore)
             }

@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.impl.*
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.FqNameUnsafe
 import org.jetbrains.kotlin.name.Name
@@ -386,8 +387,8 @@ interface IrTypeSystemContext : TypeSystemContext, TypeSystemCommonSuperTypesCon
         throw IllegalStateException("Should not be called")
     }
 
-    override fun findCommonIntegerLiteralTypesSuperType(explicitSupertypes: List<RigidTypeMarker>): IrSimpleType =
-        irBuiltIns.intType as IrSimpleType
+    // There are no ILTs in IR type system
+    override fun findCommonIntegerLiteralTypesSuperType(explicitSupertypes: List<RigidTypeMarker>): IrSimpleType? = null
 
     override fun KotlinTypeMarker.replaceCustomAttributes(newAttributes: List<AnnotationMarker>): KotlinTypeMarker = this
 
@@ -447,7 +448,7 @@ interface IrTypeSystemContext : TypeSystemContext, TypeSystemCommonSuperTypesCon
         (this as? IrType)?.annotations?.firstOrNull { annotation ->
             annotation.symbol.owner.parentAsClass.hasEqualFqName(fqName)
         }?.run {
-            if (valueArgumentsCount > 0) (getValueArgument(0) as? IrConst)?.value else null
+            (arguments.getOrNull(0) as? IrConst)?.value
         }
 
     override fun TypeConstructorMarker.getTypeParameterClassifier(): TypeParameterMarker? =

@@ -186,7 +186,6 @@ internal sealed class KaFirKotlinPropertySymbol<P : KtCallableDeclaration>(
         }
 
         // These constants are used to reduce the chance of clash with the original symbol
-        const val HASH_CODE_ADDITION_FOR_RECEIVER: Int = 1
         const val HASH_CODE_ADDITION_FOR_BACKING_FIELD: Int = 2
         const val HASH_CODE_ADDITION_FOR_GETTER: Int = 3
         const val HASH_CODE_ADDITION_FOR_SETTER: Int = 4
@@ -322,6 +321,9 @@ private class KaFirKotlinPropertyKtPropertyBasedSymbol : KaFirKotlinPropertySymb
                 firSymbol.fir.fromPrimaryConstructor == true
         }
 
+    override val isExternal: Boolean
+        get() = withValidityAssertion { backingPsi?.hasModifier(KtTokens.EXTERNAL_KEYWORD) ?: firSymbol.isExternal }
+
     // NB: `field` in accessors indicates the property should have a backing field. To see that, though, we need BODY_RESOLVE.
     override val hasBackingField: Boolean
         get() = withValidityAssertion { firSymbol.hasBackingField }
@@ -430,6 +432,9 @@ private class KaFirKotlinPropertyKtParameterBasedSymbol : KaFirKotlinPropertySym
     override val isFromPrimaryConstructor: Boolean
         get() = withValidityAssertion { true }
 
+    override val isExternal: Boolean
+        get() = withValidityAssertion { backingPsi?.hasModifier(KtTokens.EXTERNAL_KEYWORD) ?: firSymbol.isExternal }
+
     override val hasBackingField: Boolean
         get() = withValidityAssertion { true }
 }
@@ -520,6 +525,9 @@ private class KaFirKotlinPropertyKtDestructuringDeclarationEntryBasedSymbol : Ka
 
     override val isFromPrimaryConstructor: Boolean
         get() = withValidityAssertion { false }
+
+    override val isExternal: Boolean
+        get() = withValidityAssertion { backingPsi?.hasModifier(KtTokens.EXTERNAL_KEYWORD) ?: firSymbol.isExternal }
 
     /** KT-70766 */
     override val hasBackingField: Boolean

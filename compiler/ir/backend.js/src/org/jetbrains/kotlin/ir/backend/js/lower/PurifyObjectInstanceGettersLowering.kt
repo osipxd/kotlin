@@ -19,6 +19,9 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.*
 
+/**
+ * Optimization: make object instance getter functions pure whenever it's possible.
+ */
 class PurifyObjectInstanceGettersLowering(val context: JsCommonBackendContext) : DeclarationTransformer {
     private var IrClass.instanceField by context.mapping.objectToInstanceField
 
@@ -96,7 +99,7 @@ class PurifyObjectInstanceGettersLowering(val context: JsCommonBackendContext) :
                 (this is IrReturn && value.isPureStatementForObjectInitialization(owner)) ||
                         // Only objects which don't have a class parent
                         (this is IrDelegatingConstructorCall && symbol.owner.parent == context.irBuiltIns.anyClass.owner) ||
-                        (this is IrExpression && isPure(anyVariable = true, checkFields = false, context = context)) ||
+                        (this is IrExpression && isPure(anyVariable = true, checkFields = false, symbols = context.ir.symbols)) ||
                         (this is IrContainerExpression && statements.all { it.isPureStatementForObjectInitialization(owner) }) ||
                         (this is IrVariable && (isEs6DelegatingConstructorCallReplacement || initializer?.isPureStatementForObjectInitialization(owner) != false)) ||
                         // Only fields of the objects are safe to not save an intermediate state of another class/object/global

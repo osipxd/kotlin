@@ -9,7 +9,7 @@ KaJavaFieldSymbol:
   isStatic: false
   isVal: false
   location: CLASS
-  modality: OPEN
+  modality: FINAL
   name: field2
   origin: JAVA_SOURCE
   receiverParameter: null
@@ -37,7 +37,7 @@ KaJavaFieldSymbol:
   isStatic: false
   isVal: false
   location: CLASS
-  modality: OPEN
+  modality: FINAL
   name: field
   origin: JAVA_SOURCE
   receiverParameter: null
@@ -91,6 +91,7 @@ KaNamedFunctionSymbol:
     type: JavaClass
   getContainingFileSymbol: null
   getContainingJvmClassName: JavaClass
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 

@@ -72,7 +72,7 @@ internal class DebugInfo(override val generationState: NativeGenerationState) : 
                 // we don't split path to filename and directory to provide enough level uniquely for dsymutil to avoid symbol
                 // clashing, which happens on linking with libraries produced from intercepting sources.
                 File = path.path(),
-                dir = "",
+                dir = config.configuration.get(BinaryOptions.debugCompilationDir) ?: "",
                 producer = DWARF.producer,
                 isOptimized = 0,
                 flags = "",
@@ -182,7 +182,16 @@ internal class DebugInfo(override val generationState: NativeGenerationState) : 
             linkageName: String,
             startLine: Int,
             nodebug: Boolean,
-    ) = diFunctionScope(fileEntry, name.asString(), linkageName, startLine, subroutineType(llvmTargetData), nodebug)
+            isTransparentStepping: Boolean = false,
+    ) = diFunctionScope(
+            fileEntry,
+            name.asString(),
+            linkageName,
+            startLine,
+            subroutineType(llvmTargetData),
+            nodebug,
+            isTransparentStepping = isTransparentStepping,
+    )
 
     fun diFunctionScope(
             fileEntry: IrFileEntry,
@@ -191,6 +200,7 @@ internal class DebugInfo(override val generationState: NativeGenerationState) : 
             startLine: Int,
             subroutineType: DISubroutineTypeRef,
             nodebug: Boolean,
+            isTransparentStepping: Boolean = false,
     ) = DICreateFunction(
             builder = builder,
             scope = compilationUnit,
@@ -202,7 +212,8 @@ internal class DebugInfo(override val generationState: NativeGenerationState) : 
             //TODO: need more investigations.
             isLocal = 0,
             isDefinition = 1,
-            scopeLine = 0
+            scopeLine = 0,
+            isTransparentStepping = if (isTransparentStepping) 1 else 0,
     )!!
 
     private fun dwarfPointerType(type: DITypeOpaqueRef): DITypeOpaqueRef =
@@ -318,7 +329,8 @@ internal fun setupBridgeDebugInfo(generationState: NativeGenerationState, functi
             type = debugInfo.subroutineType(generationState.runtime.targetData, emptyList()), // TODO: use proper type.
             isLocal = 0,
             isDefinition = 1,
-            scopeLine = 0
+            scopeLine = 0,
+            isTransparentStepping = generationState.config.enableDebugTransparentStepping,
     ).reinterpret()
 
     return LocationInfo(scope, 1, 0)

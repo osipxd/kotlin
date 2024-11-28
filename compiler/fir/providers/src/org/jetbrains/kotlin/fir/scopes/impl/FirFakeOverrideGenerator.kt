@@ -112,7 +112,7 @@ object FirFakeOverrideGenerator {
         isExpect: Boolean = baseFunction.isExpect,
         newDispatchReceiverType: ConeSimpleKotlinType?,
         newParameterTypes: List<ConeKotlinType?>? = null,
-        newTypeParameters: List<FirTypeParameter>? = null,
+        newTypeParameters: List<FirTypeParameterRef>? = null,
         newReceiverType: ConeKotlinType? = null,
         newContextReceiverTypes: List<ConeKotlinType?>? = null,
         newReturnType: ConeKotlinType? = null,
@@ -165,6 +165,7 @@ object FirFakeOverrideGenerator {
         receiverParameter = baseConstructor.receiverParameter?.let { receiverParameter ->
             buildReceiverParameterCopy(receiverParameter) {
                 typeRef = receiverParameter.typeRef.withReplacedConeType(null)
+                symbol = FirReceiverParameterSymbol()
             }
         }
 
@@ -302,6 +303,7 @@ object FirFakeOverrideGenerator {
             receiverParameter = baseFunction.receiverParameter?.let { receiverParameter ->
                 buildReceiverParameterCopy(receiverParameter) {
                     typeRef = receiverParameter.typeRef.withReplacedConeType(newReceiverType)
+                    symbol = FirReceiverParameterSymbol()
                 }
             }
         }
@@ -322,8 +324,9 @@ object FirFakeOverrideGenerator {
         contextReceivers += baseFunction.contextReceivers.zip(
             newContextReceiverTypes ?: List(baseFunction.contextReceivers.size) { null }
         ) { contextReceiver, newType ->
-            buildContextReceiverCopy(contextReceiver) {
-                typeRef = contextReceiver.typeRef.withReplacedConeType(newType)
+            buildValueParameterCopy(contextReceiver) {
+                symbol = FirValueParameterSymbol(name)
+                returnTypeRef = contextReceiver.returnTypeRef.withReplacedConeType(newType)
             }
         }
     }
@@ -332,7 +335,7 @@ object FirFakeOverrideGenerator {
         original: FirValueParameter,
         returnTypeRef: FirTypeRef,
         origin: FirDeclarationOrigin,
-        containingFunctionSymbol: FirFunctionSymbol<*>,
+        containingDeclarationSymbol: FirFunctionSymbol<*>,
         source: KtSourceElement?,
         copyDefaultValues: Boolean = true,
     ): FirValueParameter = buildValueParameterCopy(original) {
@@ -340,7 +343,7 @@ object FirFakeOverrideGenerator {
         this.source = source
         this.returnTypeRef = returnTypeRef
         symbol = FirValueParameterSymbol(original.name)
-        this.containingFunctionSymbol = containingFunctionSymbol
+        this.containingDeclarationSymbol = containingDeclarationSymbol
         defaultValue = defaultValue
             ?.takeIf { copyDefaultValues }
             ?.let {
@@ -539,7 +542,7 @@ object FirFakeOverrideGenerator {
                     original = originalParameter,
                     returnTypeRef = propertyReturnTypeRef,
                     origin = origin,
-                    containingFunctionSymbol = it.symbol,
+                    containingDeclarationSymbol = it.symbol,
                     source = originalParameter.source,
                 )
                 it.replaceValueParameters(listOf(newParameter))
@@ -646,7 +649,7 @@ object FirFakeOverrideGenerator {
         val copiedContextReceiverTypes = newContextReceiverTypes?.map {
             it?.let(substitutor::substituteOrNull)
         } ?: baseCallable.contextReceivers.map {
-            substitutor.substituteOrNull(it.typeRef.coneType)
+            substitutor.substituteOrNull(it.returnTypeRef.coneType)
         }
 
         val copiedReturnType = newReturnType?.let {
@@ -690,6 +693,7 @@ object FirFakeOverrideGenerator {
             receiverParameter = baseVariable.receiverParameter?.let { receiverParameter ->
                 buildReceiverParameterCopy(receiverParameter) {
                     typeRef = receiverParameter.typeRef.withReplacedConeType(newReceiverType)
+                    symbol = FirReceiverParameterSymbol()
                 }
             }
         }
@@ -697,8 +701,9 @@ object FirFakeOverrideGenerator {
         contextReceivers += baseVariable.contextReceivers.zip(
             newContextReceiverTypes ?: List(baseVariable.contextReceivers.size) { null }
         ) { contextReceiver, newType ->
-            buildContextReceiverCopy(contextReceiver) {
-                typeRef = contextReceiver.typeRef.withReplacedConeType(newType)
+            buildValueParameterCopy(contextReceiver) {
+                symbol = FirValueParameterSymbol(name)
+                returnTypeRef = contextReceiver.returnTypeRef.withReplacedConeType(newType)
             }
         }
     }
@@ -733,14 +738,14 @@ object FirFakeOverrideGenerator {
     // Returns a list of type parameters, and a substitutor that should be used for all other types
     fun createNewTypeParametersAndSubstitutor(
         useSiteSession: FirSession,
-        member: FirTypeParameterRefsOwner,
+        original: FirTypeParameterRefsOwner,
         symbolForOverride: FirBasedSymbol<*>,
         substitutor: ConeSubstitutor,
         origin: FirDeclarationOrigin,
         forceTypeParametersRecreation: Boolean = true,
     ): Pair<List<FirTypeParameterRef>, ConeSubstitutor> {
-        if (member.typeParameters.isEmpty()) return Pair(member.typeParameters, substitutor)
-        val newTypeParameters = member.typeParameters.map { typeParameterRef ->
+        if (original.typeParameters.isEmpty()) return Pair(original.typeParameters, substitutor)
+        val newTypeParameters = original.typeParameters.map { typeParameterRef ->
             val typeParameter = typeParameterRef.symbol.fir
             FirTypeParameterBuilder().apply {
                 source = typeParameter.source
@@ -756,33 +761,116 @@ object FirFakeOverrideGenerator {
             }
         }
 
-        val substitutionMapForNewParameters = member.typeParameters.zip(newTypeParameters).associate { (original, new) ->
-            Pair(original.symbol, ConeTypeParameterTypeImpl(new.symbol.toLookupTag(), isMarkedNullable = false))
-        }
+        /**
+         * Our final substitutor will serve two functions:
+         *
+         * 1. Substitute class type parameters according to the provided [substitutor].
+         * 2. Substitute references to the declaration's own type parameters with copies declared in the substitution override
+         *    (e.g., in upper bounds of type parameters, receiver, parameter and return types).
+         *
+         * There are two scenarios to consider:
+         *
+         * Regular function:
+         * ```kt
+         * class Foo<A> {
+         *     fun <B : A> bar(foo: Foo<B>) {}
+         * }
+         * ```
+         * substituted with `{A -> B}`
+         *
+         * In this scenario, we want to produce
+         *
+         * ```kt
+         *     fun <B_ : B> bar(foo: Foo<B_>) {}
+         * ```
+         *
+         * Notice that there is no loop in the upper bound of the fake override's type parameter `B_`
+         * because it refers to the `B` from the unsubstituted `bar`.
+         * Having a loop would lead to problems like infinite recursion when iterating all bounds recursively (KT-70389).
+         * To achieve this, the order of substitution must be own type parameters, then class parameters.
+         * If it was reversed, in the example above we would substitute the upper bound of `B_ : A` with `{ A -> B -> B_ }`
+         * which would produce `B_ : B_`.
+         *
+         * The second scenario is substituted constructors, called through a typealias or an inner class of a generic outer:
+         * ```kt
+         * public class Outer<T> {
+         *     public class Inner<E> {
+         *         public <F extends E, G extends T> Inner(E x, java.util.List<F> y, G z) {}
+         *     }
+         * }
+         *
+         * Outer<Int>().Inner("", listOf<String>(), 1)
+         * ```
+         *
+         * Constructors of generic classes are generic as well,
+         * however the type parameters from the outer class are represented as [FirConstructedClassTypeParameterRef].
+         * In the case of Java, they can also have their own type parameters.
+         *
+         * The substituted constructor should have the following signature:
+         * ```kt
+         * <E_, F_ : E_, G_ : Int> constructor(x: E_, y: List<F_>, z: G_): Inner<E_, Int>
+         * ```
+         * To achieve this, we substitute with `{F -> F_ | G -> G_} then {T -> kotlin/Int} then {E -> E_}`.
+         * We apply own type parameters, then class parameters from outer types, then own class type parameters.
+         *
+         * Applying own type parameters first but own class type parameters last is necessary for the following scenario:
+         *
+         * ```kt
+         * class TColl<T, C : Collection<T>>
+         * typealias TC<T1, T2> = TColl<T1, T2>
+         * ```
+         *
+         * The substitution is `{T -> T1 | C -> T2} then {T -> T_ | C -> C_}`.
+         * The type parameter types are affected by both the class substitution and the substitution from original to copied declaration,
+         * but the substitution of the class takes precedence.
+         * The result is:
+         *
+         * ```kt
+         * <T_, C_ : Collection<T1> constructor(): TColl<T1, T2>
+         * ```
+         */
+        val (ownTypeParameters, constructedClassTypeParameters) = original.typeParameters
+            .zip(newTypeParameters)
+            .partition { it.first !is FirConstructedClassTypeParameterRef }
 
-        val additionalSubstitutor = substitutorByMap(substitutionMapForNewParameters, useSiteSession)
+        fun substitutorFrom(
+            pairs: List<Pair<FirTypeParameterRef, FirTypeParameterBuilder>>,
+            useSiteSession: FirSession,
+        ): ConeSubstitutor = substitutorByMap(
+            pairs.associate { (originalTypeParameter, new) ->
+                Pair(originalTypeParameter.symbol, ConeTypeParameterTypeImpl(new.symbol.toLookupTag(), isMarkedNullable = false))
+            },
+            useSiteSession
+        )
+
+        val chainedSubstitutor = ChainedSubstitutor(
+            substitutorFrom(ownTypeParameters, useSiteSession),
+            ChainedSubstitutor(
+                substitutor,
+                substitutorFrom(constructedClassTypeParameters, useSiteSession)
+            )
+        )
 
         var wereChangesInTypeParameters = forceTypeParametersRecreation
-        for ((newTypeParameter, oldTypeParameter) in newTypeParameters.zip(member.typeParameters)) {
-            val original = oldTypeParameter.symbol.fir
-            for (boundTypeRef in original.symbol.resolvedBounds) {
+        for ((newTypeParameter, originalTypeParameter) in newTypeParameters.zip(original.typeParameters)) {
+            for (boundTypeRef in originalTypeParameter.symbol.resolvedBounds) {
                 val typeForBound = boundTypeRef.coneType
-                val substitutedBound = substitutor.substituteOrNull(typeForBound)
+                val substitutedBound = chainedSubstitutor.substituteOrNull(typeForBound)
                 if (substitutedBound != null) {
                     wereChangesInTypeParameters = true
                 }
                 newTypeParameter.bounds +=
                     buildResolvedTypeRef {
                         source = boundTypeRef.source
-                        coneType = additionalSubstitutor.substituteOrSelf(substitutedBound ?: typeForBound)
+                        coneType = substitutedBound ?: typeForBound
                     }
             }
         }
 
-        if (!wereChangesInTypeParameters) return Pair(member.typeParameters, substitutor)
+        if (!wereChangesInTypeParameters) return Pair(original.typeParameters, substitutor)
         return Pair(
             newTypeParameters.map(FirTypeParameterBuilder::build),
-            ChainedSubstitutor(substitutor, additionalSubstitutor)
+            chainedSubstitutor
         )
     }
 

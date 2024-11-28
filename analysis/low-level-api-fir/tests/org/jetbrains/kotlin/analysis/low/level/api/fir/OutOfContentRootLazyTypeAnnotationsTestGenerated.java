@@ -40,6 +40,12 @@ public class OutOfContentRootLazyTypeAnnotationsTestGenerated extends AbstractOu
     }
 
     @Test
+    @TestMetadata("contextReceiver.kt")
+    public void testContextReceiver() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/class/contextReceiver.kt");
+    }
+
+    @Test
     @TestMetadata("delegateFieldWithAnnotationClash.kt")
     public void testDelegateFieldWithAnnotationClash() {
       runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/class/delegateFieldWithAnnotationClash.kt");
@@ -131,6 +137,24 @@ public class OutOfContentRootLazyTypeAnnotationsTestGenerated extends AbstractOu
     @TestMetadata("callWithConstructor.kt")
     public void testCallWithConstructor() {
       runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/constructor/callWithConstructor.kt");
+    }
+
+    @Test
+    @TestMetadata("contextReceiverExplicitPrimaryConstructor.kt")
+    public void testContextReceiverExplicitPrimaryConstructor() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/constructor/contextReceiverExplicitPrimaryConstructor.kt");
+    }
+
+    @Test
+    @TestMetadata("contextReceiverImplicitPrimaryConstructor.kt")
+    public void testContextReceiverImplicitPrimaryConstructor() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/constructor/contextReceiverImplicitPrimaryConstructor.kt");
+    }
+
+    @Test
+    @TestMetadata("contextReceiverSecondaryConstructor.kt")
+    public void testContextReceiverSecondaryConstructor() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/constructor/contextReceiverSecondaryConstructor.kt");
     }
 
     @Test
@@ -318,6 +342,24 @@ public class OutOfContentRootLazyTypeAnnotationsTestGenerated extends AbstractOu
     }
 
     @Test
+    @TestMetadata("contextReceiver.kt")
+    public void testContextReceiver() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/function/contextReceiver.kt");
+    }
+
+    @Test
+    @TestMetadata("contextReceiverAsImplicitReturnType.kt")
+    public void testContextReceiverAsImplicitReturnType() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/function/contextReceiverAsImplicitReturnType.kt");
+    }
+
+    @Test
+    @TestMetadata("contextReceiverAsImplicitReturnTypePropagation.kt")
+    public void testContextReceiverAsImplicitReturnTypePropagation() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/function/contextReceiverAsImplicitReturnTypePropagation.kt");
+    }
+
+    @Test
     @TestMetadata("copyTypeCollisionAndAnnotations.kt")
     public void testCopyTypeCollisionAndAnnotations() {
       runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/function/copyTypeCollisionAndAnnotations.kt");
@@ -336,6 +378,12 @@ public class OutOfContentRootLazyTypeAnnotationsTestGenerated extends AbstractOu
     }
 
     @Test
+    @TestMetadata("explicitParameterName.kt")
+    public void testExplicitParameterName() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/function/explicitParameterName.kt");
+    }
+
+    @Test
     @TestMetadata("explicitType.kt")
     public void testExplicitType() {
       runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/function/explicitType.kt");
@@ -351,6 +399,12 @@ public class OutOfContentRootLazyTypeAnnotationsTestGenerated extends AbstractOu
     @TestMetadata("generatedCopy.kt")
     public void testGeneratedCopy() {
       runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/function/generatedCopy.kt");
+    }
+
+    @Test
+    @TestMetadata("implicitParameterName.kt")
+    public void testImplicitParameterName() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/function/implicitParameterName.kt");
     }
 
     @Test
@@ -527,6 +581,24 @@ public class OutOfContentRootLazyTypeAnnotationsTestGenerated extends AbstractOu
     @TestMetadata("constructorParameter.kt")
     public void testConstructorParameter() {
       runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/property/constructorParameter.kt");
+    }
+
+    @Test
+    @TestMetadata("contextReceiver.kt")
+    public void testContextReceiver() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/property/contextReceiver.kt");
+    }
+
+    @Test
+    @TestMetadata("contextReceiverAsImplicitReturnType.kt")
+    public void testContextReceiverAsImplicitReturnType() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/property/contextReceiverAsImplicitReturnType.kt");
+    }
+
+    @Test
+    @TestMetadata("contextReceiverAsImplicitReturnTypePropagation.kt")
+    public void testContextReceiverAsImplicitReturnTypePropagation() {
+      runTest("analysis/low-level-api-fir/testData/lazyResolveTypeAnnotations/property/contextReceiverAsImplicitReturnTypePropagation.kt");
     }
 
     @Test

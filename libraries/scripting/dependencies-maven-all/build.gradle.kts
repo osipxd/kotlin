@@ -31,13 +31,14 @@ dependencies {
 
     embedded(project(":kotlin-scripting-dependencies-maven")) { isTransitive = false }
 
+    embedded("com.google.guava:failureaccess:1.0.2")
     embedded("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.2")
     embedded("org.apache.maven.resolver:maven-resolver-transport-file:1.9.2")
     embedded("org.apache.maven.resolver:maven-resolver-transport-wagon:1.9.2")
     embedded("org.apache.maven.resolver:maven-resolver-impl:1.9.2")
     embedded("org.apache.maven:maven-core:3.8.7")
     embedded("org.apache.maven.wagon:wagon-http:3.5.3")
-    embedded("commons-io:commons-io:2.11.0")
+    embedded(libs.apache.commons.io)
 
     testImplementation(libs.junit4)
     testRuntimeOnly("org.slf4j:slf4j-nop:1.7.36")

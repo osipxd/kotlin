@@ -32,7 +32,7 @@ abstract class FirSerializerExtension {
     }
 
     abstract val constValueProvider: ConstValueProvider?
-    protected abstract val additionalMetadataProvider: FirAdditionalMetadataProvider?
+    abstract val additionalMetadataProvider: FirAdditionalMetadataProvider?
 
     @OptIn(ConstValueProviderInternals::class)
     internal inline fun <T> processFile(firFile: FirFile, crossinline action: () -> T): T {
@@ -48,7 +48,12 @@ abstract class FirSerializerExtension {
     open fun shouldUseTypeTable(): Boolean = false
     open fun shouldUseNormalizedVisibility(): Boolean = false
 
-    open fun serializePackage(packageFqName: FqName, proto: ProtoBuf.Package.Builder) {
+    open fun serializePackage(
+        packageFqName: FqName,
+        proto: ProtoBuf.Package.Builder,
+        versionRequirementTable: MutableVersionRequirementTable?,
+        childSerializer: FirElementSerializer
+    ) {
     }
 
     open fun serializeClass(

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -20,21 +20,10 @@ public interface KaDiagnosticProvider {
     @KaExperimentalApi
     public fun KtElement.diagnostics(filter: KaDiagnosticCheckerFilter): Collection<KaDiagnosticWithPsi<*>>
 
-    @KaExperimentalApi
-    @Deprecated("Use 'diagnostics()' instead.", replaceWith = ReplaceWith("diagnostic(filter)"))
-    public fun KtElement.getDiagnostics(filter: KaDiagnosticCheckerFilter): Collection<KaDiagnosticWithPsi<*>> {
-        return diagnostics(filter)
-    }
-
     /**
      * Computes all diagnostics for the given file.
      */
     public fun KtFile.collectDiagnostics(filter: KaDiagnosticCheckerFilter): Collection<KaDiagnosticWithPsi<*>>
-
-    @Deprecated("Use 'collectDiagnostics()' instead.", replaceWith = ReplaceWith("collectDiagnostics(filter)"))
-    public fun KtFile.collectDiagnosticsForFile(filter: KaDiagnosticCheckerFilter): Collection<KaDiagnosticWithPsi<*>> {
-        return collectDiagnostics(filter)
-    }
 }
 
 public enum class KaDiagnosticCheckerFilter {
@@ -42,6 +31,3 @@ public enum class KaDiagnosticCheckerFilter {
     ONLY_EXTENDED_CHECKERS,
     EXTENDED_AND_COMMON_CHECKERS,
 }
-
-@Deprecated("Use 'KaDiagnosticCheckerFilter' instead.", replaceWith = ReplaceWith("KaDiagnosticCheckerFilter"))
-public typealias KtDiagnosticCheckerFilter = KaDiagnosticCheckerFilter

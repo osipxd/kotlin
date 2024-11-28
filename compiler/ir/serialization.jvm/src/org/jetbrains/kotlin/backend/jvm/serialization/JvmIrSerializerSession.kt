@@ -5,9 +5,9 @@
 
 package org.jetbrains.kotlin.backend.jvm.serialization
 
-import org.jetbrains.kotlin.backend.common.serialization.CompatibilityMode
 import org.jetbrains.kotlin.backend.common.serialization.DeclarationTable
 import org.jetbrains.kotlin.backend.common.serialization.IrFileSerializer
+import org.jetbrains.kotlin.backend.common.serialization.IrSerializationSettings
 import org.jetbrains.kotlin.backend.jvm.serialization.proto.JvmIr
 import org.jetbrains.kotlin.config.JvmSerializeIrMode
 import org.jetbrains.kotlin.config.LanguageVersionSettings
@@ -18,16 +18,16 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.synthetic.isVisibleOutside
 
 class JvmIrSerializerSession(
-    private val declarationTable: DeclarationTable,
+    declarationTable: DeclarationTable.Default,
     private val mode: JvmSerializeIrMode,
     private val fileClassFqName: FqName,
     languageVersionSettings: LanguageVersionSettings,
 ) : IrFileSerializer(
+    IrSerializationSettings(
+        languageVersionSettings = languageVersionSettings,
+        bodiesOnlyForInlines = mode == JvmSerializeIrMode.INLINE,
+    ),
     declarationTable,
-    compatibilityMode = CompatibilityMode.CURRENT,
-    languageVersionSettings = languageVersionSettings,
-    bodiesOnlyForInlines = mode == JvmSerializeIrMode.INLINE,
-    normalizeAbsolutePaths = false, sourceBaseDirs = emptyList()
 ) {
     init {
         assert(mode != JvmSerializeIrMode.NONE)
@@ -39,7 +39,7 @@ class JvmIrSerializerSession(
         var anySaved = false
         val proto = JvmIr.ClassOrFile.newBuilder()
 
-        declarationTable.inFile(irFile) {
+        inFile(irFile) {
             irFile.declarations.filter { it !is IrClass }.forEach { topDeclaration ->
                 forEveryDeclarationToSerialize(topDeclaration, mode) { declaration ->
                     proto.addDeclaration(serializeDeclaration(declaration))
@@ -57,7 +57,7 @@ class JvmIrSerializerSession(
 
     fun serializeTopLevelClass(irClass: IrClass): JvmIr.ClassOrFile? {
         val proto = JvmIr.ClassOrFile.newBuilder()
-        declarationTable.inFile(irClass.parent as IrFile) {
+        inFile(irClass.parent as IrFile) {
             forEveryDeclarationToSerialize(irClass, mode) { declaration ->
                 proto.addDeclaration(serializeDeclaration(declaration))
             }
@@ -69,7 +69,7 @@ class JvmIrSerializerSession(
     }
 
     private fun serializeAuxTables(proto: JvmIr.ClassOrFile.Builder) {
-        protoTypeArray.forEach(proto::addType)
+        protoTypeArray.protoTypes.forEach(proto::addType)
         protoIdSignatureArray.forEach(proto::addSignature)
         protoStringArray.forEach(proto::addString)
         protoBodyArray.forEach { proto.addBody(it.toProto()) }

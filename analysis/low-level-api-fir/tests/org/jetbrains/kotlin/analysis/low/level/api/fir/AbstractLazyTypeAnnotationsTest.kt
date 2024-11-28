@@ -22,12 +22,13 @@ import org.jetbrains.kotlin.fir.expressions.FirLazyBlock
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirBackingFieldSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertyAccessorSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirReceiverParameterSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirTypeParameterSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.symbols.lazyResolveToPhase
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
-import org.jetbrains.kotlin.fir.types.customAnnotations
+import org.jetbrains.kotlin.fir.types.typeAnnotations
 import org.jetbrains.kotlin.fir.types.forEachType
 import org.jetbrains.kotlin.fir.visitors.FirVisitorVoid
 import org.jetbrains.kotlin.psi.KtFile
@@ -96,7 +97,7 @@ abstract class AbstractLazyTypeAnnotationsTest : AbstractFirLazyDeclarationResol
     }
 }
 
-private fun ConeKotlinType.annotationContainingSymbols(): List<FirBasedSymbol<*>> = customAnnotations.mapNotNull {
+private fun ConeKotlinType.annotationContainingSymbols(): List<FirBasedSymbol<*>> = typeAnnotations.mapNotNull {
     (it as? FirAnnotationCall)?.containingDeclarationSymbol
 }
 
@@ -141,10 +142,11 @@ private fun dumpFir(
 private fun FirBasedSymbol<*>.toStringWithContext(): String {
     val base = toString()
     val parentSymbol: FirBasedSymbol<*>? = when (this) {
-        is FirValueParameterSymbol -> containingFunctionSymbol
+        is FirValueParameterSymbol -> containingDeclarationSymbol
         is FirPropertyAccessorSymbol -> propertySymbol
         is FirTypeParameterSymbol -> containingDeclarationSymbol
         is FirBackingFieldSymbol -> propertySymbol
+        is FirReceiverParameterSymbol -> containingDeclarationSymbol
         else -> null
     }
 
@@ -162,7 +164,7 @@ private fun FirElementWithResolveState.collectConeTypes(): Collection<ConeTypeWi
             contextStack.withStack(element) {
                 when (element) {
                     is FirResolvedTypeRef -> element.coneType.forEachType {
-                        if (it.customAnnotations.isNotEmpty()) {
+                        if (it.typeAnnotations.isNotEmpty()) {
                             types += ConeTypeWithContext(it, contextStack.dumpContext())
                         }
                     }

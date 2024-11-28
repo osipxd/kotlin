@@ -41,6 +41,12 @@ public class FirLightTreeOldFrontendDiagnosticsWithoutAliasExpansionTestGenerate
     }
 
     @Test
+    @TestMetadata("confirmObsoleteTypealiasExpansionInconsistencies.kt")
+    public void testConfirmObsoleteTypealiasExpansionInconsistencies() {
+      runTest("compiler/testData/diagnostics/tests/confirmObsoleteTypealiasExpansionInconsistencies.kt");
+    }
+
+    @Test
     @TestMetadata("EnumEntryAsType.kt")
     public void testEnumEntryAsType() {
       runTest("compiler/testData/diagnostics/tests/EnumEntryAsType.kt");
@@ -164,6 +170,12 @@ public class FirLightTreeOldFrontendDiagnosticsWithoutAliasExpansionTestGenerate
     @TestMetadata("typealiasInAnnotationPrimitiveVararg.kt")
     public void testTypealiasInAnnotationPrimitiveVararg() {
       runTest("compiler/testData/diagnostics/tests/typealiasInAnnotationPrimitiveVararg.kt");
+    }
+
+    @Test
+    @TestMetadata("typealiasedFunInterface.kt")
+    public void testTypealiasedFunInterface() {
+      runTest("compiler/testData/diagnostics/tests/typealiasedFunInterface.kt");
     }
 
     @Test
@@ -627,6 +639,29 @@ public class FirLightTreeOldFrontendDiagnosticsWithoutAliasExpansionTestGenerate
     }
 
     @Nested
+    @TestMetadata("compiler/testData/diagnostics/tests/imports")
+    @TestDataPath("$PROJECT_ROOT")
+    public class Imports {
+      @Test
+      @TestMetadata("RootPackage.kt")
+      public void testRootPackage() {
+        runTest("compiler/testData/diagnostics/tests/imports/RootPackage.kt");
+      }
+
+      @Test
+      @TestMetadata("RootPackageImportsA.kt")
+      public void testRootPackageImportsA() {
+        runTest("compiler/testData/diagnostics/tests/imports/RootPackageImportsA.kt");
+      }
+
+      @Test
+      @TestMetadata("RootPackageNoImports.kt")
+      public void testRootPackageNoImports() {
+        runTest("compiler/testData/diagnostics/tests/imports/RootPackageNoImports.kt");
+      }
+    }
+
+    @Nested
     @TestMetadata("compiler/testData/diagnostics/tests/incompleteCode")
     @TestDataPath("$PROJECT_ROOT")
     public class IncompleteCode {
@@ -673,6 +708,18 @@ public class FirLightTreeOldFrontendDiagnosticsWithoutAliasExpansionTestGenerate
       }
 
       @Test
+      @TestMetadata("underscoredTypeArgumentInTypeAliasedConstructor.kt")
+      public void testUnderscoredTypeArgumentInTypeAliasedConstructor() {
+        runTest("compiler/testData/diagnostics/tests/inference/underscoredTypeArgumentInTypeAliasedConstructor.kt");
+      }
+
+      @Test
+      @TestMetadata("underscoredTypeArgumentInTypeAliasedSamConstructor.kt")
+      public void testUnderscoredTypeArgumentInTypeAliasedSamConstructor() {
+        runTest("compiler/testData/diagnostics/tests/inference/underscoredTypeArgumentInTypeAliasedSamConstructor.kt");
+      }
+
+      @Test
       @TestMetadata("underscoredTypeInForbiddenPositions.kt")
       public void testUnderscoredTypeInForbiddenPositions() {
         runTest("compiler/testData/diagnostics/tests/inference/underscoredTypeInForbiddenPositions.kt");
@@ -716,6 +763,17 @@ public class FirLightTreeOldFrontendDiagnosticsWithoutAliasExpansionTestGenerate
       @TestMetadata("compiler/testData/diagnostics/tests/inference/pcla")
       @TestDataPath("$PROJECT_ROOT")
       public class Pcla {
+        @Nested
+        @TestMetadata("compiler/testData/diagnostics/tests/inference/pcla/fixationOnDemand")
+        @TestDataPath("$PROJECT_ROOT")
+        public class FixationOnDemand {
+          @Nested
+          @TestMetadata("compiler/testData/diagnostics/tests/inference/pcla/fixationOnDemand/scopeNavigation")
+          @TestDataPath("$PROJECT_ROOT")
+          public class ScopeNavigation {
+          }
+        }
+
         @Nested
         @TestMetadata("compiler/testData/diagnostics/tests/inference/pcla/oneParameter")
         @TestDataPath("$PROJECT_ROOT")
@@ -1280,6 +1338,18 @@ public class FirLightTreeOldFrontendDiagnosticsWithoutAliasExpansionTestGenerate
       @TestMetadata("abbreviatedSupertypesErrors.kt")
       public void testAbbreviatedSupertypesErrors() {
         runTest("compiler/testData/diagnostics/tests/typealias/abbreviatedSupertypesErrors.kt");
+      }
+
+      @Test
+      @TestMetadata("aliasToNotKnownAnnotation.kt")
+      public void testAliasToNotKnownAnnotation() {
+        runTest("compiler/testData/diagnostics/tests/typealias/aliasToNotKnownAnnotation.kt");
+      }
+
+      @Test
+      @TestMetadata("aliasToNotKnownJavaAnnotation.kt")
+      public void testAliasToNotKnownJavaAnnotation() {
+        runTest("compiler/testData/diagnostics/tests/typealias/aliasToNotKnownJavaAnnotation.kt");
       }
 
       @Test
@@ -2360,17 +2430,6 @@ public class FirLightTreeOldFrontendDiagnosticsWithoutAliasExpansionTestGenerate
     }
 
     @Nested
-    @TestMetadata("compiler/testData/diagnostics/testsWithStdLib/multiplatform")
-    @TestDataPath("$PROJECT_ROOT")
-    public class Multiplatform {
-      @Test
-      @TestMetadata("duplicateSupertype.kt")
-      public void testDuplicateSupertype() {
-        runTest("compiler/testData/diagnostics/testsWithStdLib/multiplatform/duplicateSupertype.kt");
-      }
-    }
-
-    @Nested
     @TestMetadata("compiler/testData/diagnostics/testsWithStdLib/reflection")
     @TestDataPath("$PROJECT_ROOT")
     public class Reflection {
@@ -2385,6 +2444,12 @@ public class FirLightTreeOldFrontendDiagnosticsWithoutAliasExpansionTestGenerate
     @TestMetadata("compiler/testData/diagnostics/testsWithStdLib/resolve")
     @TestDataPath("$PROJECT_ROOT")
     public class Resolve {
+    }
+
+    @Nested
+    @TestMetadata("compiler/testData/diagnostics/testsWithStdLib/tieredFailures")
+    @TestDataPath("$PROJECT_ROOT")
+    public class TieredFailures {
     }
 
     @Nested

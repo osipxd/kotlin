@@ -42,6 +42,12 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
   }
 
   @Test
+  @TestMetadata("ActualizeBuiltins.kt")
+  public void testActualizeBuiltins() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/ActualizeBuiltins.kt");
+  }
+
+  @Test
   public void testAllFilesPresentInSingleByPsi() {
     KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/components/resolver/singleByPsi"), Pattern.compile("^(.+)\\.kt$"), null, true, "withTestCompilerPluginEnabled");
   }
@@ -374,6 +380,12 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
   @TestMetadata("DefaultObjectInShortReferenceFormCall.kt")
   public void testDefaultObjectInShortReferenceFormCall() {
     runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/DefaultObjectInShortReferenceFormCall.kt");
+  }
+
+  @Test
+  @TestMetadata("defaultStarImportsInLibrarySource.kt")
+  public void testDefaultStarImportsInLibrarySource() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/defaultStarImportsInLibrarySource.kt");
   }
 
   @Test
@@ -1061,9 +1073,33 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
   }
 
   @Test
+  @TestMetadata("qualifiedCallSelector.kt")
+  public void testQualifiedCallSelector() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/qualifiedCallSelector.kt");
+  }
+
+  @Test
   @TestMetadata("qualifiedCalleeExpressionOfImplicitInvoke.kt")
   public void testQualifiedCalleeExpressionOfImplicitInvoke() {
     runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/qualifiedCalleeExpressionOfImplicitInvoke.kt");
+  }
+
+  @Test
+  @TestMetadata("qualifiedReferenceSelector.kt")
+  public void testQualifiedReferenceSelector() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/qualifiedReferenceSelector.kt");
+  }
+
+  @Test
+  @TestMetadata("qualifiedWholeCall.kt")
+  public void testQualifiedWholeCall() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/qualifiedWholeCall.kt");
+  }
+
+  @Test
+  @TestMetadata("qualifiedWholeReferenceSelector.kt")
+  public void testQualifiedWholeReferenceSelector() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/qualifiedWholeReferenceSelector.kt");
   }
 
   @Test
@@ -1112,6 +1148,30 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
   @TestMetadata("RetentionValue.kt")
   public void testRetentionValue() {
     runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/RetentionValue.kt");
+  }
+
+  @Test
+  @TestMetadata("safeQualifiedCallSelector.kt")
+  public void testSafeQualifiedCallSelector() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/safeQualifiedCallSelector.kt");
+  }
+
+  @Test
+  @TestMetadata("safeQualifiedReferenceSelector.kt")
+  public void testSafeQualifiedReferenceSelector() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/safeQualifiedReferenceSelector.kt");
+  }
+
+  @Test
+  @TestMetadata("safeQualifiedWholeCall.kt")
+  public void testSafeQualifiedWholeCall() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/safeQualifiedWholeCall.kt");
+  }
+
+  @Test
+  @TestMetadata("safeQualifiedWholeReferenceSelector.kt")
+  public void testSafeQualifiedWholeReferenceSelector() {
+    runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/safeQualifiedWholeReferenceSelector.kt");
   }
 
   @Test
@@ -2477,130 +2537,6 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
   }
 
   @Nested
-  @TestMetadata("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport")
-  @TestDataPath("$PROJECT_ROOT")
-  public class InImport {
-    @Test
-    public void testAllFilesPresentInInImport() {
-      KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport"), Pattern.compile("^(.+)\\.kt$"), null, true, "withTestCompilerPluginEnabled");
-    }
-
-    @Test
-    @TestMetadata("javaClass.kt")
-    public void testJavaClass() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/javaClass.kt");
-    }
-
-    @Test
-    @TestMetadata("javaPackageFirstQualifier.kt")
-    public void testJavaPackageFirstQualifier() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/javaPackageFirstQualifier.kt");
-    }
-
-    @Test
-    @TestMetadata("javaPackageSecondQualifier.kt")
-    public void testJavaPackageSecondQualifier() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/javaPackageSecondQualifier.kt");
-    }
-
-    @Test
-    @TestMetadata("kotlinClass.kt")
-    public void testKotlinClass() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/kotlinClass.kt");
-    }
-
-    @Test
-    @TestMetadata("kotlinPackageFirstQualifier.kt")
-    public void testKotlinPackageFirstQualifier() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/kotlinPackageFirstQualifier.kt");
-    }
-
-    @Test
-    @TestMetadata("kotlinPackageSecondQualifier.kt")
-    public void testKotlinPackageSecondQualifier() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/kotlinPackageSecondQualifier.kt");
-    }
-
-    @Test
-    @TestMetadata("kotlinTopLevelFunction.kt")
-    public void testKotlinTopLevelFunction() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/kotlinTopLevelFunction.kt");
-    }
-
-    @Test
-    @TestMetadata("staticFieldFromJavaClassFromSuper.kt")
-    public void testStaticFieldFromJavaClassFromSuper() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticFieldFromJavaClassFromSuper.kt");
-    }
-
-    @Test
-    @TestMetadata("staticImportFunction.kt")
-    public void testStaticImportFunction() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticImportFunction.kt");
-    }
-
-    @Test
-    @TestMetadata("staticImportFunctionFromSuper.kt")
-    public void testStaticImportFunctionFromSuper() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticImportFunctionFromSuper.kt");
-    }
-
-    @Test
-    @TestMetadata("staticImportNestedFunction.kt")
-    public void testStaticImportNestedFunction() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticImportNestedFunction.kt");
-    }
-
-    @Test
-    @TestMetadata("staticImportNestedJavaField.kt")
-    public void testStaticImportNestedJavaField() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticImportNestedJavaField.kt");
-    }
-
-    @Test
-    @TestMetadata("staticImportNestedJavaFunction.kt")
-    public void testStaticImportNestedJavaFunction() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticImportNestedJavaFunction.kt");
-    }
-
-    @Test
-    @TestMetadata("staticImportNestedProperty.kt")
-    public void testStaticImportNestedProperty() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticImportNestedProperty.kt");
-    }
-
-    @Test
-    @TestMetadata("staticImportProperty.kt")
-    public void testStaticImportProperty() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticImportProperty.kt");
-    }
-
-    @Test
-    @TestMetadata("staticImportPropertyFromSuper.kt")
-    public void testStaticImportPropertyFromSuper() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticImportPropertyFromSuper.kt");
-    }
-
-    @Test
-    @TestMetadata("staticMethodFromJavaClass.kt")
-    public void testStaticMethodFromJavaClass() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticMethodFromJavaClass.kt");
-    }
-
-    @Test
-    @TestMetadata("staticMethodFromJavaClassFromSuper.kt")
-    public void testStaticMethodFromJavaClassFromSuper() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticMethodFromJavaClassFromSuper.kt");
-    }
-
-    @Test
-    @TestMetadata("staticMethodFromJavaClassJavaClass.kt")
-    public void testStaticMethodFromJavaClassJavaClass() {
-      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/inImport/staticMethodFromJavaClassJavaClass.kt");
-    }
-  }
-
-  @Nested
   @TestMetadata("analysis/analysis-api/testData/components/resolver/singleByPsi/invoke")
   @TestDataPath("$PROJECT_ROOT")
   public class Invoke {
@@ -2902,6 +2838,12 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
     }
 
     @Test
+    @TestMetadata("defaultJavaConstructorWithTypeParameter.kt")
+    public void testDefaultJavaConstructorWithTypeParameter() {
+      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/java/defaultJavaConstructorWithTypeParameter.kt");
+    }
+
+    @Test
     @TestMetadata("JavaAnnotationParameter.kt")
     public void testJavaAnnotationParameter() {
       runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/java/JavaAnnotationParameter.kt");
@@ -3109,6 +3051,12 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
       }
 
       @Test
+      @TestMetadata("KT-69047.kt")
+      public void testKT_69047() {
+        runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/kDoc/extensions/KT-69047.kt");
+      }
+
+      @Test
       @TestMetadata("nonExtensions.kt")
       public void testNonExtensions() {
         runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/kDoc/extensions/nonExtensions.kt");
@@ -3201,6 +3149,12 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
       }
 
       @Test
+      @TestMetadata("KT-64190.kt")
+      public void testKT_64190() {
+        runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/kDoc/imports/KT-64190.kt");
+      }
+
+      @Test
       @TestMetadata("SameNameClassesFromStarImports.kt")
       public void testSameNameClassesFromStarImports() {
         runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/kDoc/imports/SameNameClassesFromStarImports.kt");
@@ -3232,6 +3186,18 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
       @TestMetadata("FunctionQualifiedWithKotlinSubclass.kt")
       public void testFunctionQualifiedWithKotlinSubclass() {
         runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/kDoc/javaDeclarations/FunctionQualifiedWithKotlinSubclass.kt");
+      }
+
+      @Test
+      @TestMetadata("KT-69128.kt")
+      public void testKT_69128() {
+        runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/kDoc/javaDeclarations/KT-69128.kt");
+      }
+
+      @Test
+      @TestMetadata("KT-69736.kt")
+      public void testKT_69736() {
+        runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/kDoc/javaDeclarations/KT-69736.kt");
       }
 
       @Test
@@ -4437,6 +4403,42 @@ public class Fe10IdeNormalAnalysisSourceModuleResolveCallTestGenerated extends A
     @TestMetadata("TypeAlias.kt")
     public void testTypeAlias() {
       runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/typeAlias/TypeAlias.kt");
+    }
+
+    @Test
+    @TestMetadata("TypeAliasAsCallableReference.kt")
+    public void testTypeAliasAsCallableReference() {
+      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/typeAlias/TypeAliasAsCallableReference.kt");
+    }
+
+    @Test
+    @TestMetadata("TypeAliasAsCallableReference_withTypeParameters.kt")
+    public void testTypeAliasAsCallableReference_withTypeParameters() {
+      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/typeAlias/TypeAliasAsCallableReference_withTypeParameters.kt");
+    }
+
+    @Test
+    @TestMetadata("TypeAliasAsConstructor.kt")
+    public void testTypeAliasAsConstructor() {
+      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/typeAlias/TypeAliasAsConstructor.kt");
+    }
+
+    @Test
+    @TestMetadata("TypeAliasAsConstructorParameter.kt")
+    public void testTypeAliasAsConstructorParameter() {
+      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/typeAlias/TypeAliasAsConstructorParameter.kt");
+    }
+
+    @Test
+    @TestMetadata("TypeAliasAsConstructor_fixedTypeParameters.kt")
+    public void testTypeAliasAsConstructor_fixedTypeParameters() {
+      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/typeAlias/TypeAliasAsConstructor_fixedTypeParameters.kt");
+    }
+
+    @Test
+    @TestMetadata("TypeAliasAsConstructor_withTypeParameters.kt")
+    public void testTypeAliasAsConstructor_withTypeParameters() {
+      runTest("analysis/analysis-api/testData/components/resolver/singleByPsi/typeAlias/TypeAliasAsConstructor_withTypeParameters.kt");
     }
 
     @Test

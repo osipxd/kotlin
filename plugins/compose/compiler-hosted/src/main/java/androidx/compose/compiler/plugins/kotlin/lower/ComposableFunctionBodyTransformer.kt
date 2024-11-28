@@ -20,7 +20,6 @@ package androidx.compose.compiler.plugins.kotlin.lower
 
 import androidx.compose.compiler.plugins.kotlin.*
 import androidx.compose.compiler.plugins.kotlin.analysis.*
-import androidx.compose.compiler.plugins.kotlin.lower.ComposerParamTransformer.ComposeDefaultValueStubOrigin
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -633,9 +632,8 @@ class ComposableFunctionBodyTransformer(
         val scope = currentFunctionScope
         // if the function isn't composable, there's nothing to do
         if (!scope.isComposable) return super.visitFunction(declaration)
-        if (declaration.origin == ComposeDefaultValueStubOrigin) {
-            // this is a synthetic function stub, don't touch the body, only remove the stub origin
-            declaration.origin = IrDeclarationOrigin.DEFINED
+        if (declaration.isDefaultValueStub) {
+            // this is a synthetic function stub, don't touch the body
             return declaration
         }
 
@@ -669,6 +667,39 @@ class ComposableFunctionBodyTransformer(
                 changedParam,
                 defaultParam
             )
+        }.also { function ->
+            val assignableParams = function.valueParameters.filter { it.isAssignable }.toSet()
+            val defaultArgs = assignableParams // only default args and composer are marked as `isAssignable`
+
+            if (assignableParams.isNotEmpty()) {
+                function.transform(
+                    object : IrElementTransformerVoid() {
+                        override fun visitGetValue(expression: IrGetValue): IrExpression {
+                            if (expression.symbol.owner !in defaultArgs) {
+                                return super.visitGetValue(expression)
+                            }
+                            val defaultParameterType = expression.type.defaultParameterType()
+                            if (defaultParameterType != expression.type) {
+                                return IrTypeOperatorCallImpl(
+                                    expression.startOffset,
+                                    expression.endOffset,
+                                    expression.type,
+                                    IrTypeOperator.IMPLICIT_CAST,
+                                    expression.type,
+                                    IrGetValueImpl(
+                                        expression.startOffset,
+                                        expression.endOffset,
+                                        defaultParameterType,
+                                        expression.symbol,
+                                        expression.origin
+                                    )
+                                )
+                            }
+                            return super.visitGetValue(expression)
+                        }
+                    }, null
+                )
+            }
         }
     }
 
@@ -764,7 +795,7 @@ class ComposableFunctionBodyTransformer(
         scope: Scope.FunctionScope,
         changedParam: IrChangedBitMaskValue,
         defaultParam: IrDefaultBitMaskValue?,
-    ): IrStatement {
+    ): IrFunction {
         val body = declaration.body!!
 
         val hasExplicitGroups = declaration.hasExplicitGroups
@@ -901,7 +932,7 @@ class ComposableFunctionBodyTransformer(
         declaration: IrFunction,
         scope: Scope.FunctionScope,
         changedParam: IrChangedBitMaskValue,
-    ): IrStatement {
+    ): IrFunction {
         // no group, since composableLambda should already create one
         // no default logic
         val body = declaration.body!!
@@ -1019,9 +1050,7 @@ class ComposableFunctionBodyTransformer(
                 ),
                 // Use end offsets so that stepping out of the composable function
                 // does not step back to the start line for the function.
-                elsePart = irSkipToGroupEnd(body.endOffset, body.endOffset),
-                startOffset = body.startOffset,
-                endOffset = body.endOffset
+                elsePart = irSkipToGroupEnd(),
             )
             scope.realizeCoalescableGroup()
             declaration.body = context.irFactory.createBlockBody(body.startOffset, body.endOffset).apply {
@@ -1081,7 +1110,7 @@ class ComposableFunctionBodyTransformer(
         scope: Scope.FunctionScope,
         changedParam: IrChangedBitMaskValue,
         defaultParam: IrDefaultBitMaskValue?,
-    ): IrStatement {
+    ): IrFunction {
         val body = declaration.body!!
         val skipPreamble = mutableStatementContainer()
         val bodyPreamble = mutableStatementContainer()
@@ -1217,9 +1246,7 @@ class ComposableFunctionBodyTransformer(
                 ),
                 // Use end offsets so that stepping out of the composable function
                 // does not step back to the start line for the function.
-                elsePart = irSkipToGroupEnd(body.endOffset, body.endOffset),
-                startOffset = body.startOffset,
-                endOffset = body.endOffset
+                elsePart = irSkipToGroupEnd(),
             )
         } else irComposite(
             statements = bodyPreamble.statements + transformed.statements
@@ -1603,7 +1630,7 @@ class ComposableFunctionBodyTransformer(
                     // composer.skipCurrentGroup()
                     elsePart = irBlock(
                         statements = listOf(
-                            irSkipToGroupEnd(UNDEFINED_OFFSET, UNDEFINED_OFFSET),
+                            irSkipToGroupEnd(),
                             *skipDefaults.statements.toTypedArray()
                         )
                     )
@@ -1976,8 +2003,8 @@ class ComposableFunctionBodyTransformer(
         return hash
     }
 
-    private fun functionSourceKey(): Int {
-        when (val fn = currentFunctionScope.function) {
+    private fun functionSourceKey(function: IrFunction): Int {
+        when (val fn = function) {
             is IrSimpleFunction -> {
                 return fn.sourceKey()
             }
@@ -1995,12 +2022,12 @@ class ComposableFunctionBodyTransformer(
             sourceKey()
         )
 
-    private fun irFunctionSourceKey(): IrConst =
+    private fun irFunctionSourceKey(function: IrFunction = currentFunctionScope.function): IrConst =
         IrConstImpl.int(
             UNDEFINED_OFFSET,
             UNDEFINED_OFFSET,
             context.irBuiltIns.intType,
-            functionSourceKey()
+            functionSourceKey(function)
         )
 
     private fun irStartReplaceGroup(
@@ -2113,7 +2140,7 @@ class ComposableFunctionBodyTransformer(
             val dirty2 = params?.getOrNull(1)?.let { irGet(it) } ?: irConst(-1)
 
             irIfTraceInProgress(
-                irCall(traceEventStart, startOffset, endOffset).also {
+                irCall(traceEventStart).also {
                     it.putValueArgument(0, key)
                     it.putValueArgument(1, dirty1)
                     it.putValueArgument(2, dirty2)
@@ -2176,7 +2203,7 @@ class ComposableFunctionBodyTransformer(
         compareInstanceForUnstableValues = compareInstanceForUnstableValues
     )
 
-    private fun irSkipToGroupEnd(startOffset: Int, endOffset: Int): IrExpression {
+    private fun irSkipToGroupEnd(startOffset: Int = UNDEFINED_OFFSET, endOffset: Int = UNDEFINED_OFFSET): IrExpression {
         return irMethodCall(
             irCurrentComposer(startOffset, endOffset),
             skipToGroupEndFunction,
@@ -2874,9 +2901,19 @@ class ComposableFunctionBodyTransformer(
     }
 
     override fun visitCall(expression: IrCall): IrExpression {
+        if (expression.associatedComposableSingletonStub != null) {
+            // This call has an associated stub in ComposableSingletons class. This stub is not
+            // directly reachable by any code in this module, but might be used by other external libraries.
+            // Transform it the same way as the one above.
+            val getterCall = expression.associatedComposableSingletonStub
+            val property = getterCall?.symbol?.owner?.correspondingPropertySymbol?.owner
+            property?.transformChildrenVoid()
+        }
+
         if (expression.isComposableCall() || expression.isSyntheticComposableCall()) {
             return visitComposableCall(expression)
         }
+
         when {
             expression.symbol.owner.isInline -> {
                 // if it is not a composable call but it is an inline function, then we allow
@@ -3228,7 +3265,7 @@ class ComposableFunctionBodyTransformer(
             } else {
                 cacheCall.wrap(
                     before = inputVals.filterNotNull() + listOf(
-                        irStartReplaceGroup(expression, blockScope)
+                        irStartReplaceGroup(expression, blockScope, irFunctionSourceKey(expression.symbol.owner))
                     ),
                     after = listOf(irEndReplaceGroup(scope = blockScope))
                 )

@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 //FILE: a/MyJavaClass.java
 package a;
 
@@ -29,7 +30,7 @@ import a.<!INVISIBLE_REFERENCE!>MyJavaClass<!>
 val <!EXPOSED_PROPERTY_TYPE!>mc1<!> = <!INVISIBLE_REFERENCE!>MyJavaClass<!>()
 
 val x = <!INVISIBLE_REFERENCE!>MyJavaClass<!>.<!INVISIBLE_REFERENCE!>staticMethod<!>()
-val y = MyJavaClass.<!INVISIBLE_REFERENCE!>NestedClass<!>.<!INVISIBLE_REFERENCE!>staticMethodOfNested<!>()
+val y = <!INVISIBLE_REFERENCE!>MyJavaClass<!>.NestedClass.<!INVISIBLE_REFERENCE!>staticMethodOfNested<!>()
 val <!EXPOSED_PROPERTY_TYPE!>z<!> = <!INVISIBLE_REFERENCE!>MyJavaClass<!>.<!INVISIBLE_REFERENCE!>NestedClass<!>()
 
 //FILE: c.kt
@@ -40,5 +41,5 @@ import a.<!INVISIBLE_REFERENCE!>MyJavaClass<!>
 val <!EXPOSED_PROPERTY_TYPE!>mc1<!> = <!INVISIBLE_REFERENCE!>MyJavaClass<!>()
 
 val x = <!INVISIBLE_REFERENCE!>MyJavaClass<!>.<!INVISIBLE_REFERENCE!>staticMethod<!>()
-val y = MyJavaClass.<!INVISIBLE_REFERENCE!>NestedClass<!>.<!INVISIBLE_REFERENCE!>staticMethodOfNested<!>()
+val y = <!INVISIBLE_REFERENCE!>MyJavaClass<!>.NestedClass.<!INVISIBLE_REFERENCE!>staticMethodOfNested<!>()
 val <!EXPOSED_PROPERTY_TYPE!>z<!> = <!INVISIBLE_REFERENCE!>MyJavaClass<!>.<!INVISIBLE_REFERENCE!>NestedClass<!>()

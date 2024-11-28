@@ -130,6 +130,12 @@ public class JsIrES6InvalidationPerFileTestGenerated extends AbstractJsIrES6Inva
   }
 
   @Test
+  @TestMetadata("defaultParamMethod")
+  public void testDefaultParamMethod() {
+    runTest("js/js.translator/testData/incremental/invalidation/defaultParamMethod/");
+  }
+
+  @Test
   @TestMetadata("eagerInitialization")
   public void testEagerInitialization() {
     runTest("js/js.translator/testData/incremental/invalidation/eagerInitialization/");
@@ -289,12 +295,6 @@ public class JsIrES6InvalidationPerFileTestGenerated extends AbstractJsIrES6Inva
   @TestMetadata("inlineFunctionAsParam")
   public void testInlineFunctionAsParam() {
     runTest("js/js.translator/testData/incremental/invalidation/inlineFunctionAsParam/");
-  }
-
-  @Test
-  @TestMetadata("inlineFunctionCircleUsage")
-  public void testInlineFunctionCircleUsage() {
-    runTest("js/js.translator/testData/incremental/invalidation/inlineFunctionCircleUsage/");
   }
 
   @Test

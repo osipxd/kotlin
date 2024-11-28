@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // ISSUE: KT-63379 (modified example, see original in unitInContravariantPosition.kt)
 
 class TestDummyClass<T> {
@@ -5,9 +6,9 @@ class TestDummyClass<T> {
 }
 
 fun more(t: TestDummyClass<out CustomRunnable>) {
-    t.testFun <!ARGUMENT_TYPE_MISMATCH!>{ Unit }<!>
-    t.testFun(<!ARGUMENT_TYPE_MISMATCH!>CustomRunnable { Unit }<!>)
-    t.testFun(<!ARGUMENT_TYPE_MISMATCH!>object : CustomRunnable<!> {
+    t.testFun <!MEMBER_PROJECTED_OUT!>{ Unit }<!>
+    t.testFun(<!MEMBER_PROJECTED_OUT!>CustomRunnable { Unit }<!>)
+    t.testFun(<!MEMBER_PROJECTED_OUT!>object : CustomRunnable<!> {
         override fun run() {}
     })
 }

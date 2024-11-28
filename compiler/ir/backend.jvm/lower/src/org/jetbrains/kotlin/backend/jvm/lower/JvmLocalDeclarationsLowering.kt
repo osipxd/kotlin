@@ -22,10 +22,12 @@ import org.jetbrains.kotlin.load.java.JavaDescriptorVisibilities
 import org.jetbrains.kotlin.name.NameUtils
 import org.jetbrains.kotlin.utils.filterIsInstanceAnd
 
+/**
+ * Moves local declarations to classes.
+ */
 @PhaseDescription(
     name = "JvmLocalDeclarations",
-    description = "Move local declarations to classes",
-    prerequisite = [FunctionReferenceLowering::class, SharedVariablesLowering::class]
+    prerequisite = [FunctionReferenceLowering::class, JvmSharedVariablesLowering::class]
 )
 internal class JvmLocalDeclarationsLowering(context: JvmBackendContext) : LocalDeclarationsLowering(
     context,

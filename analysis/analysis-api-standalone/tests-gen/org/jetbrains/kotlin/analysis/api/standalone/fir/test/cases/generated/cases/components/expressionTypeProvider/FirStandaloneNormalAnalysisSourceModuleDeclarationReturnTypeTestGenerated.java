@@ -46,6 +46,36 @@ public class FirStandaloneNormalAnalysisSourceModuleDeclarationReturnTypeTestGen
   }
 
   @Test
+  @TestMetadata("constantsAnonymousFunction.kt")
+  public void testConstantsAnonymousFunction() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/constantsAnonymousFunction.kt");
+  }
+
+  @Test
+  @TestMetadata("constantsFunction.kt")
+  public void testConstantsFunction() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/constantsFunction.kt");
+  }
+
+  @Test
+  @TestMetadata("constantsGetter.kt")
+  public void testConstantsGetter() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/constantsGetter.kt");
+  }
+
+  @Test
+  @TestMetadata("constantsOverride.kt")
+  public void testConstantsOverride() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/constantsOverride.kt");
+  }
+
+  @Test
+  @TestMetadata("constantsProperty.kt")
+  public void testConstantsProperty() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/constantsProperty.kt");
+  }
+
+  @Test
   @TestMetadata("declarationInPrimaryConstructor.kt")
   public void testDeclarationInPrimaryConstructor() {
     runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/declarationInPrimaryConstructor.kt");
@@ -58,15 +88,21 @@ public class FirStandaloneNormalAnalysisSourceModuleDeclarationReturnTypeTestGen
   }
 
   @Test
+  @TestMetadata("functionType.kt")
+  public void testFunctionType() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/functionType.kt");
+  }
+
+  @Test
   @TestMetadata("functionWithoutParameterList.kt")
   public void testFunctionWithoutParameterList() {
     runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/functionWithoutParameterList.kt");
   }
 
   @Test
-  @TestMetadata("funtionType.kt")
-  public void testFuntionType() {
-    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/funtionType.kt");
+  @TestMetadata("implicitTypeFromTypealiasedConstructorCallWithImplicitTypeArguments.kt")
+  public void testImplicitTypeFromTypealiasedConstructorCallWithImplicitTypeArguments() {
+    runTest("analysis/analysis-api/testData/components/expressionTypeProvider/declarationReturnType/implicitTypeFromTypealiasedConstructorCallWithImplicitTypeArguments.kt");
   }
 
   @Test

@@ -10,12 +10,14 @@ import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.sir.*
 import org.jetbrains.kotlin.sir.providers.SirSession
 import org.jetbrains.kotlin.sir.providers.source.KotlinSource
-import org.jetbrains.kotlin.sir.providers.utils.computeIsOverrideForDesignatedInit
+import org.jetbrains.kotlin.sir.providers.utils.throwsAnnotation
 import org.jetbrains.sir.lightclasses.SirFromKtSymbol
 import org.jetbrains.sir.lightclasses.extensions.documentation
 import org.jetbrains.sir.lightclasses.extensions.lazyWithSessions
 import org.jetbrains.sir.lightclasses.extensions.withSessions
+import org.jetbrains.sir.lightclasses.utils.computeIsOverride
 import org.jetbrains.sir.lightclasses.utils.translateParameters
+import org.jetbrains.sir.lightclasses.utils.translatedAttributes
 
 internal class SirInitFromKtSymbol(
     override val ktSymbol: KaConstructorSymbol,
@@ -23,9 +25,11 @@ internal class SirInitFromKtSymbol(
     override val sirSession: SirSession,
 ) : SirInit(), SirFromKtSymbol<KaConstructorSymbol> {
 
-    override val visibility: SirVisibility = SirVisibility.PUBLIC
+    override val visibility: SirVisibility by lazyWithSessions {
+        ktSymbol.sirVisibility(this) ?: error("$ktSymbol shouldn't be exposed to SIR")
+    }
+
     override val isFailable: Boolean = false
-    override val initKind: SirInitializerKind = SirInitializerKind.ORDINARY
 
     override val origin: SirOrigin by lazy {
         KotlinSource(ktSymbol)
@@ -37,9 +41,11 @@ internal class SirInitFromKtSymbol(
         ktSymbol.documentation()
     }
 
-    override val isOverride: Boolean by lazy {
-        computeIsOverrideForDesignatedInit(parent, parameters)
-    }
+    override val isRequired: Boolean = false
+
+    override val isConvenience: Boolean = false
+
+    override val isOverride: Boolean get() = computeIsOverride()
 
     override var parent: SirDeclarationParent
         get() = withSessions {
@@ -47,7 +53,9 @@ internal class SirInitFromKtSymbol(
         }
         set(_) = Unit
 
-    override val attributes: MutableList<SirAttribute> = mutableListOf()
+    override val attributes: List<SirAttribute> by lazy { this.translatedAttributes }
+
+    override val errorType: SirType get() = if (ktSymbol.throwsAnnotation != null) SirType.any else SirType.never
 
     override var body: SirFunctionBody? = null
 }

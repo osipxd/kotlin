@@ -59,6 +59,7 @@ public interface KaRendererOtherModifiersProvider {
 
                 if (symbol is KaPropertySymbol) {
                     if (symbol.isOverride) add(KtTokens.OVERRIDE_KEYWORD)
+                    if (symbol.isExternal) add(KtTokens.EXTERNAL_KEYWORD)
                 }
 
                 if (symbol is KaValueParameterSymbol) {
@@ -92,7 +93,3 @@ public interface KaRendererOtherModifiersProvider {
         }
     }
 }
-
-@KaExperimentalApi
-@Deprecated("Use 'KaRendererOtherModifiersProvider' instead", ReplaceWith("KaRendererOtherModifiersProvider"))
-public typealias KtRendererOtherModifiersProvider = KaRendererOtherModifiersProvider

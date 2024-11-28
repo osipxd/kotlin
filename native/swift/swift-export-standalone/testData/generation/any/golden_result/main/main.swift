@@ -1,5 +1,5 @@
-import KotlinRuntime
 @_implementationOnly import KotlinBridges_main
+import KotlinRuntime
 
 public final class MyObject : KotlinRuntime.KotlinBase {
     public static var shared: main.MyObject {
@@ -10,7 +10,7 @@ public final class MyObject : KotlinRuntime.KotlinBase {
     private override init() {
         fatalError()
     }
-    public override init(
+    package override init(
         __externalRCRef: Swift.UInt
     ) {
         super.init(__externalRCRef: __externalRCRef)

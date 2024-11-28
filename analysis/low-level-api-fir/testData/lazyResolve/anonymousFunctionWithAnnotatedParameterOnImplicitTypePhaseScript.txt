@@ -1,7 +1,7 @@
 RAW_FIR:
 FILE: [ResolvedTo(RAW_FIR)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -24,7 +24,7 @@ FILE: [ResolvedTo(RAW_FIR)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 IMPORTS:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -47,7 +47,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 COMPILER_REQUIRED_ANNOTATIONS:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -70,7 +70,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 COMPANION_GENERATION:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -93,7 +93,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 SUPER_TYPES:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -116,7 +116,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 TYPES:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -139,7 +139,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 STATUS:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -162,7 +162,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 EXPECT_ACTUAL_MATCHING:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(RAW_FIR)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: kotlin.script.templates.standard.ScriptTemplateWithArgs
+        [ResolvedTo(RAW_FIR)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(RAW_FIR)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -185,7 +185,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 CONTRACTS:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @Target[Unresolved](LAZY_EXPRESSION) public final? [ResolvedTo(RAW_FIR)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -203,7 +203,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 
         public final [ResolvedTo(CONTRACTS)] val propertyToResolve: <implicit>
             public [ResolvedTo(CONTRACTS)] get(): <implicit> {
-                ^ nullablePropertyWithAnnotatedType#?.{ $subj$.let#(<L> = [ResolvedTo(RAW_FIR)] let@fun <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
+                ^ nullablePropertyWithAnnotatedType#?.{ $subj$.let#(<L> = [ResolvedTo(RAW_FIR)] let@fun [ResolvedTo(RAW_FIR)] <implicit>.<anonymous>(): <implicit> <inline=Unknown>  {
                     <strcat>(String( (), it#, String()))
                 }
                 ) } ?: String()
@@ -213,7 +213,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 IMPLICIT_TYPES_BODY_RESOLVE:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -226,14 +226,14 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 
         }
 
-        public final [ResolvedTo(CONTRACTS)] val nullablePropertyWithAnnotatedType: R|@R|Anno|(String(str))  kotlin/String?|
-            public [ResolvedTo(CONTRACTS)] get(): R|@R|Anno|(String(str))  kotlin/String?| {
+        public final [ResolvedTo(CONTRACTS)] val nullablePropertyWithAnnotatedType: R|@R|Anno|(LAZY_EXPRESSION)  kotlin/String?|
+            public [ResolvedTo(CONTRACTS)] get(): R|@R|Anno|(LAZY_EXPRESSION)  kotlin/String?| {
                 ^ Null(null)
             }
 
         public final [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] [PostponedSymbolsForAnnotationResolutionKey=[FirPropertySymbol /nullablePropertyWithAnnotatedType]] val propertyToResolve: R|kotlin/String|
             public [ResolvedTo(IMPLICIT_TYPES_BODY_RESOLVE)] get(): R|kotlin/String| {
-                ^ R|/nullablePropertyWithAnnotatedType|?.{ $subj$.R|kotlin/let|<R|@R|Anno|(String(str))  kotlin/String|, R|kotlin/String|>(<L> = [ResolvedTo(RAW_FIR)] [MatchingParameterFunctionTypeKey=kotlin/Function1<T, R>] let@fun <anonymous>([ResolvedTo(BODY_RESOLVE)] it: R|@R|Anno|(String(str))  kotlin/String|): R|kotlin/String| <inline=Inline, kind=EXACTLY_ONCE>  {
+                ^ R|/nullablePropertyWithAnnotatedType|?.{ $subj$.R|kotlin/let|<R|@R|Anno|(LAZY_EXPRESSION)  kotlin/String|, R|kotlin/String|>(<L> = [ResolvedTo(RAW_FIR)] [MatchingParameterFunctionTypeKey=kotlin/Function1<T, R>] let@fun <anonymous>([ResolvedTo(BODY_RESOLVE)] it: R|@R|Anno|(LAZY_EXPRESSION)  kotlin/String|): R|kotlin/String| <inline=Inline, kind=EXACTLY_ONCE>  {
                     ^ <strcat>(String( (), R|<local>/it|, String()))
                 }
                 ) } ?: String()
@@ -243,7 +243,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 CONSTANT_EVALUATION:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[CompilerRequiredAnnotations](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final? [ResolvedTo(COMPILER_REQUIRED_ANNOTATIONS)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -256,14 +256,14 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 
         }
 
-        public final [ResolvedTo(CONTRACTS)] val nullablePropertyWithAnnotatedType: R|@R|Anno|(String(str))  kotlin/String?|
-            public [ResolvedTo(CONTRACTS)] get(): R|@R|Anno|(String(str))  kotlin/String?| {
+        public final [ResolvedTo(CONTRACTS)] val nullablePropertyWithAnnotatedType: R|@R|Anno|(LAZY_EXPRESSION)  kotlin/String?|
+            public [ResolvedTo(CONTRACTS)] get(): R|@R|Anno|(LAZY_EXPRESSION)  kotlin/String?| {
                 ^ Null(null)
             }
 
         public final [ResolvedTo(CONSTANT_EVALUATION)] [PostponedSymbolsForAnnotationResolutionKey=[FirPropertySymbol /nullablePropertyWithAnnotatedType]] val propertyToResolve: R|kotlin/String|
             public [ResolvedTo(CONSTANT_EVALUATION)] get(): R|kotlin/String| {
-                ^ R|/nullablePropertyWithAnnotatedType|?.{ $subj$.R|kotlin/let|<R|@R|Anno|(String(str))  kotlin/String|, R|kotlin/String|>(<L> = [ResolvedTo(RAW_FIR)] [MatchingParameterFunctionTypeKey=kotlin/Function1<T, R>] let@fun <anonymous>([ResolvedTo(BODY_RESOLVE)] it: R|@R|Anno|(String(str))  kotlin/String|): R|kotlin/String| <inline=Inline, kind=EXACTLY_ONCE>  {
+                ^ R|/nullablePropertyWithAnnotatedType|?.{ $subj$.R|kotlin/let|<R|@R|Anno|(LAZY_EXPRESSION)  kotlin/String|, R|kotlin/String|>(<L> = [ResolvedTo(RAW_FIR)] [MatchingParameterFunctionTypeKey=kotlin/Function1<T, R>] let@fun <anonymous>([ResolvedTo(BODY_RESOLVE)] it: R|@R|Anno|(LAZY_EXPRESSION)  kotlin/String|): R|kotlin/String| <inline=Inline, kind=EXACTLY_ONCE>  {
                     ^ <strcat>(String( (), R|<local>/it|, String()))
                 }
                 ) } ?: String()
@@ -273,7 +273,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 ANNOTATION_ARGUMENTS:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -303,7 +303,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 BODY_RESOLVE:
 FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(TYPES)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(TYPES)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(TYPES)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|) public final [ResolvedTo(STATUS)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {
@@ -333,7 +333,7 @@ FILE: [ResolvedTo(IMPORTS)] anonymousFunctionWithAnnotatedParameterOnImplicitTyp
 FILE RAW TO BODY:
 FILE: [ResolvedTo(BODY_RESOLVE)] anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts
     SCRIPT: [ResolvedTo(BODY_RESOLVE)] <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>
-        <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
+        [ResolvedTo(BODY_RESOLVE)] <script receiver parameter>: R|kotlin/script/templates/standard/ScriptTemplateWithArgs|
         [ResolvedTo(BODY_RESOLVE)] lval args: R|kotlin/Array<kotlin/String>|
 
         @R|kotlin/annotation/Target|[Types](allowedTargets = vararg(Q|kotlin/annotation/AnnotationTarget|.R|kotlin/annotation/AnnotationTarget.TYPE|)) public final [ResolvedTo(BODY_RESOLVE)] [ContainingScriptKey=FirScriptSymbol <script-anonymousFunctionWithAnnotatedParameterOnImplicitTypePhaseScript.kts>] annotation class Anno : R|kotlin/Annotation| {

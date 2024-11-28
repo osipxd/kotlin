@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.markers.KaDeclarationContainerS
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
-import java.util.Objects
+import java.util.*
 
 public interface KaScopeProvider {
     /**
@@ -47,11 +47,12 @@ public interface KaScopeProvider {
      * The behavior of the scope differs based on whether the given [KaDeclarationContainerSymbol] is a Kotlin or Java class:
      *
      * - **Kotlin class:** The scope contains static callables (functions and properties) and classifiers (classes and objects) declared
-     *   directly in the [KaDeclarationContainerSymbol]. Hence, the static member scope for Kotlin classes is equivalent to [declaredMemberScope].
-     * - **Java class:** The scope contains static callables (functions and properties) declared in the [KaDeclarationContainerSymbol] or any of its
-     *   superclasses (excluding static callables from super-interfaces), and classes declared directly in the [KaDeclarationContainerSymbol]. This
-     *   follows Kotlin's rules about static inheritance in Java classes, where static callables are propagated from superclasses, but
-     *   nested classes are not.
+     *   directly in the [KaDeclarationContainerSymbol]. Hence, the static member scope for Kotlin classes is equivalent to
+     *   [staticDeclaredMemberScope].
+     * - **Java class:** The scope contains static callables (functions and properties) declared in the [KaDeclarationContainerSymbol] or
+     *   any of its superclasses (excluding static callables from super-interfaces), and classes declared directly in the
+     *   [KaDeclarationContainerSymbol]. This follows Kotlin's rules about static inheritance in Java classes, where static callables are
+     *   propagated from superclasses, but nested classes are not.
      *
      * #### Kotlin Example
      *
@@ -189,7 +190,7 @@ public interface KaScopeProvider {
      * Returned [KaTypeScope] includes synthetic Java properties.
      *
      * @see KaTypeScope
-     * @see KaTypeProviderMixIn.getKaType
+     * @see KaTypeProvider.type
      */
     @KaExperimentalApi
     public val KaType.scope: KaTypeScope?
@@ -212,12 +213,6 @@ public interface KaScopeProvider {
      */
     public fun KtFile.scopeContext(position: KtElement): KaScopeContext
 
-
-    @Deprecated("Use 'scopeContext()' instead", replaceWith = ReplaceWith("scopeContext(positionInFakeFile)"))
-    public fun KtFile.getScopeContextForPosition(positionInFakeFile: KtElement): KaScopeContext {
-        return scopeContext(positionInFakeFile)
-    }
-
     /**
      * A [KaScopeContext] formed by all imports in the [KtFile].
      *
@@ -233,11 +228,6 @@ public interface KaScopeProvider {
     public fun KaScopeContext.compositeScope(filter: (KaScopeKind) -> Boolean = { true }): KaScope = withValidityAssertion {
         val subScopes = scopes.filter { filter(it.kind) }.map { it.scope }
         subScopes.asCompositeScope()
-    }
-
-    @Deprecated("Use 'compositeScope()' instead.", replaceWith = ReplaceWith("compositeScope(filter)"))
-    public fun KaScopeContext.getCompositeScope(filter: (KaScopeKind) -> Boolean = { true }): KaScope {
-        return compositeScope(filter)
     }
 }
 
@@ -258,9 +248,6 @@ public interface KaScopeContext : KaLifetimeOwner {
     public val scopes: List<KaScopeWithKind>
 }
 
-@Deprecated("Use 'KaScopeContext' instead.", replaceWith = ReplaceWith("KaScopeContext"))
-public typealias KtScopeContext = KaScopeContext
-
 /**
  * Represents the implicit receiver available in a particular context.
  */
@@ -280,9 +267,6 @@ public interface KaImplicitReceiver : KaLifetimeOwner {
      */
     public val scopeIndexInTower: Int
 }
-
-@Deprecated("Use 'KaImplicitReceiver' instead.", replaceWith = ReplaceWith("KaImplicitReceiver"))
-public typealias KtImplicitReceiver = KaImplicitReceiver
 
 public sealed interface KaScopeKind {
     /**
@@ -390,9 +374,6 @@ public object KaScopeKinds {
     public class ScriptMemberScope(override val indexInTower: Int) : KaScopeKind.ScriptMemberScope
 }
 
-@Deprecated("Use KaScopeKind' instead.", replaceWith = ReplaceWith("KaScopeKind"))
-public typealias KtScopeKind = KaScopeKind
-
 public interface KaScopeWithKind : KaLifetimeOwner {
     public val scope: KaScope
     public val kind: KaScopeKind
@@ -417,6 +398,3 @@ public class KaScopeWithKindImpl(
 
     override fun hashCode(): Int = Objects.hash(backingScope, backingKind)
 }
-
-@Deprecated("Use 'KaScopeWithKind' instead.", replaceWith = ReplaceWith("KaScopeWithKind"))
-public typealias KtScopeWithKind = KaScopeWithKind

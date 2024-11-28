@@ -81,6 +81,7 @@ val propertyBodyResolveStateType = type("fir.declarations", "FirPropertyBodyReso
 val stubReferenceType = generatedType("references.impl", "FirStubReference")
 
 val firBasedSymbolType = type("fir.symbols", "FirBasedSymbol")
+val firThisOwnerSymbolType = type("fir.symbols.impl", "FirThisOwnerSymbol")
 val callableSymbolType = type("fir.symbols.impl", "FirCallableSymbol")
 val constructorSymbolType = type("fir.symbols.impl", "FirConstructorSymbol")
 val functionSymbolType = type("fir.symbols.impl", "FirFunctionSymbol")
@@ -89,6 +90,7 @@ val errorFunctionSymbolType = type("fir.symbols.impl", "FirErrorFunctionSymbol")
 val anonymousFunctionSymbolType = type("fir.symbols.impl", "FirAnonymousFunctionSymbol")
 val variableSymbolType = type("fir.symbols.impl", "FirVariableSymbol")
 val valueParameterSymbolType = type("fir.symbols.impl", "FirValueParameterSymbol")
+val receiverParameterSymbolType = type("fir.symbols.impl", "FirReceiverParameterSymbol")
 val fieldSymbolType = type("fir.symbols.impl", "FirFieldSymbol")
 val propertySymbolType = type("fir.symbols.impl", "FirPropertySymbol")
 val errorPropertySymbolType = type("fir.symbols.impl", "FirErrorPropertySymbol")
@@ -106,6 +108,7 @@ val anonymousInitializerSymbolType = type("fir.symbols.impl", "FirAnonymousIniti
 val danglingModifierSymbolType = type("fir.symbols.impl", "FirDanglingModifierSymbol")
 val fileSymbolType = type("fir.symbols.impl", "FirFileSymbol")
 val scriptSymbolType = type("fir.symbols.impl", "FirScriptSymbol")
+val replSnippetSymbolType = type("fir.symbols.impl", "FirReplSnippetSymbol")
 val codeFragmentSymbolType = type("fir.symbols.impl", "FirCodeFragmentSymbol")
 val emptyArgumentListType = type("fir.expressions", "FirEmptyArgumentList")
 val firScopeProviderType = type("fir.scopes", "FirScopeProvider")
@@ -119,6 +122,7 @@ val coneUnreportedDuplicateDiagnosticType = generatedType("diagnostics", "ConeUn
 val firImplementationDetailType = generatedType("FirImplementationDetail")
 val declarationOriginType = generatedType("declarations", "FirDeclarationOrigin")
 val declarationAttributesType = generatedType("declarations", "FirDeclarationAttributes")
+val valueParameterKindType = generatedType("declarations", "FirValueParameterKind")
 
 val exhaustivenessStatusType = generatedType("expressions", "ExhaustivenessStatus")
 

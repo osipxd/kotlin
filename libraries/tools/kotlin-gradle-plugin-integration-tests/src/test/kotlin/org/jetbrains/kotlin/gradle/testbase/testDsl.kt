@@ -11,6 +11,7 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.tooling.GradleConnector
 import org.gradle.util.GradleVersion
+import org.jetbrains.kotlin.cli.common.CompilerSystemProperties
 import org.jetbrains.kotlin.gradle.model.ModelContainer
 import org.jetbrains.kotlin.gradle.model.ModelFetcherBuildAction
 import org.jetbrains.kotlin.gradle.report.BuildReportType
@@ -246,7 +247,7 @@ fun TestProject.buildAndFail(
 }
 
 fun getGradleUserHome(): File {
-    return testKitDir.toAbsolutePath().toFile().canonicalFile
+    return testKitDir.toAbsolutePath().toFile().normalize().absoluteFile
 }
 
 private fun BuildResult.additionalAssertions(buildOptions: BuildOptions) {
@@ -490,6 +491,19 @@ private fun commonBuildSetup(
         .values
         .sortedWith(compareBy { it.toString() })
         .joinToString(separator = ",")
+
+    val gradleJvmOptions = collectGradleJvmOptions(enableGradleDaemonMemoryLimitInMb, buildOptions.fileLeaksReportFile)
+    val kotlinDaemonJvmArgs = collectKotlinJvmArgs(enableKotlinDaemonMemoryLimitInMb, kotlinDaemonDebugPort)
+
+    /**
+     * Encloses each argument into double quotes to properly handle values with whitespaces based on [enclose] value
+     */
+    fun List<String>.joinToJvmArgsString(enclose: Boolean = true) = if (enclose) {
+        joinToString(separator = "\" \"", prefix = "\"", postfix = "\"")
+    } else {
+        joinToString(separator = " ")
+    }
+
     return buildOptions.toArguments(gradleVersion) + buildArguments + listOfNotNull(
         // Required toolchains should be pre-installed via repo. Tests should not download any JDKs
         "-Porg.gradle.java.installations.auto-download=false",
@@ -500,24 +514,53 @@ private fun commonBuildSetup(
         // Decreasing Gradle daemon idle timeout to 1 min from default 3 hours.
         // This should help with OOM on CI when agents do not have enough free memory available.
         "-Dorg.gradle.daemon.idletimeout=60000",
-        if (enableGradleDaemonMemoryLimitInMb != null) {
-            // Limiting Gradle daemon heap size to reduce memory pressure on CI agents
-            "-Dorg.gradle.jvmargs=-Xmx${enableGradleDaemonMemoryLimitInMb}m"
-        } else null,
-        if (enableKotlinDaemonMemoryLimitInMb != null) {
-            // Limiting Kotlin daemon heap size to reduce memory pressure on CI agents
-            "-Pkotlin.daemon.jvmargs=-Xmx${enableKotlinDaemonMemoryLimitInMb}m"
+        if (gradleJvmOptions.isNotEmpty()) {
+            "-Dorg.gradle.jvmargs=${gradleJvmOptions.joinToJvmArgsString()}"
         } else null,
         if (enableBuildCacheDebug) "-Dorg.gradle.caching.debug=true" else null,
         if (enableBuildScan) "--scan" else null,
-        kotlinDaemonDebugPort?.let {
-            // Note that we pass "server=n", meaning that we'll need to let the debugger start listening at this port first *before* the
-            // Kotlin daemon is launched. That is usually easier than trying to attach the debugger when the Kotlin daemon is launched
-            // (currently if we don't attach fast enough, the Kotlin daemon will fail to launch).
-            "-Pkotlin.daemon.jvmargs=-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=$it"
-        }
+        if (kotlinDaemonJvmArgs.isNotEmpty()) {
+            // do not enclose as KGP transforms arguments like "-Xmx1024m" to -"-Xmx1024m": KT-72870
+            "-Pkotlin.daemon.jvmargs=${kotlinDaemonJvmArgs.joinToJvmArgsString(enclose = false)}"
+        } else null,
+        // Configure a non-default directory to be able to track Kotlin daemons started from the tests
+        // Useful for the tests like KGPDaemonsBaseTest
+        if (buildOptions.customKotlinDaemonRunFilesDirectory != null) {
+            "-D${CompilerSystemProperties.COMPILE_DAEMON_CUSTOM_RUN_FILES_PATH_FOR_TESTS.property}=${buildOptions.customKotlinDaemonRunFilesDirectory.absolutePath}"
+        } else null,
     )
 }
+
+private fun collectGradleJvmOptions(
+    enableGradleDaemonMemoryLimitInMb: Int?,
+    useFileLeakDetectorToFile: File?,
+): List<String> = buildList {
+    if (useFileLeakDetectorToFile != null) {
+        val fileLeakDetector = File("src/test/resources/common/file-leak-detector-1.15-jar-with-dependencies.jar")
+        add("-javaagent:${fileLeakDetector.absolutePath}=trace=${useFileLeakDetectorToFile.absolutePath}")
+    }
+    // Limiting Gradle daemon heap size to reduce memory pressure on CI agents
+    if (enableGradleDaemonMemoryLimitInMb != null) {
+        add("-Xmx${enableGradleDaemonMemoryLimitInMb}m")
+    }
+}
+
+private fun collectKotlinJvmArgs(
+    enableKotlinDaemonMemoryLimitInMb: Int?,
+    kotlinDaemonDebugPort: Int?,
+): List<String> = buildList {
+    if (enableKotlinDaemonMemoryLimitInMb != null) {
+        // Limiting Kotlin daemon heap size to reduce memory pressure on CI agents
+        add("-Xmx${enableKotlinDaemonMemoryLimitInMb}m")
+    }
+    if (kotlinDaemonDebugPort != null) {
+        // Note that we pass "server=n", meaning that we'll need to let the debugger start listening at this port first *before* the
+        // Kotlin daemon is launched. That is usually easier than trying to attach the debugger when the Kotlin daemon is launched
+        // (currently if we don't attach fast enough, the Kotlin daemon will fail to launch).
+        add("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=$kotlinDaemonDebugPort")
+    }
+}
+
 
 private fun TestProject.withBuildSummary(
     buildArguments: List<String>,
@@ -551,6 +594,15 @@ val konanDir
  */
 internal val testKitDir get() = Paths.get(".").resolve("build").resolve("testKitCache")
 
+/**
+ * Use this directory to store some cross-test information, such as [BuildOptions.customKotlinDaemonRunFilesDirectory]
+ *
+ * Should be preferred over [testKitDir] to avoid potetial clashes.
+ *
+ * On changing this directory, update related location in 'cleanTestKitCache' task.
+ */
+internal val kgpTestInfraWorkingDirectory get() = Paths.get(".").resolve("build").resolve("kgpTestInfra")
+
 private val hashAlphabet: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 private fun randomHash(length: Int = 15): String {
     return List(length) { hashAlphabet.random() }.joinToString("")
@@ -582,7 +634,7 @@ internal fun Path.addDefaultSettingsToSettingsGradle(
     gradleVersion: GradleVersion,
     dependencyManagement: DependencyManagement = DependencyManagement.DefaultDependencyManagement(),
     localRepo: Path? = null,
-    projectIsolationEnabled: Boolean = false
+    projectIsolationEnabled: Boolean = false,
 ) {
     addPluginManagementToSettings()
     when (dependencyManagement) {
@@ -981,7 +1033,7 @@ fun KGPBaseTest.defaultLocalRepo(gradleVersion: GradleVersion) = workingDir.reso
 
 fun enableConfigurationCacheSinceGradle(
     sinceGradleVersion: String,
-    currentGradleVersion: GradleVersion
+    currentGradleVersion: GradleVersion,
 ): BuildOptions.ConfigurationCacheValue =
     if (currentGradleVersion >= GradleVersion.version(sinceGradleVersion)) BuildOptions.ConfigurationCacheValue.ENABLED else BuildOptions.ConfigurationCacheValue.AUTO
 

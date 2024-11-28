@@ -10,11 +10,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.TaskProvider
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
-import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptionsDeprecated
-import org.jetbrains.kotlin.gradle.dsl.KotlinTopLevelExtensionConfig
+import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
 import org.jetbrains.kotlin.gradle.tasks.Kapt
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
@@ -40,6 +36,8 @@ interface KotlinJvmFactory {
      *
      * @since 1.7.0
      */
+    @Suppress("DEPRECATION")
+    @Deprecated("Use API to create specific Kotlin extensions such as 'createKotlinJvmExtension()' or 'createKotlinAndroidExtension()'")
     val kotlinExtension: KotlinTopLevelExtensionConfig
 
     /**
@@ -48,6 +46,24 @@ interface KotlinJvmFactory {
      * @since 2.1.0
      */
     val providerFactory: ProviderFactory
+
+    /**
+     * Creates a new instance of [KotlinJvmExtension] that can be used to configure JVM compilation tasks.
+     *
+     * Note that wiring the extension configuration with tasks should be done manually.
+     *
+     * @since 2.1.0
+     */
+    fun createKotlinJvmExtension(): KotlinJvmExtension
+
+    /**
+     * Creates a new instance of [KotlinAndroidExtension] that can be used to configure Android compilation tasks.
+     *
+     * Note that wiring the extension configuration with tasks should be done manually.
+     *
+     * @since 2.1.0
+     */
+    fun createKotlinAndroidExtension(): KotlinAndroidExtension
 
     /**
      * Creates a new instance of [KotlinJvmOptionsDeprecated] that can be used to configure JVM or Android-specific compilations.
@@ -76,8 +92,7 @@ interface KotlinJvmFactory {
      * @since 1.7.0
      */
     @Deprecated(
-        message = "Replaced by registerKotlinJvmCompileTask with module name",
-        replaceWith = ReplaceWith("registerKotlinJvmCompileTask(taskName, TODO(), TODO())")
+        message = "Replaced with 'registerKotlinJvmCompileTask(taskName, compilerOptions, explicitApiMode)'",
     )
     fun registerKotlinJvmCompileTask(taskName: String): TaskProvider<out KotlinJvmCompile>
 
@@ -90,8 +105,7 @@ interface KotlinJvmFactory {
      * @since 1.9.20
      */
     @Deprecated(
-        message = "Replaced by registerKotlinJvmCompileTask with compiler options and explicit API mode",
-        replaceWith = ReplaceWith("registerKotlinJvmCompileTask(taskName, TODO(), TODO())")
+        message = "Replaced with 'registerKotlinJvmCompileTask(taskName, compilerOptions, explicitApiMode)'",
     )
     fun registerKotlinJvmCompileTask(taskName: String, moduleName: String): TaskProvider<out KotlinJvmCompile>
 
@@ -136,7 +150,28 @@ interface KotlinJvmFactory {
      *
      * @since 1.7.0
      */
+    @Deprecated("Replaced with 'registerKaptGenerateStubsTask(taskName, compileTask, kaptExtension, explicitApiMode)'")
     fun registerKaptGenerateStubsTask(taskName: String): TaskProvider<out KaptGenerateStubs>
+
+    /**
+     * Registers a new kapt generation task with the given [taskName].
+     *
+     * This task creates Java source stubs from Kotlin sources.
+     * It is designed to be used together with the [Kapt] task. Run this task before the [Kapt] task.
+     *
+     * @param taskName task name to set
+     * @param compileTask related [KotlinJvmCompile] task that is part of the same compilation unit
+     * @param kaptExtension an instance of [KaptExtensionConfig]
+     * @param explicitApiMode [ExplicitApiMode] for this task
+     *
+     * @since 2.1.0
+     */
+    fun registerKaptGenerateStubsTask(
+        taskName: String,
+        compileTask: TaskProvider<out KotlinJvmCompile>,
+        kaptExtension: KaptExtensionConfig,
+        explicitApiMode: Provider<ExplicitApiMode> = providerFactory.provider { ExplicitApiMode.Disabled },
+    ): TaskProvider<out KaptGenerateStubs>
 
     /**
      * Registers a new kapt task with the given [taskName].
@@ -145,7 +180,23 @@ interface KotlinJvmFactory {
      *
      * @since 1.7.0
      */
+    @Deprecated("Replaced with 'registerKaptTask(taskName, kaptExtension)'")
     fun registerKaptTask(taskName: String): TaskProvider<out Kapt>
+
+    /**
+     * Registers a new kapt task with the given [taskName].
+     *
+     * This task runs annotation processing.
+     *
+     * @param taskName task name to set
+     * @param kaptExtension an instance of [KaptExtensionConfig]
+     *
+     * @since 2.1.0
+     */
+    fun registerKaptTask(
+        taskName: String,
+        kaptExtension: KaptExtensionConfig,
+    ): TaskProvider<out Kapt>
 
     /**
      * Adds a compiler plugin dependency to this project.

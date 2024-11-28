@@ -8,11 +8,8 @@ package org.jetbrains.kotlin.analysis.api.fir.references
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.TokenSet
 import org.jetbrains.kotlin.KtFakeSourceElementKind
-import org.jetbrains.kotlin.analysis.api.fir.KaFirSession
-import org.jetbrains.kotlin.analysis.api.fir.KaSymbolByFirBuilder
-import org.jetbrains.kotlin.analysis.api.fir.buildSymbol
-import org.jetbrains.kotlin.analysis.api.fir.getCandidateSymbols
-import org.jetbrains.kotlin.analysis.api.fir.unwrapSafeCall
+import org.jetbrains.kotlin.analysis.api.fir.*
+import org.jetbrains.kotlin.analysis.api.fir.references.FirReferenceResolveHelper.getSymbolsByResolvedImport
 import org.jetbrains.kotlin.analysis.api.fir.utils.processEqualsFunctions
 import org.jetbrains.kotlin.analysis.api.symbols.KaPackageSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
@@ -24,6 +21,7 @@ import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.checkers.getContainingClassSymbol
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.buildImport
+import org.jetbrains.kotlin.fir.declarations.builder.buildResolvedImport
 import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.declarations.utils.isCompanion
 import org.jetbrains.kotlin.fir.declarations.utils.isLocal
@@ -35,12 +33,12 @@ import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeUnmatchedTypeArgumentsError
 import org.jetbrains.kotlin.fir.resolve.toRegularClassSymbol
 import org.jetbrains.kotlin.fir.resolve.toSymbol
-import org.jetbrains.kotlin.fir.resolve.transformers.FirImportResolveTransformer
 import org.jetbrains.kotlin.fir.scopes.impl.FirExplicitSimpleImportingScope
 import org.jetbrains.kotlin.fir.scopes.processClassifiersByName
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirReceiverParameterSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.ClassId
@@ -116,12 +114,17 @@ internal object FirReferenceResolveHelper {
                 listOfNotNull(resolvedSymbol.buildSymbol(symbolBuilder))
             }
             is FirThisReference -> {
-                val boundSymbol = boundSymbol
-                when {
-                    !isInLabelReference && boundSymbol is FirCallableSymbol<*> ->
-                        symbolBuilder.callableBuilder.buildExtensionReceiverSymbol(boundSymbol)
-                    else -> boundSymbol?.fir?.buildSymbol(symbolBuilder)
-                }.let { listOfNotNull(it) }
+                if (isInLabelReference) {
+                    listOfNotNull(
+                        when (val boundSymbol = boundSymbol) {
+                            is FirReceiverParameterSymbol -> boundSymbol.containingDeclarationSymbol
+                            is FirValueParameterSymbol -> boundSymbol.containingDeclarationSymbol
+                            else -> boundSymbol as FirBasedSymbol<*>?
+                        }?.buildSymbol(symbolBuilder)
+                    )
+                } else {
+                    listOfNotNull((boundSymbol as FirBasedSymbol<*>?)?.buildSymbol(symbolBuilder))
+                }
             }
             is FirSuperReference -> {
                 listOfNotNull((superTypeRef as? FirResolvedTypeRef)?.toTargetSymbol(session, symbolBuilder))
@@ -470,22 +473,49 @@ internal object FirReferenceResolveHelper {
         return listOf(symbolBuilder.buildSymbol(fir.symbol))
     }
 
-
+    /**
+     * Returns a list of [KaSymbol]s that can be resolved from the given [FirResolvedImport].
+     *
+     * [getSymbolsByResolvedImport] only covers simple imports, but not star imports.
+     */
     private fun getSymbolsByResolvedImport(
         expression: KtSimpleNameExpression,
         builder: KaSymbolByFirBuilder,
         fir: FirResolvedImport,
         session: FirSession,
     ): List<KaSymbol> {
-        val fullFqName = fir.importedFqName
+        // If the selected `FqName` is a known package name, we don't need to search for classes or callables. We only start resolution of
+        // classes/callables at the boundary between the package FQ name and class/callable names.
         val selectedFqName = getQualifierSelected(expression, forQualifiedType = false)
+        val packageFqName = fir.packageFqName
+        if (packageFqName.startsWith(selectedFqName)) {
+            return listOf(builder.createPackageSymbol(selectedFqName))
+        }
+
+        val fullFqName = fir.importedFqName
         val rawImportForSelectedFqName = buildImport {
             importedFqName = selectedFqName
             isAllUnder = false
         }
-        val resolvedImport = FirImportResolveTransformer(session).transformImport(rawImportForSelectedFqName, null) as FirResolvedImport
+
+        // For e.g. a selected name `org.example.MyClass.NestedClass`, we need `MyClass` for the relative parent class name, as we are
+        // always dealing with simple imports.
+        val parentClassNames = selectedFqName.pathSegments()
+            .slice(packageFqName.pathSegments().size until (selectedFqName.pathSegments().size - 1))
+            .map(Name::asString)
+            .takeIf { it.isNotEmpty() }
+
+        val resolvedImport = buildResolvedImport {
+            delegate = rawImportForSelectedFqName
+            this.packageFqName = packageFqName
+            this.relativeParentClassName = parentClassNames?.let { FqName.fromSegments(it) }
+        }
+
         val scope = FirExplicitSimpleImportingScope(listOf(resolvedImport), session, ScopeSession())
         val selectedName = resolvedImport.importedName ?: return emptyList()
+
+        // We don't need to build a package symbol here because the selected `FqName` is definitely a class or callable name. If it was not,
+        // the package name check above would have caught it.
         return buildList {
             if (selectedFqName == fullFqName) {
                 // callables cannot be used as receiver expressions in imports
@@ -493,7 +523,6 @@ internal object FirReferenceResolveHelper {
                 scope.processPropertiesByName(selectedName) { add(it.fir.buildSymbol(builder)) }
             }
             scope.processClassifiersByName(selectedName) { addIfNotNull(it.fir.buildSymbol(builder)) }
-            builder.createPackageSymbolIfOneExists(selectedFqName)?.let(::add)
         }
     }
 
@@ -728,41 +757,6 @@ internal object FirReferenceResolveHelper {
     ): Collection<KaSymbol> {
         val type = fir.resolvedType
         return listOfNotNull(type.toTargetSymbol(session, symbolBuilder))
-    }
-
-    private fun findPossibleTypeQualifier(
-        qualifier: KtSimpleNameExpression,
-        wholeTypeFir: FirResolvedTypeRef,
-    ): ClassId? {
-        val qualifierToResolve = qualifier.parent as KtUserType
-        // FIXME make it work with generics in functional types (like () -> AA.BB<CC, AA.DD>)
-        val wholeType = when (val psi = wholeTypeFir.psi) {
-            is KtUserType -> psi
-            is KtTypeReference -> psi.typeElement?.unwrapNullability() as? KtUserType
-            else -> null
-        } ?: return null
-
-        val qualifiersToDrop = countQualifiersToDrop(wholeType, qualifierToResolve)
-        return wholeTypeFir.coneType.classId?.dropLastNestedClasses(qualifiersToDrop)
-    }
-
-    /**
-     * @return class id without [classesToDrop] last nested classes, or `null` if [classesToDrop] is too big.
-     *
-     * Example: `foo.bar.Baz.Inner` with 1 dropped class is `foo.bar.Baz`, and with 2 dropped class is `null`.
-     */
-    private fun ClassId.dropLastNestedClasses(classesToDrop: Int) =
-        generateSequence(this) { it.outerClassId }.drop(classesToDrop).firstOrNull()
-
-    /**
-     * @return How many qualifiers needs to be dropped from [wholeType] to get [nestedType].
-     *
-     * Example: to get `foo.bar` from `foo.bar.Baz.Inner`, you need to drop 2 qualifiers (`Inner` and `Baz`).
-     */
-    private fun countQualifiersToDrop(wholeType: KtUserType, nestedType: KtUserType): Int {
-        val qualifierIndex = generateSequence(wholeType) { it.qualifier }.indexOf(nestedType)
-        require(qualifierIndex != -1) { "Whole type $wholeType should contain $nestedType, but it didn't" }
-        return qualifierIndex
     }
 
     private val syntheticTokenTypes = TokenSet.create(KtTokens.ELVIS, KtTokens.EXCLEXCL)

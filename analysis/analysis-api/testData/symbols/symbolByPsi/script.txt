@@ -31,6 +31,7 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: KaFileSymbol(script.kts)
   getContainingJvmClassName: null
+  canBeOperator: false
   getContainingModule: KaScriptModule "Script script.kts"
   deprecationStatus: null
 
@@ -99,6 +100,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -162,6 +164,7 @@ KaNamedFunctionSymbol:
     type: C
   getContainingFileSymbol: KaFileSymbol(script.kts)
   getContainingJvmClassName: C
+  canBeOperator: false
   getContainingModule: KaScriptModule "Script script.kts"
   deprecationStatus: null
 
@@ -234,6 +237,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false

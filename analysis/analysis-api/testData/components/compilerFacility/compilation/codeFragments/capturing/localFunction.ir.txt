@@ -1,6 +1,6 @@
 MODULE_FRAGMENT
   FILE fqName:<root> fileName:context.kt
-    FUN name:call visibility:local modality:FINAL <> (a:kotlin.Int, b:kotlin.String) returnType:kotlin.Unit
+    FUN FILLED_FOR_UNBOUND_SYMBOL name:call visibility:local modality:FINAL <> (a:kotlin.Int, b:kotlin.String) returnType:kotlin.Unit
       VALUE_PARAMETER name:a index:0 type:kotlin.Int
       VALUE_PARAMETER name:b index:1 type:kotlin.String
     FUN name:test visibility:public modality:FINAL <> () returnType:kotlin.Unit

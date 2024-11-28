@@ -21,10 +21,8 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.types.impl.IrStarProjectionImpl
 import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
-import org.jetbrains.kotlin.ir.util.isLocal
-import org.jetbrains.kotlin.ir.util.render
-import org.jetbrains.kotlin.ir.util.unexpectedSymbolKind
-import org.jetbrains.kotlin.ir.util.defaultValueForType
+import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.util.isNullable
 
 /**
  * Perform as much type erasure as is significant for JVM signature generation.
@@ -142,7 +140,7 @@ fun IrType.isMultiFieldValueClassType(): Boolean = erasedUpperBound.isMultiField
 
 fun IrType.isValueClassType(): Boolean = erasedUpperBound.isValue
 
-val IrType.upperBound: IrType
+val IrType.upperBound: IrSimpleType
     get() = erasedUpperBound.symbol.starProjectedType
 
 fun IrType.eraseToScope(scopeOwner: IrTypeParametersContainer): IrType =

@@ -13,16 +13,16 @@ import org.jetbrains.kotlin.backend.jvm.createJvmFileFacadeClass
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrMemberAccessExpression
-import org.jetbrains.kotlin.ir.util.createParameterDeclarations
+import org.jetbrains.kotlin.ir.util.createThisReceiverParameter
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.load.kotlin.FacadeClassSource
 
-@PhaseDescription(
-    name = "ExternalPackageParentPatcherLowering",
-    description = "Replace parent from package fragment to FileKt class for top-level callables (K2 only)"
-)
+/**
+ * Replaces parent from package fragment to FileKt class for top-level callables (K2 only).
+ */
+@PhaseDescription(name = "ExternalPackageParentPatcherLowering")
 internal class ExternalPackageParentPatcherLowering(val context: JvmBackendContext) : FileLoweringPass {
     override fun lower(irFile: IrFile) {
         if (context.config.useFir) {
@@ -59,7 +59,7 @@ internal class ExternalPackageParentPatcherLowering(val context: JvmBackendConte
                 deserializedSource,
                 deserializeIr = { irClass -> deserializeTopLevelClass(irClass) }
             ).also {
-                it.createParameterDeclarations()
+                it.createThisReceiverParameter()
                 it.classNameOverride = facadeName
             }
         }

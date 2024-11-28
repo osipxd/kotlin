@@ -1,4 +1,7 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // LANGUAGE: -SuspendFunctionAsSupertype
+// IGNORE_PHASE_VERIFICATION: invalid code inside annotations
+
 typealias Action = () -> Unit
 
 interface SAM {

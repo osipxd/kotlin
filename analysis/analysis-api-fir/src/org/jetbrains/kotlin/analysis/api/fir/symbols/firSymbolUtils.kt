@@ -73,10 +73,10 @@ internal fun FirRegularClassSymbol.createContextReceivers(
 
 private fun createContextReceiver(
     builder: KaSymbolByFirBuilder,
-    contextReceiver: FirContextReceiver
+    contextReceiver: FirValueParameter
 ) = KaBaseContextReceiver(
-    builder.typeBuilder.buildKtType(contextReceiver.typeRef),
-    contextReceiver.customLabelName,
+    builder.typeBuilder.buildKtType(contextReceiver.returnTypeRef),
+    contextReceiver.name,
     builder.token
 )
 

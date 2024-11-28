@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.test.directives.LanguageSettingsDirectives
 import org.jetbrains.kotlin.test.frontend.classic.ClassicFrontendOutputArtifact
 import org.jetbrains.kotlin.test.frontend.fir.FirOutputArtifact
 import org.jetbrains.kotlin.test.model.*
+import org.jetbrains.kotlin.test.services.AdditionalSourceProvider
 import org.jetbrains.kotlin.test.services.configuration.CommonEnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.configuration.JvmEnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.configuration.JvmForeignAnnotationsConfigurator
@@ -32,9 +33,10 @@ fun <F : ResultingArtifact.FrontendOutput<F>, B : ResultingArtifact.BackendInput
     targetFrontend: FrontendKind<F>,
     frontendFacade: Constructor<FrontendFacade<F>>,
     frontendToBackendConverter: Constructor<Frontend2BackendConverter<F, B>>,
-    commonServicesConfiguration: (FrontendKind<*>) -> Unit = { commonServicesConfigurationForCodegenTest(it) }
+    additionalSourceProvider: Constructor<AdditionalSourceProvider>? = null,
 ) {
-    commonServicesConfiguration(targetFrontend)
+    commonServicesConfigurationForCodegenAndDebugTest(targetFrontend)
+    additionalSourceProvider?.let { useAdditionalSourceProviders(it) }
     facadeStep(frontendFacade)
     classicFrontendHandlersStep()
     firHandlersStep()
@@ -45,6 +47,21 @@ fun <F : ResultingArtifact.FrontendOutput<F>, B : ResultingArtifact.BackendInput
 }
 
 fun TestConfigurationBuilder.commonServicesConfigurationForCodegenAndDebugTest(targetFrontend: FrontendKind<*>) {
+    useConfigurators(
+        ::CommonEnvironmentConfigurator,
+        ::JvmEnvironmentConfigurator,
+        ::ScriptingEnvironmentConfigurator,
+    )
+
+    useAdditionalSourceProviders(
+        ::AdditionalDiagnosticsSourceFilesProvider,
+        ::CoroutineHelpersSourceFilesProvider,
+    )
+
+    commonServicesMinimalSettingsConfigurationForCodegenAndDebugTest(targetFrontend)
+}
+
+fun TestConfigurationBuilder.commonServicesMinimalSettingsConfigurationForCodegenAndDebugTest(targetFrontend: FrontendKind<*>) {
     globalDefaults {
         frontend = targetFrontend
         targetPlatform = JvmPlatforms.defaultJvmPlatform
@@ -56,30 +73,11 @@ fun TestConfigurationBuilder.commonServicesConfigurationForCodegenAndDebugTest(t
     }
 
     useConfigurators(
-        ::CommonEnvironmentConfigurator,
-        ::JvmEnvironmentConfigurator,
-        ::ScriptingEnvironmentConfigurator,
         ::JvmForeignAnnotationsConfigurator,
     )
 
     useAdditionalSourceProviders(
-        ::AdditionalDiagnosticsSourceFilesProvider,
-        ::CoroutineHelpersSourceFilesProvider,
-        ::CodegenHelpersSourceFilesProvider
-    )
-}
-
-fun TestConfigurationBuilder.commonServicesConfigurationForCodegenTest(targetFrontend: FrontendKind<*>) {
-    commonServicesConfigurationForCodegenAndDebugTest(targetFrontend)
-    useAdditionalSourceProviders(
-        ::MainFunctionForBlackBoxTestsSourceProvider
-    )
-}
-
-fun TestConfigurationBuilder.commonServicesConfigurationForDebugTest(targetFrontend: FrontendKind<*>) {
-    commonServicesConfigurationForCodegenAndDebugTest(targetFrontend)
-    useAdditionalSourceProviders(
-        ::MainFunctionForDebugTestsSourceProvider
+        ::CodegenHelpersSourceFilesProvider,
     )
 }
 
@@ -110,7 +108,7 @@ fun TestConfigurationBuilder.useInlineScopesNumbers() {
     }
 }
 
-fun TestConfigurationBuilder.configureDumpHandlersForCodegenTest() {
+fun TestConfigurationBuilder.configureDumpHandlersForCodegenTest(includeAllDumpHandlers: Boolean = true) {
     configureIrHandlersStep {
         useHandlers(
             ::IrTreeVerifierHandler,
@@ -119,7 +117,9 @@ fun TestConfigurationBuilder.configureDumpHandlersForCodegenTest() {
         )
     }
     configureJvmArtifactsHandlersStep {
-        useHandlers(::BytecodeListingHandler)
+        if (includeAllDumpHandlers) {
+            useHandlers(::BytecodeListingHandler)
+        }
     }
 }
 

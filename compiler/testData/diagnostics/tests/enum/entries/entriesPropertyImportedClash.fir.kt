@@ -1,4 +1,5 @@
-// LANGUAGE: -EnumEntries, -PrioritizedEnumEntries
+// RUN_PIPELINE_TILL: BACKEND
+// LANGUAGE: -EnumEntries -PrioritizedEnumEntries
 // WITH_STDLIB
 
 package foo

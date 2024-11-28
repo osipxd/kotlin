@@ -63,6 +63,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -122,6 +123,7 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: KaFileSymbol(Foo.kt)
   getContainingJvmClassName: test.FooKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 
@@ -190,6 +192,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -249,6 +252,7 @@ KaNamedFunctionSymbol:
   visibility: INTERNAL
   getContainingFileSymbol: KaFileSymbol(Foo.kt)
   getContainingJvmClassName: test.FooKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 
@@ -317,6 +321,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -376,6 +381,7 @@ KaNamedFunctionSymbol:
   visibility: PRIVATE
   getContainingFileSymbol: KaFileSymbol(Foo.kt)
   getContainingJvmClassName: test.FooKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 
@@ -444,6 +450,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -503,6 +510,7 @@ KaNamedFunctionSymbol:
   visibility: PUBLIC
   getContainingFileSymbol: KaFileSymbol(Bar.kt)
   getContainingJvmClassName: test.BarKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 
@@ -571,6 +579,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -630,6 +639,7 @@ KaNamedFunctionSymbol:
   visibility: INTERNAL
   getContainingFileSymbol: KaFileSymbol(Bar.kt)
   getContainingJvmClassName: test.BarKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null
 
@@ -698,6 +708,7 @@ KaKotlinPropertySymbol:
   isDelegatedProperty: false
   isExpect: false
   isExtension: false
+  isExternal: false
   isFromPrimaryConstructor: false
   isLateInit: false
   isOverride: false
@@ -757,5 +768,6 @@ KaNamedFunctionSymbol:
   visibility: PRIVATE
   getContainingFileSymbol: KaFileSymbol(Bar.kt)
   getContainingJvmClassName: test.BarKt
+  canBeOperator: false
   getContainingModule: KaSourceModule "Sources of main"
   deprecationStatus: null

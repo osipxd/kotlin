@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // LANGUAGE: -ProperFieldAccessGenerationForFieldAccessShadowedByKotlinProperty
 // ISSUE: KT-56386
 
@@ -8,7 +9,7 @@ public class Jaba {
 
 // FILE: test.kt
 class My : Jaba() {
-    private val a: String = "FAIL"
+    private val <!PROPERTY_HIDES_JAVA_FIELD!>a<!>: String = "FAIL"
 
     operator fun plus(my: My) = my
 }

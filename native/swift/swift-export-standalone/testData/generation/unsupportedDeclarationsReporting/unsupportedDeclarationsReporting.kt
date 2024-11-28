@@ -11,13 +11,9 @@ class Foo {
 
     val Unit.extPropMember
         get() = Unit
-
-    fun Unit.extFunMember() {}
 }
 
 interface MyInterface
-
-fun Foo.ext() {}
 
 val Foo.extProp
     get() = Unit
@@ -26,8 +22,6 @@ inline fun foo() {}
 
 // FILE: packaged.kt
 package a.b.c
-
-abstract class A
 
 enum class E {
     A, B, C

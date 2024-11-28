@@ -1,3 +1,5 @@
+@file:kotlin.Suppress("DEPRECATION_ERROR")
+
 import kotlin.native.internal.ExportedBridge
 import kotlinx.cinterop.*
 
@@ -15,7 +17,7 @@ public fun __root___getString(): kotlin.native.internal.NativePtr {
 
 @ExportedBridge("__root___setString__TypesOfArguments__Swift_String__")
 public fun __root___setString__TypesOfArguments__Swift_String__(value: kotlin.native.internal.NativePtr): Unit {
-    val __value = interpretObjCPointer<String>(value)
+    val __value = interpretObjCPointer<kotlin.String>(value)
     setString(__value)
 }
 
@@ -27,7 +29,7 @@ public fun __root___string_get(): kotlin.native.internal.NativePtr {
 
 @ExportedBridge("__root___string_set__TypesOfArguments__Swift_String__")
 public fun __root___string_set__TypesOfArguments__Swift_String__(newValue: kotlin.native.internal.NativePtr): Unit {
-    val __newValue = interpretObjCPointer<String>(newValue)
+    val __newValue = interpretObjCPointer<kotlin.String>(newValue)
     string = __newValue
 }
 

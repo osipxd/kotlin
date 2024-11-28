@@ -14,11 +14,12 @@ import org.jetbrains.kotlin.fir.SessionConfiguration
 import org.jetbrains.kotlin.fir.symbols.FirLazyDeclarationResolver
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.test.*
+import org.jetbrains.kotlin.test.backend.handlers.NoFirCompilationErrorsHandler
+import org.jetbrains.kotlin.test.backend.handlers.NoLightTreeParsingErrorsHandler
+import org.jetbrains.kotlin.test.backend.handlers.NoPsiParsingErrorsHandler
+import org.jetbrains.kotlin.test.backend.handlers.testTierExceptionInverter
 import org.jetbrains.kotlin.test.backend.ir.IrDiagnosticsHandler
-import org.jetbrains.kotlin.test.builders.TestConfigurationBuilder
-import org.jetbrains.kotlin.test.builders.configureFirHandlersStep
-import org.jetbrains.kotlin.test.builders.firHandlersStep
-import org.jetbrains.kotlin.test.builders.irHandlersStep
+import org.jetbrains.kotlin.test.builders.*
 import org.jetbrains.kotlin.test.directives.CodegenTestDirectives
 import org.jetbrains.kotlin.test.directives.ConfigurationDirectives.DISABLE_TYPEALIAS_EXPANSION
 import org.jetbrains.kotlin.test.directives.ConfigurationDirectives.WITH_STDLIB
@@ -40,10 +41,7 @@ import org.jetbrains.kotlin.test.directives.configureFirParser
 import org.jetbrains.kotlin.test.frontend.classic.handlers.FirTestDataConsistencyHandler
 import org.jetbrains.kotlin.test.frontend.fir.*
 import org.jetbrains.kotlin.test.frontend.fir.handlers.*
-import org.jetbrains.kotlin.test.model.AfterAnalysisChecker
-import org.jetbrains.kotlin.test.model.DependencyKind
-import org.jetbrains.kotlin.test.model.FrontendFacade
-import org.jetbrains.kotlin.test.model.FrontendKinds
+import org.jetbrains.kotlin.test.model.*
 import org.jetbrains.kotlin.test.services.*
 import org.jetbrains.kotlin.test.services.configuration.CommonEnvironmentConfigurator
 import org.jetbrains.kotlin.test.services.configuration.JvmEnvironmentConfigurator
@@ -55,11 +53,27 @@ import org.jetbrains.kotlin.test.services.sourceProviders.AdditionalDiagnosticsS
 import org.jetbrains.kotlin.test.services.sourceProviders.CoroutineHelpersSourceFilesProvider
 import org.jetbrains.kotlin.utils.bind
 
+fun TestConfigurationBuilder.configureDiagnosticTest(parser: FirParser) {
+    baseFirDiagnosticTestConfiguration()
+    enableLazyResolvePhaseChecking()
+    configureFirParser(parser)
+
+    useAdditionalService(::LibraryProvider)
+}
+
 abstract class AbstractFirDiagnosticTestBase(val parser: FirParser) : AbstractKotlinCompilerTest() {
     override fun TestConfigurationBuilder.configuration() {
-        baseFirDiagnosticTestConfiguration()
-        enableLazyResolvePhaseChecking()
-        configureFirParser(parser)
+        configureDiagnosticTest(parser)
+
+        forTestsMatching(
+            "compiler/testData/diagnostics/tests/*" or
+                    "compiler/testData/diagnostics/testsWithStdLib/*" or
+                    "compiler/fir/analysis-tests/testData/resolve/*" or
+                    "compiler/fir/analysis-tests/testData/resolveWithStdlib/*" or
+                    "compiler/fir/analysis-tests/testData/resolveFreezesIDE/*"
+        ) {
+            useAfterAnalysisCheckers(::PartialTestTierChecker)
+        }
     }
 }
 
@@ -91,6 +105,46 @@ abstract class AbstractFirLightTreeDiagnosticsWithoutAliasExpansionTest : Abstra
     }
 }
 
+abstract class AbstractTieredFrontendJvmTest(val parser: FirParser) : AbstractKotlinCompilerTest() {
+    override fun TestConfigurationBuilder.configuration() {
+        configureTieredFrontendJvmTest(parser)
+
+        val (handlers, checker) = listOfNotNull(
+            // Makes the FIR tier fail if there are errors; otherwise, it would fail on meta-infos mismatch.
+            // But it's important to continue processing next modules in diagnostic tests, otherwise
+            // we won't collect their meta-infos and see a difference.
+            { NoFirCompilationErrorsHandler(it, failureDisablesNextSteps = false) },
+            // `<SYNTAX>` is reported separately
+            when (parser) {
+                FirParser.LightTree -> ::NoLightTreeParsingErrorsHandler
+                FirParser.Psi -> ::NoPsiParsingErrorsHandler
+            },
+        ).toTieredHandlersAndCheckerOf(TestTierLabel.FRONTEND)
+
+        configureFirHandlersStep { useHandlers(handlers) }
+        useAfterAnalysisCheckers(checker)
+    }
+}
+
+fun <A : ResultingArtifact<A>> List<Constructor<AnalysisHandler<A>>>.toTieredHandlersAndCheckerOf(
+    tier: TestTierLabel,
+): Pair<List<Constructor<AnalysisHandler<A>>>, Constructor<AfterAnalysisChecker>> {
+    val invertedHandlers = map { testTierExceptionInverter(tier, it) }
+    val checker = { it: TestServices -> TestTierChecker(tier, numberOfMarkerHandlersPerModule = invertedHandlers.size, it) }
+    return invertedHandlers to checker
+}
+
+fun TestConfigurationBuilder.configureTieredFrontendJvmTest(parser: FirParser) {
+    configureDiagnosticTest(parser)
+
+    if (parser == FirParser.LightTree) {
+        useAdditionalService { LightTreeSyntaxDiagnosticsReporterHolder() }
+    }
+}
+
+open class AbstractTieredFrontendJvmLightTreeTest : AbstractTieredFrontendJvmTest(FirParser.LightTree)
+open class AbstractTieredFrontendJvmPsiTest : AbstractTieredFrontendJvmTest(FirParser.Psi)
+
 class LightTreeSyntaxDiagnosticsReporterHolder : TestService {
     val reporter = SimpleDiagnosticsCollector(BaseDiagnosticsCollector.RawReporter.DO_NOTHING)
 }
@@ -111,21 +165,30 @@ abstract class AbstractFirWithActualizerDiagnosticsTest(val parser: FirParser) :
         configureFirParser(parser)
         baseFirDiagnosticTestConfiguration()
 
-        facadeStep(::Fir2IrResultsConverter)
-        irHandlersStep {
-            useHandlers(
-                ::IrDiagnosticsHandler
-            )
+        firHandlersStep {
+            useHandlers(::NoFirCompilationErrorsHandler)
         }
 
+        facadeStep(::Fir2IrResultsConverter)
         useAdditionalService(::LibraryProvider)
 
         @OptIn(TestInfrastructureInternals::class)
-        useModuleStructureTransformers(DuplicateFileNameChecker, PlatformModuleProvider)
+        useModuleStructureTransformers(PlatformModuleProvider)
+
+        configureIrActualizerDiagnosticsTest()
     }
 }
 
-open class AbstractFirPsiWithActualizerDiagnosticsTest : AbstractFirWithActualizerDiagnosticsTest(FirParser.Psi)
+fun TestConfigurationBuilder.configureIrActualizerDiagnosticsTest() {
+    irHandlersStep {
+        useHandlers(
+            ::IrDiagnosticsHandler
+        )
+    }
+
+    @OptIn(TestInfrastructureInternals::class)
+    useModuleStructureTransformers(DuplicateFileNameChecker)
+}
 
 open class AbstractFirLightTreeWithActualizerDiagnosticsTest : AbstractFirWithActualizerDiagnosticsTest(FirParser.LightTree)
 open class AbstractFirLightTreeWithActualizerDiagnosticsWithLatestLanguageVersionTest : AbstractFirLightTreeWithActualizerDiagnosticsTest() {
@@ -160,6 +223,10 @@ fun TestConfigurationBuilder.baseFirDiagnosticTestConfiguration(
         dependencyKind = DependencyKind.Source
     }
 
+    defaultDirectives {
+        LANGUAGE + "+EnableDfaWarningsInK2"
+    }
+
     enableMetaInfoHandler()
 
     useConfigurators(
@@ -187,7 +254,12 @@ fun TestConfigurationBuilder.baseFirDiagnosticTestConfiguration(
     }
 
     useMetaInfoProcessors(::PsiLightTreeMetaInfoProcessor)
+    configureCommonDiagnosticTestPaths(testDataConsistencyHandler)
+}
 
+fun TestConfigurationBuilder.configureCommonDiagnosticTestPaths(
+    testDataConsistencyHandler: Constructor<AfterAnalysisChecker> = ::FirTestDataConsistencyHandler,
+) {
     forTestsMatching("compiler/testData/diagnostics/*") {
         configurationForClassicAndFirTestsAlongside(testDataConsistencyHandler)
     }
@@ -279,8 +351,10 @@ fun TestConfigurationBuilder.baseFirDiagnosticTestConfiguration(
         }
     }
 
-    defaultDirectives {
-        LANGUAGE + "+EnableDfaWarningsInK2"
+    forTestsMatching("compiler/fir/analysis-tests/testData/resolve/nestedTypeAliases/*") {
+        defaultDirectives {
+            LANGUAGE + "+NestedTypeAliases"
+        }
     }
 }
 

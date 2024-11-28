@@ -33,6 +33,18 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
   }
 
   @Test
+  @TestMetadata("actualDeprecated.kt")
+  public void testActualDeprecated() {
+    runTest("compiler/testData/diagnostics/tests/multiplatform/actualDeprecated.kt");
+  }
+
+  @Test
+  @TestMetadata("actualExternalInJs.kt")
+  public void testActualExternalInJs() {
+    runTest("compiler/testData/diagnostics/tests/multiplatform/actualExternalInJs.kt");
+  }
+
+  @Test
   @TestMetadata("actualMissingConstructor.kt")
   public void testActualMissingConstructor() {
     runTest("compiler/testData/diagnostics/tests/multiplatform/actualMissingConstructor.kt");
@@ -158,6 +170,12 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
   }
 
   @Test
+  @TestMetadata("collections.kt")
+  public void testCollections() {
+    runTest("compiler/testData/diagnostics/tests/multiplatform/collections.kt");
+  }
+
+  @Test
   @TestMetadata("delegationToExpectInterfaceMixedWithInheritance.kt")
   public void testDelegationToExpectInterfaceMixedWithInheritance() {
     runTest("compiler/testData/diagnostics/tests/multiplatform/delegationToExpectInterfaceMixedWithInheritance.kt");
@@ -200,6 +218,12 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
   }
 
   @Test
+  @TestMetadata("duplicateSupertype.kt")
+  public void testDuplicateSupertype() {
+    runTest("compiler/testData/diagnostics/tests/multiplatform/duplicateSupertype.kt");
+  }
+
+  @Test
   @TestMetadata("expectAbstractToString.kt")
   public void testExpectAbstractToString() {
     runTest("compiler/testData/diagnostics/tests/multiplatform/expectAbstractToString.kt");
@@ -215,6 +239,12 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
   @TestMetadata("expectActualClassesAreInBeta_suppressWarningWithLv.kt")
   public void testExpectActualClassesAreInBeta_suppressWarningWithLv() {
     runTest("compiler/testData/diagnostics/tests/multiplatform/expectActualClassesAreInBeta_suppressWarningWithLv.kt");
+  }
+
+  @Test
+  @TestMetadata("expectActualExtensionOverride.kt")
+  public void testExpectActualExtensionOverride() {
+    runTest("compiler/testData/diagnostics/tests/multiplatform/expectActualExtensionOverride.kt");
   }
 
   @Test
@@ -356,6 +386,12 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
   }
 
   @Test
+  @TestMetadata("jvmOverloads.kt")
+  public void testJvmOverloads() {
+    runTest("compiler/testData/diagnostics/tests/multiplatform/jvmOverloads.kt");
+  }
+
+  @Test
   @TestMetadata("kt54827.kt")
   public void testKt54827() {
     runTest("compiler/testData/diagnostics/tests/multiplatform/kt54827.kt");
@@ -407,6 +443,18 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
   @TestMetadata("missingActual.kt")
   public void testMissingActual() {
     runTest("compiler/testData/diagnostics/tests/multiplatform/missingActual.kt");
+  }
+
+  @Test
+  @TestMetadata("missingActualOnlySubclassIsNotActualized.kt")
+  public void testMissingActualOnlySubclassIsNotActualized() {
+    runTest("compiler/testData/diagnostics/tests/multiplatform/missingActualOnlySubclassIsNotActualized.kt");
+  }
+
+  @Test
+  @TestMetadata("missingActualWithFunctionCallInPlatformModule.kt")
+  public void testMissingActualWithFunctionCallInPlatformModule() {
+    runTest("compiler/testData/diagnostics/tests/multiplatform/missingActualWithFunctionCallInPlatformModule.kt");
   }
 
   @Test
@@ -1601,6 +1649,12 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
     }
 
     @Test
+    @TestMetadata("directJavaActualization_enumStatics.kt")
+    public void testDirectJavaActualization_enumStatics() {
+      runTest("compiler/testData/diagnostics/tests/multiplatform/directJavaActualization/directJavaActualization_enumStatics.kt");
+    }
+
+    @Test
     @TestMetadata("directJavaActualization_enumWithFun.kt")
     public void testDirectJavaActualization_enumWithFun() {
       runTest("compiler/testData/diagnostics/tests/multiplatform/directJavaActualization/directJavaActualization_enumWithFun.kt");
@@ -1622,12 +1676,6 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
     @TestMetadata("directJavaActualization_functionModifiers.kt")
     public void testDirectJavaActualization_functionModifiers() {
       runTest("compiler/testData/diagnostics/tests/multiplatform/directJavaActualization/directJavaActualization_functionModifiers.kt");
-    }
-
-    @Test
-    @TestMetadata("directJavaActualization_getterInActual.kt")
-    public void testDirectJavaActualization_getterInActual() {
-      runTest("compiler/testData/diagnostics/tests/multiplatform/directJavaActualization/directJavaActualization_getterInActual.kt");
     }
 
     @Test
@@ -1664,6 +1712,12 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
     @TestMetadata("directJavaActualization_overloadedMethods.kt")
     public void testDirectJavaActualization_overloadedMethods() {
       runTest("compiler/testData/diagnostics/tests/multiplatform/directJavaActualization/directJavaActualization_overloadedMethods.kt");
+    }
+
+    @Test
+    @TestMetadata("directJavaActualization_propertyInActual.kt")
+    public void testDirectJavaActualization_propertyInActual() {
+      runTest("compiler/testData/diagnostics/tests/multiplatform/directJavaActualization/directJavaActualization_propertyInActual.kt");
     }
 
     @Test
@@ -2651,6 +2705,12 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
     }
 
     @Test
+    @TestMetadata("expectActualExtension.kt")
+    public void testExpectActualExtension() {
+      runTest("compiler/testData/diagnostics/tests/multiplatform/topLevelFun/expectActualExtension.kt");
+    }
+
+    @Test
     @TestMetadata("functionModifiers.kt")
     public void testFunctionModifiers() {
       runTest("compiler/testData/diagnostics/tests/multiplatform/topLevelFun/functionModifiers.kt");
@@ -2718,6 +2778,12 @@ public class FirOldFrontendMPPDiagnosticsWithLightTreeWithLatestLanguageVersionT
     @TestMetadata("differentKindsOfProperties.kt")
     public void testDifferentKindsOfProperties() {
       runTest("compiler/testData/diagnostics/tests/multiplatform/topLevelProperty/differentKindsOfProperties.kt");
+    }
+
+    @Test
+    @TestMetadata("expectActualExtensionProperty.kt")
+    public void testExpectActualExtensionProperty() {
+      runTest("compiler/testData/diagnostics/tests/multiplatform/topLevelProperty/expectActualExtensionProperty.kt");
     }
 
     @Test

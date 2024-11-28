@@ -7,8 +7,10 @@ package org.jetbrains.kotlin.daemon
 
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.cliArgument
+import org.jetbrains.kotlin.cli.common.messages.MessageCollectorImpl
 import org.jetbrains.kotlin.daemon.client.KotlinCompilerClient
 import org.jetbrains.kotlin.daemon.common.CompileService
+import org.jetbrains.kotlin.daemon.common.DaemonOptions
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -20,13 +22,16 @@ class LastSessionDaemonTest : BaseDaemonSessionTest() {
     private val logFile
         get() = workingDirectory.resolve("daemon.log")
 
+    override val defaultDaemonOptions: DaemonOptions
+        get() = super.defaultDaemonOptions.copy(autoshutdownUnusedSeconds = (DAEMON_PERIODIC_CHECK_INTERVAL_MS / 1000).toInt())
+
     @DisplayName("Already leased session can perform compilation")
     @Test
     fun canCompileInLastSessionMode() {
         val (compileService, sessionId) = leaseSession(logFile = logFile)
         sleep(DAEMON_PERIODIC_CHECK_INTERVAL_MS + 1_000)
         logFile.assertLogFileContains("Some sessions are active, waiting for them to finish")
-        val testMessageCollector = TestMessageCollector()
+        val testMessageCollector = MessageCollectorImpl()
         val exitCode = KotlinCompilerClient.compile(
             compileService,
             sessionId,

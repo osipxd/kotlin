@@ -1,3 +1,5 @@
+// IGNORE_FIR_DIAGNOSTICS
+// RUN_PIPELINE_TILL: FRONTEND
 // ISSUE: KT-70179
 
 // MODULE: m1-common
@@ -8,7 +10,7 @@ expect annotation class Ann()
 // MODULE: m2-jvm
 // FILE: some/my/Ann.java
 
-package some.my.Ann;
+package some.my;
 
 public @interface Ann {}
 

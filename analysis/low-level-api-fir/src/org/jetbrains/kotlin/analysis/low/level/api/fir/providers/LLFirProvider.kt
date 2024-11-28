@@ -10,11 +10,13 @@ import org.jetbrains.kotlin.analysis.low.level.api.fir.LLFirModuleResolveCompone
 import org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.LLFirSession
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclarationProvider
 import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProvider
+import org.jetbrains.kotlin.analysis.low.level.api.fir.util.LLContainingClassCalculator
 import org.jetbrains.kotlin.fir.NoMutableState
 import org.jetbrains.kotlin.fir.ThreadSafeMutableState
 import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.resolve.providers.*
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.utils.exceptions.withFirSymbolEntry
 import org.jetbrains.kotlin.name.CallableId
@@ -106,6 +108,15 @@ internal class LLFirProvider(
                 withEntry("packageFqName", fqName.asString())
             }
 
+    override fun getContainingClass(symbol: FirBasedSymbol<*>): FirClassLikeSymbol<*>? {
+        val psiResult = LLContainingClassCalculator.getContainingClassSymbol(symbol)
+        if (psiResult != null) {
+            return psiResult
+        }
+
+        return super.getContainingClass(symbol)
+    }
+
     @NoMutableState
     internal inner class SymbolProvider : LLFirKotlinSymbolProvider(session) {
         override val declarationProvider: KotlinDeclarationProvider get() = providerHelper.declarationProvider
@@ -186,7 +197,7 @@ internal class LLFirProvider(
             destination += providerHelper.getTopLevelPropertySymbols(callableId, properties.mapTo(mutableSetOf()) { it.containingKtFile })
         }
 
-        override fun getPackage(fqName: FqName): FqName? =
-            providerHelper.getPackage(fqName)
+        override fun hasPackage(fqName: FqName): Boolean =
+            providerHelper.hasPackage(fqName)
     }
 }

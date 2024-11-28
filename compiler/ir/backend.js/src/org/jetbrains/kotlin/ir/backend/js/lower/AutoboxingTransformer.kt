@@ -24,9 +24,9 @@ import org.jetbrains.kotlin.ir.symbols.IrReturnTargetSymbol
 import org.jetbrains.kotlin.ir.symbols.IrReturnableBlockSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.util.isPrimitiveArray
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents
-import org.jetbrains.kotlin.ir.util.render
 
 
 // Copied and adapted from Kotlin/Native
@@ -85,7 +85,7 @@ abstract class AbstractValueUsageLowering(
         parameter: IrValueParameter
     ): IrExpression {
 
-        return this.useAsArgument(expression.target.valueParameters[parameter.index])
+        return this.useAsArgument(expression.target.valueParameters[parameter.indexInOldValueParameters])
     }
 
     override fun useAsVarargElement(element: IrExpression, expression: IrVararg): IrExpression =

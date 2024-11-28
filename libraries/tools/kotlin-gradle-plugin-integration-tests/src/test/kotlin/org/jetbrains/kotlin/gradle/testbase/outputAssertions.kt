@@ -138,7 +138,10 @@ fun BuildResult.assertNoBuildWarnings(
     additionalExpectedWarnings: Set<String> = emptySet(),
 ) {
     val expectedWarnings = setOf(
-        "w: [InternalKotlinGradlePluginPropertiesUsed | WARNING] ATTENTION! This build uses the following Kotlin Gradle Plugin properties:"
+        "w: [InternalKotlinGradlePluginPropertiesUsed | WARNING] ATTENTION! This build uses the following Kotlin Gradle Plugin properties:",
+        // An (KTI-1928) issue prevents us from using a snapshot version of Kotlin Native during testing. This results in a diagnostic warning.
+        // Diagnostic warnings concern outdated Kotlin Native versions should be ignored in test environments.
+        "w: [OldNativeVersionDiagnostic | WARNING]"
     )
     val cleanedOutput = (expectedWarnings + additionalExpectedWarnings).fold(output) { acc, s ->
         acc.replace(s, "")
@@ -156,7 +159,8 @@ fun BuildResult.assertNoBuildWarnings(
 }
 
 val expectedK2KaptWarnings = setOf(
-    "w: Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9."
+    "w: Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9. " +
+            "See https://kotl.in/try-k2-kapt"
 )
 
 /**

@@ -105,6 +105,7 @@ fun generateKLib(
     jsOutputName: String?,
     icData: List<KotlinFileSerializedData>,
     moduleFragment: IrModuleFragment,
+    irBuiltIns: IrBuiltIns,
     diagnosticReporter: DiagnosticReporter,
     builtInsPlatform: BuiltInsPlatform = BuiltInsPlatform.JS,
     wasmTarget: WasmTarget? = null,
@@ -120,6 +121,7 @@ fun generateKLib(
         outputKlibPath,
         allDependencies,
         moduleFragment,
+        irBuiltIns,
         icData,
         nopack,
         perFile = false,
@@ -608,6 +610,7 @@ fun serializeModuleIntoKlib(
     klibPath: String,
     dependencies: List<KotlinLibrary>,
     moduleFragment: IrModuleFragment,
+    irBuiltIns: IrBuiltIns,
     cleanFiles: List<KotlinFileSerializedData>,
     nopack: Boolean,
     perFile: Boolean,
@@ -623,6 +626,7 @@ fun serializeModuleIntoKlib(
     val serializerOutput = serializeModuleIntoKlib(
         moduleName = moduleFragment.name.asString(),
         irModuleFragment = moduleFragment,
+        irBuiltins = irBuiltIns,
         configuration = configuration,
         diagnosticReporter = diagnosticReporter,
         compatibilityMode = CompatibilityMode(abiVersion),
@@ -638,13 +642,15 @@ fun serializeModuleIntoKlib(
                 shouldCheckSignaturesOnUniqueness,
             ->
             JsIrModuleSerializer(
+                settings = IrSerializationSettings(
+                    languageVersionSettings = languageVersionSettings,
+                    compatibilityMode = compatibilityMode,
+                    normalizeAbsolutePaths = normalizeAbsolutePaths,
+                    sourceBaseDirs = sourceBaseDirs,
+                    shouldCheckSignaturesOnUniqueness = shouldCheckSignaturesOnUniqueness,
+                ),
                 irDiagnosticReporter,
                 irBuiltins,
-                compatibilityMode,
-                normalizeAbsolutePaths,
-                sourceBaseDirs,
-                languageVersionSettings,
-                shouldCheckSignaturesOnUniqueness,
             ) { JsIrFileMetadata(moduleExportedNames[it]?.values?.toSmartList() ?: emptyList()) }
         },
         metadataSerializer = metadataSerializer,
@@ -779,6 +785,3 @@ fun IncrementalDataProvider.getSerializedData(newSources: List<KtSourceFile>): L
 @JvmName("getSerializedDataByPsiFiles")
 fun IncrementalDataProvider.getSerializedData(newSources: List<KtFile>): List<KotlinFileSerializedData> =
     getSerializedData(newSources.map(::KtPsiSourceFile))
-
-val CompilerConfiguration.incrementalDataProvider: IncrementalDataProvider?
-    get() = get(JSConfigurationKeys.INCREMENTAL_DATA_PROVIDER)

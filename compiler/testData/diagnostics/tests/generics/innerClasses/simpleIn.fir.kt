@@ -1,3 +1,4 @@
+// RUN_PIPELINE_TILL: FRONTEND
 // CHECK_TYPE
 // DIAGNOSTICS: -UNUSED_EXPRESSION -UNUSED_PARAMETER
 
@@ -9,7 +10,7 @@ class Outer<in E> {
 
     fun bar() = Inner()
 
-    fun set(inner: Inner) {}
+    fun set(inner: <!TYPE_VARIANCE_CONFLICT_ERROR!>Inner<!>) {}
 }
 
 fun factoryString(): Outer<String>.Inner = null!!

@@ -49,6 +49,7 @@ import org.jetbrains.kotlin.fir.resolve.calls.OverloadCandidate
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeAmbiguityError
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeUnmatchedTypeArgumentsError
 import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
+import org.jetbrains.kotlin.fir.resolve.referencedMemberSymbol
 import org.jetbrains.kotlin.fir.resolve.toRegularClassSymbol
 import org.jetbrains.kotlin.fir.resolve.transformers.PackageResolutionResult
 import org.jetbrains.kotlin.fir.resolve.transformers.resolveToPackageOrClass
@@ -1150,9 +1151,15 @@ private class ElementsToShortenCollector(
                 .hasScopeCloserThan(scopeForQualifiedAccess, expressionInScope)) return false
         val candidatesWithinSamePriorityScopes = candidates.filter { it.candidate.originScope == scopeForQualifiedAccess }
 
+        if (candidatesWithinSamePriorityScopes.isEmpty()) {
+            return true
+        }
+
+        val singleCandidate = candidatesWithinSamePriorityScopes.singleOrNull() ?: return false
+
         // TODO isInBestCandidates should probably be used more actively to filter candidates
-        return candidatesWithinSamePriorityScopes.isEmpty() ||
-                candidatesWithinSamePriorityScopes.singleOrNull()?.isInBestCandidates == true
+        return singleCandidate.isInBestCandidates &&
+                areReceiversEquivalent(firQualifiedAccess, singleCandidate.candidate)
     }
 
     fun processPropertyAccess(firPropertyAccess: FirPropertyAccessExpression) {
@@ -1183,6 +1190,7 @@ private class ElementsToShortenCollector(
         if (option == ShortenStrategy.SHORTEN_IF_ALREADY_IMPORTED) return
 
         findCallableQualifiedAccessToShorten(
+            firPropertyAccess,
             propertySymbol,
             option,
             qualifiedProperty,
@@ -1234,6 +1242,7 @@ private class ElementsToShortenCollector(
         if (option == ShortenStrategy.SHORTEN_IF_ALREADY_IMPORTED) return
 
         findCallableQualifiedAccessToShorten(
+            functionCall,
             calledSymbol,
             option,
             qualifiedCallExpression,
@@ -1242,12 +1251,14 @@ private class ElementsToShortenCollector(
     }
 
     private fun findCallableQualifiedAccessToShorten(
+        qualifiedAccess: FirQualifiedAccessExpression,
         calledSymbol: FirCallableSymbol<*>,
         option: ShortenStrategy,
         qualifiedCallExpression: KtDotQualifiedExpression,
         availableCallables: List<AvailableSymbol<FirCallableSymbol<*>>>,
     ): ElementToShorten? {
         if (option == ShortenStrategy.DO_NOT_SHORTEN) return null
+        if (!canBePossibleToImportReceiver(qualifiedAccess)) return null
 
         val nameToImport = shorteningContext.convertToImportableName(calledSymbol)
 
@@ -1288,15 +1299,17 @@ private class ElementsToShortenCollector(
     private fun canBePossibleToDropReceiver(qualifiedAccess: FirQualifiedAccessExpression): Boolean {
         return when (val explicitReceiver = qualifiedAccess.explicitReceiver) {
             is FirThisReceiverExpression -> {
-                shortenOptions.removeThis &&
-                        !explicitReceiver.isImplicit &&
-                        explicitReceiver.calleeReference.referencesClosestReceiver()
+                // any non-implicit 'this' receiver can potentially be shortened by reference shortener
+                shortenOptions.removeThis && !explicitReceiver.isImplicit
             }
 
-            is FirResolvedQualifier -> qualifiedAccess.extensionReceiver == null
-
-            else -> false
+            else -> canBePossibleToImportReceiver(qualifiedAccess)
         }
+    }
+
+    private fun canBePossibleToImportReceiver(firQualifiedAccess: FirQualifiedAccessExpression): Boolean {
+        return firQualifiedAccess.explicitReceiver is FirResolvedQualifier &&
+                firQualifiedAccess.extensionReceiver == null
     }
 
     private fun findUnambiguousReferencedCallableId(namedReference: FirNamedReference): FirCallableSymbol<*>? {
@@ -1344,8 +1357,8 @@ private class ElementsToShortenCollector(
         if (labelName == null) return true
 
         val psi = psi as? KtThisExpression ?: return false
-        val implicitReceivers = towerContextProvider.getClosestAvailableParentContext(psi)?.implicitReceiverStack ?: return false
-        val closestImplicitReceiver = implicitReceivers.lastOrNull() ?: return false
+        val implicitReceivers = towerContextProvider.getClosestAvailableParentContext(psi)?.implicitValueStorage ?: return false
+        val closestImplicitReceiver = implicitReceivers.implicitReceivers.lastOrNull() ?: return false
 
         return boundSymbol == closestImplicitReceiver.boundSymbol
     }
@@ -1364,7 +1377,7 @@ private class ElementsToShortenCollector(
      * for labeled and regular `this` expressions (KT-63555).
      */
     private fun thisLabelShortenStrategy(thisReference: FirThisReference): ShortenStrategy {
-        val referencedSymbol = thisReference.boundSymbol
+        val referencedSymbol = thisReference.referencedMemberSymbol
 
         val strategy = when (referencedSymbol) {
             is FirClassLikeSymbol<*> -> classShortenStrategy(referencedSymbol)

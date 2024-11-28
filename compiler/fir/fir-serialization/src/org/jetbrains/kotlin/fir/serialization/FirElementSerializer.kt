@@ -60,6 +60,7 @@ import org.jetbrains.kotlin.metadata.serialization.Interner
 import org.jetbrains.kotlin.metadata.serialization.MutableTypeTable
 import org.jetbrains.kotlin.metadata.serialization.MutableVersionRequirementTable
 import org.jetbrains.kotlin.name.*
+import org.jetbrains.kotlin.protobuf.ByteString
 import org.jetbrains.kotlin.protobuf.GeneratedMessageLite
 import org.jetbrains.kotlin.resolve.RequireKotlinConstants
 import org.jetbrains.kotlin.serialization.deserialization.ProtoEnumFlags
@@ -149,7 +150,7 @@ class FirElementSerializer private constructor(
         builder: ProtoBuf.Package.Builder,
         actualizedExpectDeclarations: Set<FirDeclaration>?,
     ): ProtoBuf.Package.Builder {
-        extension.serializePackage(packageFqName, builder)
+        extension.serializePackage(packageFqName, builder, versionRequirementTable, this)
         // Next block will process declarations from plugins.
         // Such declarations don't belong to any file, so there is no need to call `extension.processFile`.
         for (declaration in providedDeclarationsService.getProvidedTopLevelDeclarations(packageFqName, scopeSession)) {
@@ -303,11 +304,11 @@ class FirElementSerializer private constructor(
 
         if (klass is FirRegularClass) {
             for (contextReceiver in klass.contextReceivers) {
-                val typeRef = contextReceiver.typeRef
+                val typeRef = contextReceiver.returnTypeRef
                 if (useTypeTable()) {
                     builder.addContextReceiverTypeId(typeId(typeRef))
                 } else {
-                    builder.addContextReceiverType(typeProto(contextReceiver.typeRef))
+                    builder.addContextReceiverType(typeProto(contextReceiver.returnTypeRef))
                 }
             }
         }
@@ -341,7 +342,7 @@ class FirElementSerializer private constructor(
                 plugin.registerProtoExtensions(klass.symbol, stringTable, protoRegistrar)
             }
         }
-
+        builder.serializeCompilerPluginMetadata(klass, ProtoBuf.Class.Builder::addCompilerPluginData)
         return builder
     }
 
@@ -573,7 +574,7 @@ class FirElementSerializer private constructor(
         builder.name = getSimpleNameIndex(property.name)
 
         if (useTypeTable()) {
-            builder.returnTypeId = local.typeId(property.returnTypeRef)
+            builder.returnTypeId = local.typeId(property.returnTypeRef, toSuper = true)
         } else {
             builder.setReturnType(local.typeProto(property.returnTypeRef, toSuper = true))
         }
@@ -583,11 +584,11 @@ class FirElementSerializer private constructor(
         }
 
         for (contextReceiver in property.contextReceivers) {
-            val typeRef = contextReceiver.typeRef
+            val typeRef = contextReceiver.returnTypeRef
             if (useTypeTable()) {
                 builder.addContextReceiverTypeId(local.typeId(typeRef))
             } else {
-                builder.addContextReceiverType(local.typeProto(contextReceiver.typeRef))
+                builder.addContextReceiverType(local.typeProto(contextReceiver.returnTypeRef))
             }
         }
 
@@ -610,6 +611,7 @@ class FirElementSerializer private constructor(
         }
 
         extension.serializeProperty(property, builder, versionRequirementTable, local)
+        builder.serializeCompilerPluginMetadata(property, ProtoBuf.Property.Builder::addCompilerPluginData)
 
         return builder
     }
@@ -658,7 +660,7 @@ class FirElementSerializer private constructor(
         builder.name = getSimpleNameIndex(name)
 
         if (useTypeTable()) {
-            builder.returnTypeId = local.typeId(function.returnTypeRef)
+            builder.returnTypeId = local.typeId(function.returnTypeRef, toSuper = true)
         } else {
             builder.setReturnType(local.typeProto(function.returnTypeRef, toSuper = true))
         }
@@ -670,11 +672,11 @@ class FirElementSerializer private constructor(
         }
 
         for (contextReceiver in function.contextReceivers) {
-            val typeRef = contextReceiver.typeRef
+            val typeRef = contextReceiver.returnTypeRef
             if (useTypeTable()) {
                 builder.addContextReceiverTypeId(local.typeId(typeRef))
             } else {
-                builder.addContextReceiverType(local.typeProto(contextReceiver.typeRef))
+                builder.addContextReceiverType(local.typeProto(contextReceiver.returnTypeRef))
             }
         }
 
@@ -707,6 +709,8 @@ class FirElementSerializer private constructor(
                 builder.addVersionRequirement(writeVersionRequirement(LanguageFeature.DefinitelyNonNullableTypes))
             }
         }
+
+        builder.serializeCompilerPluginMetadata(function, ProtoBuf.Function.Builder::addCompilerPluginData)
 
         return builder
     }
@@ -745,6 +749,7 @@ class FirElementSerializer private constructor(
         builder.name = getSimpleNameIndex(typeAlias.name)
 
         for (typeParameter in typeAlias.typeParameters) {
+            if (typeParameter !is FirTypeParameter) continue
             builder.addTypeParameter(local.typeParameterProto(typeParameter))
         }
 
@@ -772,6 +777,7 @@ class FirElementSerializer private constructor(
         }
 
         extension.serializeTypeAlias(typeAlias, builder)
+        builder.serializeCompilerPluginMetadata(typeAlias, ProtoBuf.TypeAlias.Builder::addCompilerPluginData)
 
         return builder
     }
@@ -811,7 +817,7 @@ class FirElementSerializer private constructor(
         }
 
         extension.serializeConstructor(constructor, builder, local)
-
+        builder.serializeCompilerPluginMetadata(constructor, ProtoBuf.Constructor.Builder::addCompilerPluginData)
         return builder
     }
 
@@ -903,14 +909,14 @@ class FirElementSerializer private constructor(
             return builder
         }
 
-    fun typeId(typeRef: FirTypeRef): Int {
+    fun typeId(typeRef: FirTypeRef, toSuper: Boolean = false): Int {
         if (typeRef !is FirResolvedTypeRef) {
             return -1 // TODO: serializeErrorType?
         }
-        return typeId(typeRef.coneType)
+        return typeId(typeRef.coneType, toSuper)
     }
 
-    fun typeId(type: ConeKotlinType): Int = typeTable[typeProto(type)]
+    fun typeId(type: ConeKotlinType, toSuper: Boolean = false): Int = typeTable[typeProto(type, toSuper)]
 
     private fun typeProto(typeRef: FirTypeRef, toSuper: Boolean = false): ProtoBuf.Type.Builder {
         return typeProto(typeRef.coneType, toSuper, correspondingTypeRef = typeRef)
@@ -1069,6 +1075,10 @@ class FirElementSerializer private constructor(
         for (attribute in sortedAttributes) {
             when {
                 attribute is CustomAnnotationTypeAttribute -> typeAnnotations.addAll(attribute.annotations.nonSourceAnnotations(session))
+                attribute is ParameterNameTypeAttribute -> {
+                    typeAnnotations.addAll(listOf(attribute.annotation).nonSourceAnnotations(session))
+                    typeAnnotations.addAll(attribute.others.nonSourceAnnotations(session))
+                }
                 attribute.key in CompilerConeAttributes.classIdByCompilerAttributeKey ->
                     typeAnnotations.addIfNotNull(createAnnotationForCompilerDefinedTypeAttribute(attribute))
                 else -> extensionAttributes += attribute
@@ -1447,6 +1457,19 @@ class FirElementSerializer private constructor(
                 }
             }
             return versionRequirementTable[requirement]
+        }
+    }
+
+    private inline fun <M : GeneratedMessageLite.ExtendableMessage<M>, B : GeneratedMessageLite.Builder<M, B>> B.serializeCompilerPluginMetadata(
+        declaration: FirDeclaration,
+        addCompilerPluginData: B.(ProtoBuf.CompilerPluginData.Builder) -> B
+    ) {
+        extension.additionalMetadataProvider?.findMetadataExtensionsFor(declaration)?.forEach { (pluginId, data) ->
+            val pluginData = ProtoBuf.CompilerPluginData.newBuilder().apply {
+                this.pluginId = stringTable.getStringIndex(pluginId)
+                this.data = ByteString.copyFrom(data)
+            }
+            addCompilerPluginData(pluginData)
         }
     }
 }

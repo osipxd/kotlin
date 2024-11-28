@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.analysis.api.components.KaCodeCompilationException
 import org.jetbrains.kotlin.analysis.api.components.KaCompilationResult
 import org.jetbrains.kotlin.analysis.api.components.KaCompilerFacility
 import org.jetbrains.kotlin.analysis.api.components.KaCompilerTarget
+import org.jetbrains.kotlin.analysis.api.components.classBuilderFactory
 import org.jetbrains.kotlin.analysis.api.descriptors.Fe10AnalysisFacade.AnalysisMode
 import org.jetbrains.kotlin.analysis.api.descriptors.KaFe10Session
 import org.jetbrains.kotlin.analysis.api.descriptors.components.base.KaFe10SessionComponent
@@ -23,7 +24,6 @@ import org.jetbrains.kotlin.backend.common.phaser.PhaseConfig
 import org.jetbrains.kotlin.backend.jvm.FacadeClassSourceShimForFragmentCompilation
 import org.jetbrains.kotlin.backend.jvm.JvmGeneratorExtensionsImpl
 import org.jetbrains.kotlin.backend.jvm.JvmIrCodegenFactory
-import org.jetbrains.kotlin.backend.jvm.jvmPhases
 import org.jetbrains.kotlin.codegen.KotlinCodegenFacade
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.config.*
@@ -69,10 +69,6 @@ internal class KaFe10CompilerFacility(
     ): KaCompilationResult {
         if (file is KtCodeFragment) {
             throw UnsupportedOperationException("Code fragments are not supported in K1 implementation")
-        }
-
-        val classBuilderFactory = when (target) {
-            is KaCompilerTarget.Jvm -> target.classBuilderFactory
         }
 
         val effectiveConfiguration = configuration
@@ -130,7 +126,7 @@ internal class KaFe10CompilerFacility(
 
         val state = GenerationState.Builder(
             file.project,
-            classBuilderFactory,
+            target.classBuilderFactory,
             analysisContext.resolveSession.moduleDescriptor,
             bindingContext,
             filesToCompile,
@@ -202,7 +198,7 @@ internal class KaFe10CompilerFacility(
 
         return JvmIrCodegenFactory(
             configuration,
-            PhaseConfig(jvmPhases),
+            PhaseConfig(),
             jvmGeneratorExtensions = jvmGeneratorExtensions,
             ideCodegenSettings = ideCodegenSettings,
         )

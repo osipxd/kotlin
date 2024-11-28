@@ -15,8 +15,6 @@ dependencies {
     compileOnly(project(":compiler:fir:fir2ir"))
     compileOnly(project(":compiler:fir:tree"))
     compileOnly(project(":compiler:fir:fir-deserialization"))
-    compileOnly(project(":js:js.frontend"))
-    compileOnly(project(":js:js.translator"))
     compileOnly(project(":kotlin-util-klib-metadata"))
     compileOnly(project(":compiler:cli-common"))
 

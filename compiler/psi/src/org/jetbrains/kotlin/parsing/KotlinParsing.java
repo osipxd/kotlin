@@ -679,6 +679,13 @@ public class KotlinParsing extends AbstractKotlinParsing {
      *   : "context" "(" (contextReceiver{","})+ ")"
      */
     private void parseContextReceiverList() {
+        parseContextReceiverList(true);
+    }
+    /*
+     * contextReceiverList
+     *   : "context" "(" (contextReceiver{","})+ ")"
+     */
+    private void parseContextReceiverList(boolean allowNamed) {
         assert _at(CONTEXT_KEYWORD);
         PsiBuilder.Marker contextReceiverList = mark();
         advance(); // CONTEXT_KEYWORD
@@ -688,7 +695,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
                 if (at(COMMA)) {
                     errorAndAdvance("Expecting a type reference");
                 }
-                parseContextReceiver();
+                parseContextReceiver(allowNamed);
                 if (at(RPAR)) {
                     advance();
                     break;
@@ -713,7 +720,11 @@ public class KotlinParsing extends AbstractKotlinParsing {
      * contextReceiver
      *   : label? typeReference
      */
-    private void parseContextReceiver() {
+    private void parseContextReceiver(boolean allowNamed) {
+        if (allowNamed && tryParseValueParameter(true)) {
+            return;
+        }
+
         PsiBuilder.Marker contextReceiver = mark();
         if (myExpressionParsing.isAtLabelDefinitionOrMissingIdentifier()) {
             myExpressionParsing.parseLabelDefinition();
@@ -1689,9 +1700,9 @@ public class KotlinParsing extends AbstractKotlinParsing {
         myBuilder.disableNewlines();
 
         if (propertyComponentKind != PropertyComponentKind.FIELD) {
+            PsiBuilder.Marker parameterList = mark();
             expect(LPAR, "Expecting '('", RPAR_IDENTIFIER_COLON_LBRACE_EQ_SET);
             if (propertyComponentKind == PropertyComponentKind.SET) {
-                PsiBuilder.Marker parameterList = mark();
                 PsiBuilder.Marker setterParameter = mark();
                 parseModifierList(COMMA_COLON_RPAR_SET);
                 expect(IDENTIFIER, "Expecting parameter name", RPAR_COLON_LBRACE_EQ_SET);
@@ -1704,7 +1715,6 @@ public class KotlinParsing extends AbstractKotlinParsing {
                 if (at(COMMA)) {
                     advance(); // COMMA
                 }
-                parameterList.done(VALUE_PARAMETER_LIST);
             }
             if (!at(RPAR)) {
                 errorUntil("Expecting ')'", TokenSet.create(RPAR, COLON, LBRACE, RBRACE, EQ, EOL_OR_SEMICOLON));
@@ -1712,6 +1722,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             if (at(RPAR)) {
                 advance();
             }
+            parameterList.done(VALUE_PARAMETER_LIST);
         }
         myBuilder.restoreNewlinesState();
 
@@ -2195,7 +2206,8 @@ public class KotlinParsing extends AbstractKotlinParsing {
         PsiBuilder.Marker contextReceiversStart = mark();
 
         if (withContextReceiver) {
-            parseContextReceiverList();
+            // TODO parse named context parameters in function types and report diagnostic.
+            parseContextReceiverList(/*allowNamed = */ false);
         }
 
         PsiBuilder.Marker typeElementMarker = mark();

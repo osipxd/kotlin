@@ -36,8 +36,13 @@ import org.jetbrains.kotlin.fir.backend.jvm.FirJvmTypeMapper
 import org.jetbrains.kotlin.fir.extensions.*
 import org.jetbrains.kotlin.fir.java.JavaSymbolProvider
 import org.jetbrains.kotlin.fir.languageVersionSettings
-import org.jetbrains.kotlin.fir.resolve.providers.*
+import org.jetbrains.kotlin.fir.resolve.providers.DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY
+import org.jetbrains.kotlin.fir.resolve.providers.FirProvider
+import org.jetbrains.kotlin.fir.resolve.providers.FirSymbolProvider
+import org.jetbrains.kotlin.fir.resolve.providers.dependenciesSymbolProvider
+import org.jetbrains.kotlin.fir.resolve.providers.impl.FirBuiltinSyntheticFunctionInterfaceProvider
 import org.jetbrains.kotlin.fir.resolve.providers.impl.FirExtensionSyntheticFunctionInterfaceProvider
+import org.jetbrains.kotlin.fir.resolve.providers.impl.syntheticFunctionInterfacesSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
 import org.jetbrains.kotlin.fir.resolve.scopes.wrapScopeWithJvmMapped
 import org.jetbrains.kotlin.fir.resolve.transformers.FirDummyCompilerLazyDeclarationResolver
@@ -126,7 +131,7 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
 
             val dependencyProvider = LLFirDependenciesSymbolProvider(this) {
                 buildList {
-                    addMerged(collectDependencySymbolProviders(module))
+                    addMerged(session, collectDependencySymbolProviders(module))
                     add(builtinsSession.symbolProvider)
                 }
             }
@@ -292,7 +297,7 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
 
             val dependencyProvider = LLFirDependenciesSymbolProvider(this) {
                 buildList {
-                    addMerged(collectDependencySymbolProviders(module))
+                    addMerged(session, collectDependencySymbolProviders(module))
                     add(builtinsSession.symbolProvider)
                 }
             }
@@ -314,6 +319,11 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
             val context = SourceSessionCreationContext(
                 firProvider.searchScope, firProvider, dependencyProvider, syntheticFunctionInterfaceProvider,
                 switchableExtensionDeclarationsSymbolProvider,
+            )
+
+            register(
+                FirBuiltinSyntheticFunctionInterfaceProvider::class,
+                builtinsSession.syntheticFunctionInterfacesSymbolProvider
             )
 
             additionalSessionConfiguration(context)
@@ -434,10 +444,11 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
         val moduleData = createModuleData(session)
 
         return session.apply {
+            val languageVersionSettings = KotlinProjectStructureProvider.getInstance(project).libraryLanguageVersionSettings
             registerModuleData(moduleData)
-            registerIdeComponents(project)
+            registerIdeComponents(project, languageVersionSettings)
             register(FirLazyDeclarationResolver::class, FirDummyCompilerLazyDeclarationResolver)
-            registerCommonComponents(KotlinProjectStructureProvider.getInstance(project).libraryLanguageVersionSettings)
+            registerCommonComponents(languageVersionSettings)
             registerCommonComponentsAfterExtensionsAreConfigured()
             registerDefaultComponents()
 
@@ -466,11 +477,10 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
 
     abstract fun createDanglingFileSession(module: KaDanglingFileModule, contextSession: LLFirSession): LLFirSession
 
-    @Suppress("CONTEXT_RECEIVERS_DEPRECATED")
     protected fun doCreateDanglingFileSession(
         module: KaDanglingFileModule,
         contextSession: LLFirSession,
-        additionalSessionConfiguration: context(DanglingFileSessionCreationContext) LLFirDanglingFileSession.() -> Unit,
+        additionalSessionConfiguration: LLFirDanglingFileSession.(DanglingFileSessionCreationContext) -> Unit,
     ): LLFirSession {
         val danglingFile = module.file
         val platform = module.targetPlatform
@@ -516,7 +526,7 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
 
             val dependencyProvider = LLFirDependenciesSymbolProvider(this) {
                 buildList {
-                    addMerged(computeFlattenedSymbolProviders(listOf(contextSession)))
+                    addMerged(session, computeFlattenedSymbolProviders(listOf(contextSession)))
 
                     when (contextSession.ktModule) {
                         is KaLibraryModule, is KaLibrarySourceModule -> {
@@ -551,19 +561,17 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
 
             val context = DanglingFileSessionCreationContext(
                 moduleData,
-                firProvider,
                 dependencyProvider,
                 syntheticFunctionInterfaceProvider,
                 switchableExtensionDeclarationsSymbolProvider
             )
 
-            additionalSessionConfiguration(context, this)
+            additionalSessionConfiguration(this, context)
         }
     }
 
     protected class DanglingFileSessionCreationContext(
         val moduleData: LLFirModuleData,
-        val firProvider: LLFirProvider,
         val dependencyProvider: LLFirDependenciesSymbolProvider,
         val syntheticFunctionInterfaceProvider: FirExtensionSyntheticFunctionInterfaceProvider?,
         val switchableExtensionDeclarationsSymbolProvider: FirSwitchableExtensionDeclarationsSymbolProvider?,
@@ -651,7 +659,7 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
     }
 
     private fun LLFirSession.registerAllCommonComponents(languageVersionSettings: LanguageVersionSettings) {
-        registerIdeComponents(project)
+        registerIdeComponents(project, languageVersionSettings)
         registerCommonComponents(languageVersionSettings)
         registerResolveComponents()
         registerDefaultComponents()
@@ -661,10 +669,8 @@ internal abstract class LLFirAbstractSessionFactory(protected val project: Proje
      * Merges dependency symbol providers of the same kind, and adds the result to the receiver [MutableList].
      * See [mergeDependencySymbolProvidersInto] for more information on symbol provider merging.
      */
-    context(LLFirSession)
-    @Suppress("CONTEXT_RECEIVERS_DEPRECATED")
-    private fun MutableList<FirSymbolProvider>.addMerged(dependencies: List<FirSymbolProvider>) {
-        dependencies.mergeDependencySymbolProvidersInto(this@LLFirSession, this)
+    private fun MutableList<FirSymbolProvider>.addMerged(session: LLFirSession, dependencies: List<FirSymbolProvider>) {
+        dependencies.mergeDependencySymbolProvidersInto(session, this)
     }
 
     /**

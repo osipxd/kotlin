@@ -184,6 +184,7 @@ inline fun IrProperty.addBackingField(builder: IrFieldBuilder.() -> Unit = {}): 
     IrFieldBuilder().run {
         name = this@addBackingField.name
         origin = IrDeclarationOrigin.PROPERTY_BACKING_FIELD
+        visibility = DescriptorVisibilities.PRIVATE
         builder()
         factory.buildField(this).also { field ->
             this@addBackingField.backingField = field
@@ -306,6 +307,7 @@ fun <D> buildReceiverParameter(
         startOffset = startOffset,
         endOffset = endOffset,
         origin = origin,
+        kind = IrParameterKind.DispatchReceiver,
         name = SpecialNames.THIS,
         type = type,
         isAssignable = false,
@@ -324,6 +326,7 @@ fun IrFactory.buildValueParameter(builder: IrValueParameterBuilder, parent: IrDe
             startOffset = startOffset,
             endOffset = endOffset,
             origin = origin,
+            kind = kind,
             name = name,
             type = type,
             isAssignable = isAssignable,
@@ -348,8 +351,9 @@ inline fun <D> buildValueParameter(declaration: D, builder: IrValueParameterBuil
 inline fun IrFunction.addValueParameter(builder: IrValueParameterBuilder.() -> Unit): IrValueParameter =
     IrValueParameterBuilder().run {
         builder()
+        kind = IrParameterKind.Regular
         factory.buildValueParameter(this, this@addValueParameter).also { valueParameter ->
-            valueParameters = valueParameters + valueParameter
+            parameters += valueParameter
         }
     }
 

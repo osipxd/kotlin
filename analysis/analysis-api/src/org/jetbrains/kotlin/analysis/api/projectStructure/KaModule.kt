@@ -10,6 +10,7 @@ package org.jetbrains.kotlin.analysis.api.projectStructure
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
@@ -70,9 +71,6 @@ public interface KaModule {
      */
     public val targetPlatform: TargetPlatform
 
-    @Deprecated("Use 'targetPlatform' instead.", replaceWith = ReplaceWith("targetPlatform"))
-    public val platform: TargetPlatform get() = targetPlatform
-
     /**
      * [Project] to which the current module belongs.
      *
@@ -95,9 +93,6 @@ public interface KaModule {
 public interface KaSourceModule : KaModule {
     public val name: String
 
-    @Deprecated("Use 'name' instead.", replaceWith = ReplaceWith("name"))
-    public val moduleName: String get() = name
-
     /**
      * A stable binary name of module from the *Kotlin* point of view.
      * Having correct module name is critical for `internal`-visibility mangling. See [org.jetbrains.kotlin.asJava.mangleInternalName]
@@ -116,6 +111,10 @@ public interface KaSourceModule : KaModule {
      * A set of Kotlin settings, like API version, supported features and flags.
      */
     public val languageVersionSettings: LanguageVersionSettings
+
+    @KaExperimentalApi
+    public val psiRoots: List<PsiFileSystemItem>
+        get() = listOf()
 }
 
 /**

@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.FirVariable
 import org.jetbrains.kotlin.fir.declarations.builder.buildAnonymousFunction
 import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
+import org.jetbrains.kotlin.fir.declarations.builder.buildReceiverParameterCopy
 import org.jetbrains.kotlin.fir.declarations.builder.buildValueParameter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
@@ -40,6 +41,7 @@ import org.jetbrains.kotlin.fir.references.builder.buildExplicitThisReference
 import org.jetbrains.kotlin.fir.references.builder.buildSimpleNamedReference
 import org.jetbrains.kotlin.fir.symbols.impl.FirAnonymousFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirReceiverParameterSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.FirTypeProjection
 import org.jetbrains.kotlin.fir.types.FirTypeRef
@@ -47,6 +49,7 @@ import org.jetbrains.kotlin.fir.types.builder.buildErrorTypeRef
 import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.SpecialNames
+import org.jetbrains.kotlin.psi.psiUtil.UNWRAPPABLE_TOKEN_TYPES
 import org.jetbrains.kotlin.psi.stubs.elements.KtConstantExpressionElementType
 import org.jetbrains.kotlin.psi.stubs.elements.KtNameReferenceExpressionElementType
 import org.jetbrains.kotlin.types.expressions.OperatorConventions
@@ -179,7 +182,7 @@ class LightTreeRawFirExpressionBuilder(
             moduleData = baseModuleData
             origin = FirDeclarationOrigin.Source
             returnTypeRef = implicitType
-            receiverParameter = expressionSource.asReceiverParameter()
+            receiverParameter = expressionSource.asReceiverParameter(moduleData, functionSymbol)
             symbol = functionSymbol
             isLambda = true
             hasExplicitParameterList = hasArrow
@@ -198,7 +201,7 @@ class LightTreeRawFirExpressionBuilder(
                     val name = SpecialNames.DESTRUCT
                     val multiParameter = buildValueParameter {
                         source = valueParameter.firValueParameter.source
-                        containingFunctionSymbol = functionSymbol
+                        containingDeclarationSymbol = functionSymbol
                         moduleData = baseModuleData
                         origin = FirDeclarationOrigin.Source
                         returnTypeRef = valueParameter.firValueParameter.returnTypeRef
@@ -344,6 +347,7 @@ class LightTreeRawFirExpressionBuilder(
                     firOperation,
                     leftArgAsFir.annotations,
                     rightArg,
+                    leftArgNode?.tokenType in UNWRAPPABLE_TOKEN_TYPES,
                 ) {
                     getAsFirExpression<FirExpression>(
                         this,
@@ -420,7 +424,7 @@ class LightTreeRawFirExpressionBuilder(
 
         context.dropLastLabel()
 
-        return buildExpressionHandlingErrors(firExpression, labeledExpression.toFirSourceElement(), forbiddenLabelKind, labelSource)
+        return buildExpressionHandlingLabelErrors(firExpression, labeledExpression.toFirSourceElement(), forbiddenLabelKind, labelSource)
     }
 
     /**
@@ -781,6 +785,12 @@ class LightTreeRawFirExpressionBuilder(
                         symbol = FirPropertySymbol(variable.name)
                         isLocal = true
                         status = FirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL)
+                        receiverParameter = variable.receiverParameter?.let {
+                            buildReceiverParameterCopy(it) {
+                                symbol = FirReceiverParameterSymbol()
+                                containingDeclarationSymbol = this@buildProperty.symbol
+                            }
+                        }
                         annotations += variable.annotations
                     }
                 }

@@ -10,7 +10,6 @@ package org.jetbrains.kotlin.analysis.api.impl.base
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.base.KaConstantValue
 import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.types.ConstantValueKind
 
 @KaImplementationDetail
 object KaConstantValueFactory {
@@ -34,11 +33,7 @@ object KaConstantValueFactory {
 }
 
 @KaImplementationDetail
-class KaNullConstantValueImpl(override val sourcePsi: KtElement?) : KaConstantValue.NullValue, KaConstantValue.KaNullConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Null
-
+class KaNullConstantValueImpl(override val sourcePsi: KtElement?) : KaConstantValue.NullValue {
     override val value: Nothing?
         get() = null
 
@@ -50,11 +45,7 @@ class KaNullConstantValueImpl(override val sourcePsi: KtElement?) : KaConstantVa
 class KaBooleanConstantValueImpl(
     override val value: Boolean,
     override val sourcePsi: KtElement?
-) : KaConstantValue.BooleanValue, KaConstantValue.KaBooleanConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Boolean
-
+) : KaConstantValue.BooleanValue {
     override fun render(): String = value.toString()
     override fun toString(): String = render()
 }
@@ -63,11 +54,7 @@ class KaBooleanConstantValueImpl(
 class KaCharConstantValueImpl(
     override val value: Char,
     override val sourcePsi: KtElement?
-) : KaConstantValue.CharValue, KaConstantValue.KaCharConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Char
-
+) : KaConstantValue.CharValue {
     override fun render(): String = "`$value`"
     override fun toString(): String = render()
 }
@@ -76,11 +63,7 @@ class KaCharConstantValueImpl(
 class KaByteConstantValueImpl(
     override val value: Byte,
     override val sourcePsi: KtElement?
-) : KaConstantValue.ByteValue, KaConstantValue.KaByteConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Byte
-
+) : KaConstantValue.ByteValue {
     override fun render(): String = value.toString()
     override fun toString(): String = render()
 }
@@ -89,11 +72,7 @@ class KaByteConstantValueImpl(
 class KaUnsignedByteConstantValueImpl(
     override val value: UByte,
     override val sourcePsi: KtElement?
-) : KaConstantValue.UByteValue, KaConstantValue.KaUnsignedByteConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.UnsignedByte
-
+) : KaConstantValue.UByteValue {
     override fun render(): String = "${value}u"
     override fun toString(): String = render()
 }
@@ -102,11 +81,7 @@ class KaUnsignedByteConstantValueImpl(
 class KaShortConstantValueImpl(
     override val value: Short,
     override val sourcePsi: KtElement?
-) : KaConstantValue.ShortValue, KaConstantValue.KaShortConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Short
-
+) : KaConstantValue.ShortValue {
     override fun render(): String = value.toString()
     override fun toString(): String = render()
 }
@@ -115,11 +90,7 @@ class KaShortConstantValueImpl(
 class KaUnsignedShortConstantValueImpl(
     override val value: UShort,
     override val sourcePsi: KtElement?
-) : KaConstantValue.UShortValue, KaConstantValue.KaUnsignedShortConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.UnsignedShort
-
+) : KaConstantValue.UShortValue {
     override fun render(): String = "${value}u"
     override fun toString(): String = render()
 }
@@ -128,11 +99,7 @@ class KaUnsignedShortConstantValueImpl(
 class KaIntConstantValueImpl(
     override val value: Int,
     override val sourcePsi: KtElement?
-) : KaConstantValue.IntValue, KaConstantValue.KaIntConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Int
-
+) : KaConstantValue.IntValue {
     override fun render(): String = value.toString()
     override fun toString(): String = render()
 }
@@ -141,11 +108,7 @@ class KaIntConstantValueImpl(
 class KaUnsignedIntConstantValueImpl(
     override val value: UInt,
     override val sourcePsi: KtElement?
-) : KaConstantValue.UIntValue, KaConstantValue.KaUnsignedIntConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.UnsignedInt
-
+) : KaConstantValue.UIntValue {
     override fun render(): String = "${value}u"
     override fun toString(): String = render()
 }
@@ -154,11 +117,7 @@ class KaUnsignedIntConstantValueImpl(
 class KaLongConstantValueImpl(
     override val value: Long,
     override val sourcePsi: KtElement?
-) : KaConstantValue.LongValue, KaConstantValue.KaLongConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Long
-
+) : KaConstantValue.LongValue {
     override fun render(): String = value.toString()
     override fun toString(): String = render()
 }
@@ -167,11 +126,7 @@ class KaLongConstantValueImpl(
 class KaUnsignedLongConstantValueImpl(
     override val value: ULong,
     override val sourcePsi: KtElement?
-) : KaConstantValue.ULongValue, KaConstantValue.KaUnsignedLongConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.UnsignedLong
-
+) : KaConstantValue.ULongValue {
     override fun render(): String = "${value}uL"
     override fun toString(): String = render()
 }
@@ -180,11 +135,7 @@ class KaUnsignedLongConstantValueImpl(
 class KaStringConstantValueImpl(
     override val value: String,
     override val sourcePsi: KtElement?
-) : KaConstantValue.StringValue, KaConstantValue.KaStringConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.String
-
+) : KaConstantValue.StringValue {
     override fun render(): String = "\"${value}\""
     override fun toString(): String = render()
 }
@@ -193,11 +144,7 @@ class KaStringConstantValueImpl(
 class KaFloatConstantValueImpl(
     override val value: Float,
     override val sourcePsi: KtElement?
-) : KaConstantValue.FloatValue, KaConstantValue.KaFloatConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Float
-
+) : KaConstantValue.FloatValue {
     override fun render(): String = "${value}f"
     override fun toString(): String = render()
 }
@@ -206,11 +153,7 @@ class KaFloatConstantValueImpl(
 class KaDoubleConstantValueImpl(
     override val value: Double,
     override val sourcePsi: KtElement?
-) : KaConstantValue.DoubleValue, KaConstantValue.KaDoubleConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Double
-
+) : KaConstantValue.DoubleValue {
     override fun render(): String = value.toString()
     override fun toString(): String = render()
 }
@@ -219,11 +162,7 @@ class KaDoubleConstantValueImpl(
 class KaErrorConstantValueImpl(
     override val errorMessage: String,
     override val sourcePsi: KtElement?,
-) : KaConstantValue.ErrorValue, KaConstantValue.KaErrorConstantValue {
-    @Deprecated("Check the class type instead.")
-    override val constantValueKind: ConstantValueKind
-        get() = ConstantValueKind.Error
-
+) : KaConstantValue.ErrorValue {
     override val value: Nothing
         get() = error("Cannot get value for KaErrorConstantValue")
 

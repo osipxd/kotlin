@@ -15,15 +15,14 @@ import kotlin.reflect.KClass
 
 annotation class PhaseDescription(
     val name: String,
-    val description: String,
     val prerequisite: Array<KClass<out FileLoweringPass>> = [],
 )
 
 fun <Context : CommonBackendContext> createFilePhases(
-    vararg phases: (Context) -> FileLoweringPass
+    vararg phases: ((Context) -> FileLoweringPass)?
 ): List<SimpleNamedCompilerPhase<Context, IrFile, IrFile>> {
     val createdPhases = hashSetOf<Class<out FileLoweringPass>>()
-    return phases.map { phase ->
+    return phases.filterNotNull().map { phase ->
         val loweringClass = phase.extractReturnTypeArgument()
         createdPhases.add(loweringClass)
         createFilePhase(loweringClass, createdPhases, phase)
@@ -31,15 +30,26 @@ fun <Context : CommonBackendContext> createFilePhases(
 }
 
 fun <Context : CommonBackendContext> createModulePhases(
-    vararg phases: (Context) -> ModuleLoweringPass
+    vararg phases: ((Context) -> ModuleLoweringPass)?
 ): List<SimpleNamedCompilerPhase<Context, IrModuleFragment, IrModuleFragment>> {
     val createdPhases = hashSetOf<Class<out ModuleLoweringPass>>()
-    return phases.map { phase ->
+    return phases.filterNotNull().map { phase ->
         val loweringClass = phase.extractReturnTypeArgument()
         createdPhases.add(loweringClass)
         createModulePhase(loweringClass, createdPhases, phase)
     }
 }
+
+fun <Context : CommonBackendContext> buildModuleLoweringsPhase(
+    vararg phases: ((Context) -> ModuleLoweringPass)?
+): CompilerPhase<Context, IrModuleFragment, IrModuleFragment> =
+    createModulePhases(*phases)
+        .fold(noopPhase(), CompilerPhase<Context, IrModuleFragment, IrModuleFragment>::then)
+
+private fun <Context : CommonBackendContext, T> noopPhase(): CompilerPhase<Context, T, T> =
+    object : CompilerPhase<Context, T, T> {
+        override fun invoke(phaseConfig: PhaseConfigurationService, phaserState: PhaserState<T>, context: Context, input: T): T = input
+    }
 
 private inline fun <ReturnType, reified FunctionType : Function<ReturnType>>
         FunctionType.extractReturnTypeArgument(): Class<out ReturnType> {
@@ -48,9 +58,13 @@ private inline fun <ReturnType, reified FunctionType : Function<ReturnType>>
     val functionType = javaClass.genericInterfaces.singleOrNull {
         it is ParameterizedType && it.rawType == FunctionType::class.java
     } ?: error("Supertype ${FunctionType::class.java} is not found: " + javaClass.genericInterfaces.toList())
-    val returnTypeClass = (functionType as ParameterizedType).actualTypeArguments.last()
+    val returnType = (functionType as ParameterizedType).actualTypeArguments.last()
     @Suppress("UNCHECKED_CAST")
-    return returnTypeClass as Class<out ReturnType>
+    return when (returnType) {
+        is Class<*> -> returnType
+        is ParameterizedType -> returnType.rawType
+        else -> error("Unexpected return type ${returnType.typeName}")
+    } as Class<out ReturnType>
 }
 
 private fun <Context : CommonBackendContext> createFilePhase(
@@ -62,7 +76,6 @@ private fun <Context : CommonBackendContext> createFilePhase(
 
     return createSimpleNamedCompilerPhase(
         name = annotation.name,
-        description = annotation.description,
         preactions = DEFAULT_IR_ACTIONS,
         postactions = DEFAULT_IR_ACTIONS,
         prerequisite = emptySet(),
@@ -81,7 +94,7 @@ private fun <Context : CommonBackendContext> createModulePhase(
 ): SimpleNamedCompilerPhase<Context, IrModuleFragment, IrModuleFragment> {
     val annotation = loadAnnotationAndCheckPrerequisites(loweringClass, previouslyCreatedPhases)
 
-    return makeIrModulePhase(createLoweringPass, annotation.name, annotation.description)
+    return makeIrModulePhase(createLoweringPass, annotation.name)
 }
 
 private fun loadAnnotationAndCheckPrerequisites(

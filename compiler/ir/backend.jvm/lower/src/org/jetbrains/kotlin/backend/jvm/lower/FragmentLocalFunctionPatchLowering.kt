@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.backend.jvm.lower
 
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
+import org.jetbrains.kotlin.backend.common.defaultArgumentsOriginalFunction
 import org.jetbrains.kotlin.backend.common.lower.LocalDeclarationsLowering
 import org.jetbrains.kotlin.backend.common.phaser.PhaseDescription
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
@@ -26,15 +27,13 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.copyTypeArgumentsFrom
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 
-// This lowering rewrites local function calls in code fragments to the
-// corresponding lifted declaration. In the process, the lowering determines
-// whether the captures of the local function are a subset of the captures of
-// the fragment, and if not, introduces additional captures to the fragment
-// wrapper. The captures are then supplied to the fragment wrapper as
-// parameters supplied at evaluation time.
+/**
+ * Rewrites local function calls in code fragments to the corresponding lifted declaration. In the process, the lowering determines whether
+ * the captures of the local function are a subset of the captures of the fragment, and if not, introduces additional captures to the
+ * fragment wrapper. The captures are then supplied to the fragment wrapper as parameters supplied at evaluation time.
+ */
 @PhaseDescription(
     name = "FragmentLocalFunctionPatching",
-    description = "Rewrite calls to local functions to the appropriate, lifted function created by local declarations lowering.",
     prerequisite = [JvmLocalDeclarationsLowering::class]
 )
 internal class FragmentLocalFunctionPatchLowering(
@@ -54,7 +53,7 @@ internal class FragmentLocalFunctionPatchLowering(
             override fun visitCall(expression: IrCall): IrExpression {
                 expression.transformChildrenVoid(this)
                 val localDeclarationsDataKey = when (expression.symbol.owner.origin) {
-                    IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER -> context.mapping.defaultArgumentsOriginalFunction[expression.symbol.owner]
+                    IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER -> expression.symbol.owner.defaultArgumentsOriginalFunction
                     else -> expression.symbol.owner
                 }
                 val localsData = localDeclarationsData[localDeclarationsDataKey] ?: return expression
@@ -76,7 +75,7 @@ internal class FragmentLocalFunctionPatchLowering(
                             // the corresponding argument from the existing
                             // call and place at the appropriate slot in the
                             // call to the lowered function
-                            expression.getValueArgument(oldParameter.index)!!
+                            expression.getValueArgument(oldParameter.indexInOldValueParameters)!!
                         } else {
                             // The parameter is introduced by the lowering to
                             // private static function, so corresponds to a _capture_ by the local function
@@ -101,7 +100,7 @@ internal class FragmentLocalFunctionPatchLowering(
                             irBuilder.irGet(newParameter)
                         }
 
-                        putValueArgument(newValueParameterDeclaration.index, getValue)
+                        putValueArgument(newValueParameterDeclaration.indexInOldValueParameters, getValue)
                     }
                 }
             }

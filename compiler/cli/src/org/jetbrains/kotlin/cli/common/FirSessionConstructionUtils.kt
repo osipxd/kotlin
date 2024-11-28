@@ -18,8 +18,9 @@ import org.jetbrains.kotlin.fir.checkers.registerExperimentalCheckers
 import org.jetbrains.kotlin.fir.checkers.registerExtraCommonCheckers
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
+import org.jetbrains.kotlin.fir.resolve.providers.impl.FirBuiltinSyntheticFunctionInterfaceProvider
+import org.jetbrains.kotlin.fir.resolve.providers.impl.syntheticFunctionInterfacesSymbolProvider
 import org.jetbrains.kotlin.fir.session.*
-import org.jetbrains.kotlin.fir.session.environment.AbstractProjectEnvironment
 import org.jetbrains.kotlin.fir.session.environment.AbstractProjectFileSearchScope
 import org.jetbrains.kotlin.incremental.components.LookupTracker
 import org.jetbrains.kotlin.library.KotlinLibrary
@@ -50,7 +51,7 @@ val GroupedKtSources.fileBelongsToModuleForLt: (KtSourceFile, String) -> Boolean
     get() = { file, moduleName -> sourcesByModuleName[moduleName].orEmpty().contains(file) }
 
 fun prepareJvmSessionsForScripting(
-    projectEnvironment: AbstractProjectEnvironment,
+    projectEnvironment: VfsBasedProjectEnvironment,
     configuration: CompilerConfiguration,
     files: List<KtFile>,
     rootModuleNameAsString: String,
@@ -59,8 +60,7 @@ fun prepareJvmSessionsForScripting(
     isScript: (KtFile) -> Boolean,
     createProviderAndScopeForIncrementalCompilation: (List<KtFile>) -> IncrementalCompilationContext?,
 ): List<SessionWithSources<KtFile>> {
-    val extensionRegistrars = (projectEnvironment as? VfsBasedProjectEnvironment)
-        ?.let { FirExtensionRegistrar.getInstances(it.project) }.orEmpty()
+    val extensionRegistrars = FirExtensionRegistrar.getInstances(projectEnvironment.project)
     return MinimizedFrontendContext(projectEnvironment, MessageCollector.NONE, extensionRegistrars, configuration).prepareJvmSessions(
         files, rootModuleNameAsString, friendPaths, librariesScope, isCommonSourceForPsi, isScript,
         fileBelongsToModuleForPsi, createProviderAndScopeForIncrementalCompilation
@@ -324,7 +324,7 @@ fun <F> prepareWasmSessions(
 fun <F> prepareCommonSessions(
     files: List<F>,
     configuration: CompilerConfiguration,
-    projectEnvironment: AbstractProjectEnvironment,
+    projectEnvironment: VfsBasedProjectEnvironment,
     rootModuleName: Name,
     extensionRegistrars: List<FirExtensionRegistrar>,
     librariesScope: AbstractProjectFileSearchScope,
@@ -390,10 +390,12 @@ private inline fun <F> prepareSessions(
     val hmppModuleStructure = configuration.get(CommonConfigurationKeys.HMPP_MODULE_STRUCTURE)
     val sessionProvider = FirProjectSessionProvider()
 
-    createLibrarySession(sessionProvider)
+    val librarySession = createLibrarySession(sessionProvider)
     val extraAnalysisMode = configuration.getBoolean(CommonConfigurationKeys.USE_FIR_EXTRA_CHECKERS)
     val experimentalAnalysisMode = configuration.getBoolean(CommonConfigurationKeys.USE_FIR_EXPERIMENTAL_CHECKERS)
     val sessionConfigurator: FirSessionConfigurator.() -> Unit = {
+        registerComponent(FirBuiltinSyntheticFunctionInterfaceProvider::class, librarySession.syntheticFunctionInterfacesSymbolProvider)
+
         if (extraAnalysisMode) {
             registerExtraCommonCheckers()
         }

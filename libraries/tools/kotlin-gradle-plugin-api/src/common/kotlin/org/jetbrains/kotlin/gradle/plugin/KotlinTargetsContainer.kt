@@ -12,15 +12,19 @@ import org.jetbrains.kotlin.gradle.DeprecatedTargetPresetApi
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 
 /**
- * @suppress TODO: KT-58858 add documentation
+ * Represents a Kotlin DSL entity containing a collection of multiple [Kotlin targets][KotlinTarget] in this project.
  */
 @KotlinTargetsDsl
 interface KotlinTargetsContainer {
+
+    /**
+     * A [NamedDomainObjectContainer] containing all registered [Kotlin targets][KotlinTarget] in this project.
+     */
     val targets: NamedDomainObjectCollection<KotlinTarget>
 }
 
 /**
- * @suppress TODO: KT-58858 add documentation
+ * @suppress
  */
 @OptIn(InternalKotlinGradlePluginApi::class)
 @DeprecatedTargetPresetApi
@@ -33,8 +37,12 @@ interface KotlinTargetsContainerWithPresets : KotlinTargetsContainer {
 }
 
 /**
- * @suppress TODO: KT-58858 add documentation
+ * Represents a Kotlin DSL entity containing a collection of multiple [KotlinSourceSets][KotlinSourceSet].
  */
 interface KotlinSourceSetContainer {
+
+    /**
+     * A [NamedDomainObjectContainer] containing all registered [KotlinSourceSets][KotlinSourceSet] in this project.
+     */
     val sourceSets: NamedDomainObjectContainer<KotlinSourceSet>
 }

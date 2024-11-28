@@ -6,12 +6,14 @@
 package org.jetbrains.kotlin.analysis.low.level.api.fir.providers
 
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.analysis.low.level.api.fir.caches.NullableCaffeineCache
-import org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.LLFirSession
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclarationProvider
-import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProvider
 import org.jetbrains.kotlin.analysis.api.platform.declarations.mergeDeclarationProviders
+import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProvider
 import org.jetbrains.kotlin.analysis.api.platform.packages.mergePackageProviders
+import org.jetbrains.kotlin.analysis.low.level.api.fir.caches.NullableCaffeineCache
+import org.jetbrains.kotlin.analysis.low.level.api.fir.caches.withStatsCounter
+import org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.LLFirSession
+import org.jetbrains.kotlin.analysis.low.level.api.fir.statistics.LLStatisticsService
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.resolve.providers.FirCompositeCachedSymbolNamesProvider
@@ -55,7 +57,11 @@ internal class LLFirCombinedKotlinSymbolProvider private constructor(
 ) : LLFirSelectingCombinedSymbolProvider<LLFirKotlinSymbolProvider>(session, project, providers) {
     override val symbolNamesProvider: FirSymbolNamesProvider = FirCompositeCachedSymbolNamesProvider.fromSymbolProviders(session, providers)
 
-    private val classifierCache = NullableCaffeineCache<ClassId, FirClassLikeSymbol<*>> { it.maximumSize(500) }
+    private val classifierCache = NullableCaffeineCache<ClassId, FirClassLikeSymbol<*>> {
+        it
+            .maximumSize(500)
+            .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderCacheStatsCounter)
+    }
 
     override fun getClassLikeSymbolByClassId(classId: ClassId): FirClassLikeSymbol<*>? {
         if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
@@ -119,7 +125,7 @@ internal class LLFirCombinedKotlinSymbolProvider private constructor(
             }
     }
 
-    override fun getPackage(fqName: FqName): FqName? {
+    override fun hasPackage(fqName: FqName): Boolean {
         val hasPackage = if (fqName.startsWith(StandardNames.BUILT_INS_PACKAGE_NAME)) {
             // If a package is a `kotlin` package, `packageProvider` might find it via the scope of an individual symbol provider that
             // disallows `kotlin` packages. Hence, the combined `getPackage` would erroneously find a package it shouldn't be able to find,
@@ -133,8 +139,10 @@ internal class LLFirCombinedKotlinSymbolProvider private constructor(
 
         // Regarding caching `hasPackage`: The static (standalone) package provider precomputes its packages, while the IDE package provider
         // caches the results itself. Hence, it's currently unnecessary to provide another layer of caching here.
-        return fqName.takeIf { hasPackage }
+        return hasPackage
     }
+
+    override fun estimateSymbolCacheSize(): Long = classifierCache.estimatedSize
 
     companion object {
         fun merge(session: LLFirSession, project: Project, providers: List<LLFirKotlinSymbolProvider>): FirSymbolProvider? =

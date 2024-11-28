@@ -18,7 +18,6 @@ import java.io.IOException
 import java.io.OutputStream
 import java.io.PrintStream
 import java.lang.management.ManagementFactory
-import java.net.URLClassLoader
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.jar.Manifest
@@ -68,15 +67,13 @@ abstract class KotlinCompileDaemonBase {
     val log by lazy { Logger.getLogger("daemon") }
 
     private fun loadVersionFromResource(): String? {
-        (KotlinCompileDaemonBase::class.java.classLoader as? URLClassLoader)
-            ?.findResource("META-INF/MANIFEST.MF")
-            ?.let {
-                try {
-                    return Manifest(it.openStream()).mainAttributes.getValue("Implementation-Version") ?: null
-                }
-                catch (e: IOException) {}
+        try {
+            KotlinCompileDaemonBase::class.java.classLoader.getResourceAsStream("META-INF/MANIFEST.MF").use {
+                return Manifest(it).mainAttributes.getValue("Implementation-Version")
             }
-        return null
+        } catch (_: IOException) {
+            return null
+        }
     }
 
     protected open fun <T> runSynchronized(block: () -> T) = block()
@@ -107,12 +104,15 @@ abstract class KotlinCompileDaemonBase {
 
         val compilerId = CompilerId()
         val daemonOptions = DaemonOptions()
+        val initialClientInfo = InitialClientInformation(CompilerSystemProperties.COMPILE_DAEMON_INITIATOR_MARKER_FILE.value?.let { File(it) })
         runSynchronized {
             var serverRun: Any?
             try {
-                val daemonJVMOptions = configureDaemonJVMOptions(inheritMemoryLimits = true,
-                                                                 inheritOtherJvmOptions = true,
-                                                                 inheritAdditionalProperties = true)
+                val daemonJVMOptions = configureDaemonJVMOptions(
+                    inheritMemoryLimits = true,
+                    inheritOtherJvmOptions = true,
+                    inheritAdditionalProperties = true
+                )
 
                 val filteredArgs = args.asIterable().filterExtractProps(compilerId, daemonOptions, prefix = COMPILE_DAEMON_CMDLINE_OPTIONS_PREFIX)
 
@@ -146,6 +146,7 @@ abstract class KotlinCompileDaemonBase {
                 val timer = Timer(true)
                 val (compilerService, port) = getCompileServiceAndPort(compilerSelector, compilerId, daemonOptions, daemonJVMOptions, timer)
                 compilerService.startDaemonElections()
+                compilerService.registerInitialClient(initialClientInfo)
                 compilerService.configurePeriodicActivities()
                 serverRun = runCompileService(compilerService)
 
@@ -170,6 +171,12 @@ abstract class KotlinCompileDaemonBase {
             }
             awaitServerRun(serverRun)
         }
+    }
+}
+
+private fun CompileService.registerInitialClient(initialClient: InitialClientInformation) {
+    initialClient.aliveFlagFile?.let {
+        registerClient(it.absolutePath)
     }
 }
 

@@ -1,3 +1,5 @@
+// IGNORE_FIR_DIAGNOSTICS
+// RUN_PIPELINE_TILL: FRONTEND
 // LANGUAGE: +MultiPlatformProjects
 // ISSUE: KT-58845
 // Reason: MPP diagnostics are reported differentely in the compiler and AA
